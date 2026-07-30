@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "44488471486",
+    "project_id": "nimmyscrm",
+    "storage_bucket": "nimmyscrm.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:44488471486:android:f2eb95b65fdc25bf99bfef",
+        "android_client_info": {
+          "package_name": "com.nimmyscrm.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB98sz9hyUevNr3hj5S3iRFBUHUtkVZKdc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

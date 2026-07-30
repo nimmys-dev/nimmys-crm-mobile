@@ -8,7 +8,7 @@
 PRODUCT_NAME = nimmys_crm
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.nimmysCrm
+PRODUCT_BUNDLE_IDENTIFIER = com.nimmyscrm.app
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
