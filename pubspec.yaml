@@ -38,6 +38,28 @@ dependencies:
   shared_preferences: ^2.5.5
   firebase_core: ^4.12.1
 
+  # State management. `flutter_bloc` re-exports `bloc`, so it is the only
+  # entry needed; `equatable` keeps state comparison (and therefore widget
+  # rebuild suppression) cheap and correct.
+  flutter_bloc: ^9.1.1
+  equatable: ^2.0.7
+
+  # Networking. Only Dio is listed: the app talks to the abstract `ApiClient`
+  # in core/network, so swapping in a `package:http` implementation later
+  # touches exactly one file and no feature code.
+  dio: ^5.9.0
+
+  # Service locator used for constructor injection at composition roots.
+  get_it: ^8.0.3
+
+  # Auth tokens live in the Keychain / EncryptedSharedPreferences, never in
+  # SharedPreferences — see core/storage/token_storage.dart.
+  flutter_secure_storage: ^9.2.4
+
+  # Lets the app fail fast with a "no connection" message instead of waiting
+  # out a full request timeout.
+  connectivity_plus: ^6.1.5
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -49,6 +71,11 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
+
+  # Test doubles for repositories/clients and a harness that asserts on the
+  # exact sequence of states a bloc emits.
+  bloc_test: ^10.0.0
+  mocktail: ^1.0.4
 
 # Launcher icon generation — run `dart run flutter_launcher_icons` after any
 # change here. Source artwork: assets/logo/app_logo.png (1254x1254, opaque).
@@ -88,8 +115,12 @@ flutter:
 
   # Brand artwork. AppLogo reads nimmys_logo.png and falls back to a
   # painted lockup if the file is ever missing.
+  #
+  # `assets/images/nimmys_logo.png` is intentionally not listed: the file is
+  # not in the repo, and declaring an asset that does not exist fails the
+  # asset bundle for every build and test. AppLogo's `errorBuilder` renders
+  # the painted lockup instead. Add the line back alongside the artwork.
   assets:
-    - assets/images/nimmys_logo.png
     - assets/logo/app_logo.png
 
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -1,3 +1,6 @@
+// `CupertinoPageTransitionsBuilder` lives in the cupertino library, not
+// material, so the page-transitions theme below needs this import.
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

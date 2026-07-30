@@ -1,30 +1,39 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
+import 'package:nimmys_crm/app.dart';
+import 'package:nimmys_crm/core/di/service_locator.dart';
+import 'package:nimmys_crm/core/network/api_config.dart';
+import 'package:nimmys_crm/core/storage/token_storage.dart';
+import 'package:nimmys_crm/core/theme/theme_controller.dart';
 
-import 'package:nimmys_crm/main.dart';
-
+/// Boots the real app with only the platform-backed pieces swapped out.
+///
+/// Doubles as the worked example of testing against the object graph:
+/// [configureDependencies] takes an `overrides` hook, and anything registered
+/// there wins over the production registration. Here that is
+/// [InMemoryTokenStorage] — the secure store needs a Keychain the test
+/// binding does not have — while everything else wires up exactly as it does
+/// in release.
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  setUp(() async {
+    await resetDependencies();
+    await configureDependencies(
+      config: ApiConfig.development,
+      overrides: (GetIt sl) =>
+          sl.registerLazySingleton<TokenStorage>(InMemoryTokenStorage.new),
+    );
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  tearDown(resetDependencies);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+  testWidgets('boots without throwing', (WidgetTester tester) async {
+    await tester.pumpWidget(NimmysCrmApp(themeController: ThemeController()));
+
+    // A single pump rather than `pumpAndSettle`: the splash runs a timed
+    // animation, and settling would wait it out for no added confidence.
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }
