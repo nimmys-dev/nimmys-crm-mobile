@@ -13,6 +13,10 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // Required by flutter_local_notifications 22, which compiles against
+        // java.time and declares desugaring in its own AAR metadata — the
+        // build fails at :app:checkDebugAarMetadata without this.
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -45,4 +49,11 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Ships the backported java.time implementation the desugaring above
+    // rewrites calls to. Keep the version in step with the one declared by
+    // flutter_local_notifications' own build.gradle.
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

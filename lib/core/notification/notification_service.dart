@@ -188,10 +188,14 @@ class NotificationService {
 
       // `settings:` is named as of flutter_local_notifications 20 — the
       // positional form the original project used no longer compiles.
+      //
+      // No background response handler is registered: it would run in its own
+      // isolate with no navigator to push onto, and there are no action
+      // buttons for it to service. Taps that launch the app are replayed into
+      // the callback below once the engine is up.
       await _flutterLocalNotificationsPlugin.initialize(
         settings: initSettings,
         onDidReceiveNotificationResponse: _onLocalNotificationTapped,
-        onDidReceiveBackgroundNotificationResponse: _onLocalNotificationTapped,
       );
       CustomLog.debug(
         this,
