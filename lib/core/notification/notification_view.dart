@@ -1,7 +1,7 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
-import '../utils/custom_log.dart';
+import '../../utils/custom_log.dart';
 
 /// Draws an ordinary (non-critical) push.
 ///

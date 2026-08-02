@@ -1,4 +1,4 @@
-import '../utils/custom_log.dart';
+import '../../utils/custom_log.dart';
 
 class NotificationPayload {
   String? route;

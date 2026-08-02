@@ -7,24 +7,36 @@ class CustomLog {
 
   static final _logger = Logger(printer: PrettyPrinter());
 
+  /// The tag written in front of every line.
+  ///
+  /// `instance` is normally `this`, but a `static` method has no instance to
+  /// pass and hands over its own type instead — `CustomLog.debug(Foo, …)`.
+  /// `runtimeType` on a `Type` is `_Type`, which would make every static log
+  /// line from the app read the same, so that case is unwrapped here.
+  static String _tag(Object instance) =>
+      instance is Type ? instance.toString() : instance.runtimeType.toString();
+
   static void debug(Object instance, String message) {
     if(kDebugMode){
-      _logger.d(message = "[${instance.runtimeType.toString()}] $message", time: DateTimeHelper.now());
+      _logger.d("[${_tag(instance)}] $message", time: DateTimeHelper.now());
     }
   }
 
   static void info(Object instance, String message) {
     if(kDebugMode){
-      _logger.i(message = "[${instance.runtimeType.toString()}] $message", time: DateTimeHelper.now());
+      _logger.i("[${_tag(instance)}] $message", time: DateTimeHelper.now());
     }
   }
 
-  static void error(Object instance, String message, Object? exception) {
+  /// [exception] is optional: plenty of errors are a bad state rather than a
+  /// caught throwable, and those callers have nothing to pass.
+  static void error(Object instance, String message, [Object? exception, StackTrace? stackTrace]) {
     if(kDebugMode){
       _logger.e(
-          message = "[${instance.runtimeType.toString()}] $message",
-          time: DateTime.now(),
+          "[${_tag(instance)}] $message",
+          time: DateTimeHelper.now(),
           error: exception,
+          stackTrace: stackTrace,
       );
     }
   }

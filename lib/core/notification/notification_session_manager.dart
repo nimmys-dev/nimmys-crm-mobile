@@ -1,5 +1,5 @@
 import '../storage/secured_shared_preferences.dart';
-import '../utils/custom_log.dart';
+import '../../utils/custom_log.dart';
 
 /// Remembers which device raised the most recent alert of each kind.
 ///

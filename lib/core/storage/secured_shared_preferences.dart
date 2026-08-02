@@ -1,6 +1,6 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import '../utils/custom_log.dart';
+import '../../utils/custom_log.dart';
 
 /// Loose-key storage backed by the Keychain / EncryptedSharedPreferences.
 ///

@@ -15,7 +15,7 @@ import '../constants/app_string.dart';
 import '../navigation/app_navigator.dart';
 import '../storage/secured_shared_preferences.dart';
 import '../theme/app_colors.dart';
-import '../utils/custom_log.dart';
+import '../../utils/custom_log.dart';
 import 'notification_helper.dart';
 import 'notification_payload.dart';
 import 'notification_session_manager.dart';
