@@ -212,46 +212,184 @@ class LeadQuotationDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const String blank = '—';
+    final List<QuotationItem> items = quotation.filledItems;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         LeadDetailBlock(
           label: 'Customer Address',
-          value: quotation.customerAddress ?? blank,
+          value: quotation.customerAddress ?? '—',
           icon: Icons.location_on_outlined,
         ),
-        const SizedBox(height: AppSpacing.xs),
-        LeadDetailTile(
-          label: 'Item / Product',
-          value: quotation.item ?? blank,
-          icon: Icons.inventory_2_outlined,
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: LeadDetailTile(
-                label: 'Quantity',
-                value: quotation.quantity?.toString() ?? blank,
-                icon: Icons.numbers_rounded,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Expanded(
-              child: LeadDetailTile(
-                label: 'Rate',
-                value: quotation.rate == null
-                    ? blank
-                    : formatRate(quotation.rate!),
-                icon: Icons.currency_rupee_rounded,
-                isAccent: true,
-              ),
-            ),
-          ],
-        ),
+        if (items.isNotEmpty) ...<Widget>[
+          const SizedBox(height: AppSpacing.xs),
+          // A table rather than a stack of tiles: a quotation can carry any
+          // number of lines, and columns keep them comparable.
+          LeadQuotationItemsTable(items: items, total: quotation.total),
+        ],
       ],
+    );
+  }
+}
+
+/// The quoted lines, one row each, with a total when the figures allow one.
+class LeadQuotationItemsTable extends StatelessWidget {
+  const LeadQuotationItemsTable({super.key, required this.items, this.total});
+
+  final List<QuotationItem> items;
+  final double? total;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: context.palette.surfaceAlt,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: context.palette.line),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: <Widget>[
+          Container(
+            color: context.palette.inkWash,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: 8,
+            ),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  flex: 46,
+                  child: Text('ITEM / PRODUCT', style: _headerStyle(context)),
+                ),
+                Expanded(
+                  flex: 16,
+                  child: Text(
+                    'QTY',
+                    style: _headerStyle(context),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Expanded(
+                  flex: 38,
+                  child: Text(
+                    'RATE',
+                    style: _headerStyle(context),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          for (int index = 0; index < items.length; index++)
+            LeadQuotationItemRow(
+              item: items[index],
+              isLast: index == items.length - 1 && total == null,
+            ),
+          if (total != null)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: 9,
+              ),
+              decoration: BoxDecoration(
+                color: context.palette.redWashSoft,
+                border: Border(top: BorderSide(color: context.palette.line)),
+              ),
+              child: Row(
+                children: <Widget>[
+                  Expanded(child: Text('Total', style: _headerStyle(context))),
+                  Text(
+                    LeadQuotationDetails.formatRate(total!),
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.red,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  static TextStyle _headerStyle(BuildContext context) => TextStyle(
+    fontSize: 10,
+    fontWeight: FontWeight.w800,
+    color: context.palette.slate,
+    letterSpacing: 0.5,
+  );
+}
+
+/// A single quoted line.
+class LeadQuotationItemRow extends StatelessWidget {
+  const LeadQuotationItemRow({
+    super.key,
+    required this.item,
+    required this.isLast,
+  });
+
+  final QuotationItem item;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 10,
+      ),
+      decoration: BoxDecoration(
+        border: isLast
+            ? null
+            : Border(bottom: BorderSide(color: context.palette.line)),
+      ),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            flex: 46,
+            child: Text(
+              item.item ?? '—',
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: context.palette.ink,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Expanded(
+            flex: 16,
+            child: Text(
+              item.quantity?.toString() ?? '—',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: context.palette.slate,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 38,
+            child: Text(
+              item.rate == null
+                  ? '—'
+                  : LeadQuotationDetails.formatRate(item.rate!),
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: context.palette.ink,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

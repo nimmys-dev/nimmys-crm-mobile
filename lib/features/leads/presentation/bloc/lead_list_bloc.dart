@@ -133,8 +133,7 @@ class LeadListBloc extends PaginatedListBloc<Lead> {
     final Result<void> result = await _repository.deleteLead(event.id);
 
     result.fold(
-      onSuccess: (_) =>
-          removeItem(emit, (Lead lead) => lead.id == event.id),
+      onSuccess: (_) => removeItem(emit, (Lead lead) => lead.id == event.id),
       // The list itself is still valid, so keep it and report the failure
       // over the top of it.
       onFailure: (exception) =>

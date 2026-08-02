@@ -41,34 +41,75 @@ void main() {
       );
     });
 
-    test('weekly needs at least one day', () {
-      const TaskSchedule weekly = TaskSchedule(frequency: TaskFrequency.weekly);
-      expect(weekly.isComplete, isFalse);
-      expect(weekly.toggleWeekday(DateTime.monday).isComplete, isTrue);
+    test('weekly needs a window and at least one day', () {
+      final TaskSchedule weekly = const TaskSchedule(
+        frequency: TaskFrequency.weekly,
+      ).toggleWeekday(DateTime.monday);
+      expect(
+        weekly.validationError,
+        'Select a start date and end date.',
+        reason: 'days alone are not enough now that weekly has a window',
+      );
+
+      final TaskSchedule dated = weekly.copyWith(
+        weeklyRange: TaskDateRange(
+          from: DateTime(2026, 8, 3),
+          to: DateTime(2026, 9, 30),
+        ),
+      );
+      expect(dated.isComplete, isTrue);
       // Toggling the only day back off makes it incomplete again.
       expect(
-        weekly
-            .toggleWeekday(DateTime.monday)
-            .toggleWeekday(DateTime.monday)
-            .isComplete,
-        isFalse,
+        dated.toggleWeekday(DateTime.monday).validationError,
+        'Select at least one day of the week.',
       );
     });
 
-    test('monthly needs at least one day, and keeps its own set', () {
+    test('monthly needs a window and at least one date', () {
+      final TaskSchedule monthly = const TaskSchedule(
+        frequency: TaskFrequency.monthly,
+      ).copyWith(
+        monthlyRange: TaskDateRange(
+          from: DateTime(2026, 8, 1),
+          to: DateTime(2026, 12, 31),
+        ),
+      );
+      expect(
+        monthly.validationError,
+        'Select at least one date between 1 and 30.',
+      );
+      expect(monthly.toggleMonthDay(15).isComplete, isTrue);
+
+      // The window is required too.
+      expect(
+        const TaskSchedule(
+          frequency: TaskFrequency.monthly,
+        ).toggleMonthDay(15).validationError,
+        'Select a start date and end date.',
+      );
+    });
+
+    test('monthly stops at the 30th', () {
       const TaskSchedule monthly = TaskSchedule(
         frequency: TaskFrequency.monthly,
       );
-      expect(monthly.isComplete, isFalse);
-      expect(monthly.toggleMonthWeekday(DateTime.friday).isComplete, isTrue);
+      expect(kMonthDayValues.last, 30);
+      expect(
+        monthly.toggleMonthDay(31).monthDays,
+        isEmpty,
+        reason: '31 would skip five months a year, so it is not offered',
+      );
+      expect(monthly.toggleMonthDay(0).monthDays, isEmpty);
+      expect(monthly.toggleMonthDay(30).monthDays, <int>{30});
+    });
 
-      // A weekly selection must not satisfy a monthly task, or vice versa.
-      expect(monthly.toggleWeekday(DateTime.friday).isComplete, isFalse);
-      final TaskSchedule both = monthly
-          .toggleMonthWeekday(DateTime.friday)
-          .toggleWeekday(DateTime.monday);
-      expect(both.monthWeekdays, <int>{DateTime.friday});
-      expect(both.weekdays, <int>{DateTime.monday});
+    test('weekly and monthly keep their own windows', () {
+      final TaskSchedule schedule = const TaskSchedule().copyWith(
+        weeklyRange: TaskDateRange(from: DateTime(2026, 8, 3)),
+        monthlyRange: TaskDateRange(from: DateTime(2026, 9, 1)),
+      );
+      expect(schedule.weeklyRange.from, DateTime(2026, 8, 3));
+      expect(schedule.monthlyRange.from, DateTime(2026, 9, 1));
     });
 
     test('quarterly needs a complete range in every selected quarter', () {
@@ -135,7 +176,7 @@ void main() {
 
     test('yearly needs a start date and a due date', () {
       const TaskSchedule yearly = TaskSchedule(frequency: TaskFrequency.yearly);
-      expect(yearly.validationError, 'Select a start date and a due date.');
+      expect(yearly.validationError, 'Select a start date and due date.');
       expect(
         yearly
             .copyWith(yearlyRange: TaskDateRange(from: DateTime(2026, 4, 1)))
@@ -267,25 +308,36 @@ void main() {
       expect(roundTrip(schedule), schedule);
     });
 
-    test('weekly keeps its days', () {
-      final TaskSchedule schedule = const TaskSchedule(
-        frequency: TaskFrequency.weekly,
-      ).toggleWeekday(DateTime.sunday).toggleWeekday(DateTime.wednesday);
-      expect(roundTrip(schedule).weekdays, <int>{
-        DateTime.sunday,
-        DateTime.wednesday,
-      });
+    test('weekly keeps its window and days', () {
+      final TaskSchedule schedule =
+          TaskSchedule(
+                frequency: TaskFrequency.weekly,
+                weeklyRange: TaskDateRange(
+                  from: DateTime(2026, 8, 3),
+                  to: DateTime(2026, 9, 30),
+                ),
+              )
+              .toggleWeekday(DateTime.sunday)
+              .toggleWeekday(DateTime.wednesday);
+
+      final TaskSchedule restored = roundTrip(schedule);
+      expect(restored.weekdays, <int>{DateTime.sunday, DateTime.wednesday});
+      expect(restored.weeklyRange, schedule.weeklyRange);
     });
 
-    test('monthly keeps its days', () {
+    test('monthly keeps its window and dates', () {
       final TaskSchedule schedule =
-          const TaskSchedule(frequency: TaskFrequency.monthly)
-              .toggleMonthWeekday(DateTime.saturday)
-              .toggleMonthWeekday(DateTime.tuesday);
-      expect(roundTrip(schedule).monthWeekdays, <int>{
-        DateTime.tuesday,
-        DateTime.saturday,
-      });
+          TaskSchedule(
+            frequency: TaskFrequency.monthly,
+            monthlyRange: TaskDateRange(
+              from: DateTime(2026, 8, 1),
+              to: DateTime(2026, 12, 31),
+            ),
+          ).toggleMonthDay(1).toggleMonthDay(30);
+
+      final TaskSchedule restored = roundTrip(schedule);
+      expect(restored.monthDays, <int>{1, 30});
+      expect(restored.monthlyRange, schedule.monthlyRange);
     });
 
     test('quarterly keeps every quarter and its range', () {
@@ -355,14 +407,41 @@ void main() {
         startTimeMinutes: 600,
         endTimeMinutes: 720,
         yearlyRange: TaskDateRange(from: DateTime(2026, 4, 1)),
-      ).toggleWeekday(DateTime.friday).toggleMonthWeekday(DateTime.sunday);
+      ).toggleWeekday(DateTime.friday).toggleMonthDay(9);
       final Map<String, dynamic> json = schedule.toJson();
       expect(json['weekdays'], <int>[DateTime.friday]);
       expect(json.containsKey('start_time_minutes'), isFalse);
       expect(json.containsKey('end_time_minutes'), isFalse);
-      expect(json.containsKey('month_weekdays'), isFalse);
+      expect(json.containsKey('month_days'), isFalse);
       expect(json.containsKey('quarters'), isFalse);
       expect(json.containsKey('start_date'), isFalse);
+    });
+
+    test('repeat mode is on by default and survives the round trip', () {
+      const TaskSchedule schedule = TaskSchedule();
+      expect(schedule.repeat, isTrue);
+      expect(roundTrip(schedule.copyWith(repeat: false)).repeat, isFalse);
+      // A task saved before the toggle existed was, by definition, recurring.
+      expect(
+        TaskSchedule.fromJson(<String, dynamic>{'frequency': 'weekly'}).repeat,
+        isTrue,
+      );
+    });
+
+    test('a one-off task needs no schedule and sends none', () {
+      final TaskSchedule schedule = const TaskSchedule(
+        frequency: TaskFrequency.quarterly,
+      ).copyWith(repeat: false);
+      expect(
+        schedule.isComplete,
+        isTrue,
+        reason: 'nothing is required once the task does not repeat',
+      );
+
+      final Map<String, dynamic> json = schedule.toJson();
+      expect(json['repeat'], isFalse);
+      expect(json.containsKey('quarters'), isFalse);
+      expect(json.containsKey('weekdays'), isFalse);
     });
 
     test('an unknown frequency falls back to daily instead of throwing', () {

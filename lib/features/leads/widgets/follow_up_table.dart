@@ -359,27 +359,6 @@ class FollowUpRowActions extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        FollowUpActionButton(
-          // A shade larger than the Material glyphs beside it: the brand mark
-          // is drawn tighter, so it needs the extra to match their weight.
-          icon: const FaIcon(
-            FontAwesomeIcons.whatsapp,
-            size: 20,
-            color: kWhatsAppGreen,
-          ),
-          fill: kWhatsAppGreen.withValues(alpha: 0.12),
-          border: kWhatsAppGreen.withValues(alpha: 0.32),
-          semanticLabel: 'WhatsApp ${entry.name}',
-          tooltip: 'WhatsApp message',
-          onPressed:
-              onWhatsApp ??
-              () => WhatsAppLauncher.openChat(
-                context,
-                entry.mobile,
-                message: _greeting,
-              ),
-        ),
-        SizedBox(width: spacing),
         if (entry.hasQuotation) ...<Widget>[
           FollowUpActionButton(
             // Neutral fill so the red glyph reads as "PDF" without competing
@@ -403,6 +382,28 @@ class FollowUpRowActions extends StatelessWidget {
           ),
           SizedBox(width: spacing),
         ],
+        FollowUpActionButton(
+          // A shade larger than the Material glyphs beside it: the brand mark
+          // is drawn tighter, so it needs the extra to match their weight.
+          icon: const FaIcon(
+            FontAwesomeIcons.whatsapp,
+            size: 20,
+            color: kWhatsAppGreen,
+          ),
+          fill: kWhatsAppGreen.withValues(alpha: 0.12),
+          border: kWhatsAppGreen.withValues(alpha: 0.32),
+          semanticLabel: 'WhatsApp ${entry.name}',
+          tooltip: 'WhatsApp message',
+          onPressed:
+              onWhatsApp ??
+              () => WhatsAppLauncher.openChat(
+                context,
+                entry.mobile,
+                message: _greeting,
+              ),
+        ),
+        SizedBox(width: spacing),
+
         FollowUpCallButton(
           name: entry.name,
           mobile: entry.mobile,

@@ -26,9 +26,11 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
   /// section below disappears entirely rather than rendering empty rows.
   static const LeadQuotation _quotation = LeadQuotation(
     customerAddress: 'Marine Drive, Kochi, Ernakulam 682031',
-    item: 'Sigma 85mm 1:4 Lens',
-    quantity: 2,
-    rate: 74500,
+    items: <QuotationItem>[
+      QuotationItem(item: 'Sigma 85mm 1:4 Lens', quantity: 2, rate: 74500),
+      QuotationItem(item: 'Canon Camera 85mm', quantity: 1, rate: 132000),
+      QuotationItem(item: 'Lens Cleaning Kit', quantity: 3, rate: 1250),
+    ],
   );
 
   static const List<String> _items = <String>[

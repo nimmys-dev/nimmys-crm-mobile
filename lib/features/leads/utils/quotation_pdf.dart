@@ -105,7 +105,11 @@ class QuotationPdf {
       await SharePlus.instance.share(
         ShareParams(
           files: <XFile>[
-            XFile(file.path, mimeType: 'application/pdf', name: _fileName(customerName)),
+            XFile(
+              file.path,
+              mimeType: 'application/pdf',
+              name: _fileName(customerName),
+            ),
           ],
           text: 'Hi $customerName, please find your quotation attached.',
           subject: 'Quotation from NIMMYS',
@@ -225,7 +229,7 @@ class QuotationPdf {
   );
 
   static pw.Widget _itemsTable(LeadQuotation quotation) {
-    final double? lineTotal = _lineTotal(quotation);
+    final List<QuotationItem> items = quotation.filledItems;
 
     return pw.Table(
       border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
@@ -245,17 +249,29 @@ class QuotationPdf {
             _cell('AMOUNT', isHeader: true, align: pw.TextAlign.right),
           ],
         ),
-        pw.TableRow(
-          children: <pw.Widget>[
-            _cell(quotation.item ?? '-'),
-            _cell(
-              quotation.quantity?.toString() ?? '-',
-              align: pw.TextAlign.center,
-            ),
-            _cell(_money(quotation.rate), align: pw.TextAlign.right),
-            _cell(_money(lineTotal), align: pw.TextAlign.right),
-          ],
-        ),
+        for (final QuotationItem item in items)
+          pw.TableRow(
+            children: <pw.Widget>[
+              _cell(item.item ?? '-'),
+              _cell(
+                item.quantity?.toString() ?? '-',
+                align: pw.TextAlign.center,
+              ),
+              _cell(_money(item.rate), align: pw.TextAlign.right),
+              _cell(_money(item.amount), align: pw.TextAlign.right),
+            ],
+          ),
+        // A quotation with an address but no lines still prints a table, so
+        // the reader sees an empty one rather than a missing section.
+        if (items.isEmpty)
+          pw.TableRow(
+            children: <pw.Widget>[
+              _cell('-'),
+              _cell('-', align: pw.TextAlign.center),
+              _cell('-', align: pw.TextAlign.right),
+              _cell('-', align: pw.TextAlign.right),
+            ],
+          ),
       ],
     );
   }
@@ -282,7 +298,7 @@ class QuotationPdf {
             ),
             pw.SizedBox(width: 16),
             pw.Text(
-              _money(_lineTotal(quotation)),
+              _money(quotation.total),
               style: pw.TextStyle(
                 fontSize: 13,
                 color: PdfColors.white,
@@ -324,14 +340,6 @@ class QuotationPdf {
       ),
     ),
   );
-
-  /// Quantity × rate, or null when either half is missing — a quotation may
-  /// carry only an item and an address.
-  static double? _lineTotal(LeadQuotation quotation) {
-    final int? quantity = quotation.quantity;
-    final double? rate = quotation.rate;
-    return quantity == null || rate == null ? null : quantity * rate;
-  }
 
   static String _money(double? value) {
     if (value == null) {

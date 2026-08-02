@@ -15,9 +15,9 @@ void main() {
     nextFollowUp: '12-05-2024',
     quotation: LeadQuotation(
       customerAddress: 'Marine Drive, Kochi',
-      item: 'Sigma 85mm 1:4 Lens',
-      quantity: 2,
-      rate: 74500,
+      items: <QuotationItem>[
+        QuotationItem(item: 'Sigma 85mm 1:4 Lens', quantity: 2, rate: 74500),
+      ],
     ),
   );
 

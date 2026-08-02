@@ -130,7 +130,7 @@ class _DailyFields extends StatelessWidget {
   }
 }
 
-/// Weekly picks days of the week.
+/// Weekly picks days of the week — no dates, per the schedule rules.
 class _WeekdayFields extends StatelessWidget {
   const _WeekdayFields({required this.schedule, required this.onChanged});
 
@@ -150,7 +150,7 @@ class _WeekdayFields extends StatelessWidget {
   }
 }
 
-/// Monthly picks days of the week too — same control, its own selection.
+/// Monthly runs on chosen dates of the month, inside a start/end window.
 class _MonthlyFields extends StatelessWidget {
   const _MonthlyFields({required this.schedule, required this.onChanged});
 
@@ -159,15 +159,46 @@ class _MonthlyFields extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TaskWeekdayPicker(
-      label: 'Repeat On',
-      selected: schedule.monthWeekdays,
-      onToggle: (int weekday) =>
-          onChanged(schedule.toggleMonthWeekday(weekday)),
-      emptyCaption:
-          'Pick one or more days. The task repeats every month on those days.',
-      filledCaption: (String days) => 'Repeats every month on $days.',
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        TaskDateRangeFields(
+          range: schedule.monthlyRange,
+          endLabel: 'End Date',
+          onChanged: (TaskDateRange range) =>
+              onChanged(schedule.copyWith(monthlyRange: range)),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        const AppFieldLabel(text: 'Repeat On', isRequired: true),
+        TaskMonthDayBox(
+          selected: schedule.monthDays,
+          onToggle: (int day) => onChanged(schedule.toggleMonthDay(day)),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        TaskScheduleCaption(
+          text: schedule.monthDays.isEmpty
+              ? 'Pick one or more dates. The task repeats every month on those dates.'
+              : 'Repeats every month on ${_ordinalList(schedule.monthDays)}.',
+        ),
+      ],
     );
+  }
+
+  static String _ordinalList(Set<int> days) =>
+      (days.toList()..sort()).map(_ordinal).join(', ');
+
+  /// 1 → "1st", 22 → "22nd". The teens are the exception every list of
+  /// ordinals gets wrong.
+  static String _ordinal(int day) {
+    if (day >= 11 && day <= 13) {
+      return '${day}th';
+    }
+    return switch (day % 10) {
+      1 => '${day}st',
+      2 => '${day}nd',
+      3 => '${day}rd',
+      _ => '${day}th',
+    };
   }
 }
 
@@ -211,6 +242,113 @@ class _QuarterFields extends StatelessWidget {
               : 'Set a from and to date for every selected quarter.',
         ),
       ],
+    );
+  }
+}
+
+/// A start/end date pair, used by every frequency that has a window.
+///
+/// The two calendars police the order between them: the end cannot open
+/// before the start, and moving the start past the end drops the end rather
+/// than leaving the pair reversed.
+class TaskDateRangeFields extends StatelessWidget {
+  const TaskDateRangeFields({
+    super.key,
+    required this.range,
+    required this.onChanged,
+    this.startLabel = 'Start Date',
+    this.endLabel = 'End Date',
+    this.firstDate,
+    this.lastDate,
+  });
+
+  final TaskDateRange range;
+  final ValueChanged<TaskDateRange> onChanged;
+  final String startLabel;
+  final String endLabel;
+
+  /// Bounds passed to both calendars — a quarter's window, say. Null leaves
+  /// [AppDateField]'s default five-year span.
+  final DateTime? firstDate;
+  final DateTime? lastDate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Expanded(
+          child: AppFormField(
+            label: startLabel,
+            isRequired: true,
+            bottomSpacing: 0,
+            child: AppDateField(
+              hint: 'Select start date',
+              value: range.from,
+              firstDate: firstDate,
+              lastDate: lastDate,
+              onChanged: (DateTime value) => onChanged(
+                range.to != null && range.to!.isBefore(value)
+                    ? TaskDateRange(from: value)
+                    : range.copyWith(from: value),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: AppFormField(
+            label: endLabel,
+            isRequired: true,
+            bottomSpacing: 0,
+            child: AppDateField(
+              hint: 'Select ${endLabel.toLowerCase()}',
+              value: range.to,
+              firstDate: range.from ?? firstDate,
+              lastDate: lastDate,
+              onChanged: (DateTime value) =>
+                  onChanged(range.copyWith(to: value)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The 1–30 date box a monthly task repeats on.
+class TaskMonthDayBox extends StatelessWidget {
+  const TaskMonthDayBox({
+    super.key,
+    required this.selected,
+    required this.onToggle,
+  });
+
+  final Set<int> selected;
+  final ValueChanged<int> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xs),
+      decoration: BoxDecoration(
+        color: context.palette.surfaceAlt,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: context.palette.line),
+      ),
+      child: Wrap(
+        spacing: AppSpacing.xxs,
+        runSpacing: AppSpacing.xxs,
+        children: <Widget>[
+          for (final int day in kMonthDayValues)
+            TaskChoiceChip(
+              label: '$day',
+              isSelected: selected.contains(day),
+              minWidth: 38,
+              onTap: () => onToggle(day),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -408,46 +546,13 @@ class QuarterRangePicker extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Expanded(
-                child: AppFormField(
-                  label: 'From Date',
-                  isRequired: true,
-                  bottomSpacing: 0,
-                  child: AppDateField(
-                    hint: 'From',
-                    value: range.from,
-                    firstDate: windowStart,
-                    lastDate: windowEnd,
-                    onChanged: (DateTime value) => onChanged(
-                      // A new start after the old end would leave the range
-                      // reversed, so the end drops rather than going stale.
-                      range.to != null && range.to!.isBefore(value)
-                          ? TaskDateRange(from: value)
-                          : range.copyWith(from: value),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: AppFormField(
-                  label: 'To Date',
-                  isRequired: true,
-                  bottomSpacing: 0,
-                  child: AppDateField(
-                    hint: 'To',
-                    value: range.to,
-                    firstDate: range.from ?? windowStart,
-                    lastDate: windowEnd,
-                    onChanged: (DateTime value) =>
-                        onChanged(range.copyWith(to: value)),
-                  ),
-                ),
-              ),
-            ],
+          TaskDateRangeFields(
+            range: range,
+            startLabel: 'From Date',
+            endLabel: 'To Date',
+            firstDate: windowStart,
+            lastDate: windowEnd,
+            onChanged: onChanged,
           ),
         ],
       ),

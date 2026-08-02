@@ -43,8 +43,10 @@ class _ScriptedLeadRepository implements LeadRepository {
   }) => getLeads(params: params);
 
   @override
-  Future<Result<Lead>> getLead(String id, {ApiCancelToken? cancelToken}) async =>
-      FailureResult<Lead>(const NotFoundException());
+  Future<Result<Lead>> getLead(
+    String id, {
+    ApiCancelToken? cancelToken,
+  }) async => FailureResult<Lead>(const NotFoundException());
 
   @override
   Future<Result<Lead>> createLead(LeadDraft draft) async =>
@@ -272,10 +274,7 @@ void main() {
         const LoadingMoreState<List<int>>(<int>[1], pageInfo: more).canLoadMore,
         isFalse,
       );
-      expect(
-        const LoadedState<List<int>>(<int>[1]).canLoadMore,
-        isFalse,
-      );
+      expect(const LoadedState<List<int>>(<int>[1]).canLoadMore, isFalse);
     });
 
     test('surfaces field errors from a rejected form submission', () {

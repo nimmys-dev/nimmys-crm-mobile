@@ -109,7 +109,8 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isYearly = _schedule.frequency == TaskFrequency.yearly;
+    final bool repeats = _schedule.repeat;
+    final bool isYearly = repeats && _schedule.frequency == TaskFrequency.yearly;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
@@ -199,34 +200,49 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
-                        AppFormField(
-                          label: 'Task Type',
-                          isRequired: true,
-                          // Yearly renders nothing below, so the tabs are the
-                          // last thing in the card and take no bottom gap.
-                          bottomSpacing: isYearly ? 0 : AppSpacing.md,
-                          child: AppSegmentedTabs(
-                            options: TaskFrequency.labels,
-                            selectedIndex: TaskFrequency.values.indexOf(
-                              _schedule.frequency,
-                            ),
-                            onChanged: (int index) => _updateSchedule(
-                              _schedule.copyWith(
-                                frequency: TaskFrequency.values[index],
+                        AppToggleRow(
+                          title: 'Repeat Mode',
+                          subtitle: repeats
+                              ? 'This task repeats on the schedule below'
+                              : 'This task runs once — no recurring schedule',
+                          icon: Icons.autorenew_rounded,
+                          value: repeats,
+                          onChanged: (bool value) =>
+                              _updateSchedule(_schedule.copyWith(repeat: value)),
+                        ),
+                        // Off means a one-off task, so the schedule inputs go
+                        // away entirely rather than sitting there unused.
+                        if (repeats) ...<Widget>[
+                          const SizedBox(height: AppSpacing.md),
+                          AppFormField(
+                            label: 'Task Type',
+                            isRequired: true,
+                            // Yearly renders nothing below, so the tabs are the
+                            // last thing in the card and take no bottom gap.
+                            bottomSpacing: isYearly ? 0 : AppSpacing.md,
+                            child: AppSegmentedTabs(
+                              options: TaskFrequency.labels,
+                              selectedIndex: TaskFrequency.values.indexOf(
+                                _schedule.frequency,
+                              ),
+                              onChanged: (int index) => _updateSchedule(
+                                _schedule.copyWith(
+                                  frequency: TaskFrequency.values[index],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        // Only the selected frequency's inputs render here —
-                        // a daily task asks for a time range, a weekly one
-                        // for days.
-                        TaskScheduleFields(
-                          schedule: _schedule,
-                          onChanged: _updateSchedule,
-                          // A yearly error belongs under the date fields it is
-                          // about, which live in the card below.
-                          errorText: isYearly ? null : _scheduleError,
-                        ),
+                          // Only the selected frequency's inputs render here —
+                          // a daily task asks for a time range, a weekly one
+                          // for dates and days.
+                          TaskScheduleFields(
+                            schedule: _schedule,
+                            onChanged: _updateSchedule,
+                            // A yearly error belongs under the date fields it
+                            // is about, which live in the card below.
+                            errorText: isYearly ? null : _scheduleError,
+                          ),
+                        ],
                       ],
                     ),
                   ),

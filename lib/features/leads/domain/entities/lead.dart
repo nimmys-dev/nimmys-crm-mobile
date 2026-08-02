@@ -95,72 +95,142 @@ enum LeadSource {
       LeadSource.values.map((LeadSource source) => source.label).toList();
 }
 
-/// The optional quotation captured alongside a lead.
+/// One line of a quotation — a product, how many, and at what rate.
 ///
-/// Every field is nullable because the quotation is opt-in and a user may
-/// fill in only part of it — the capture screen attaches one only when
-/// something was actually entered, which is what [hasContent] decides.
-class LeadQuotation extends Equatable {
-  const LeadQuotation({
-    this.customerAddress,
-    this.item,
-    this.quantity,
-    this.rate,
-  });
+/// Every field is nullable because the capture screen adds an empty row the
+/// moment the user taps "Add Item"; a row they then leave blank is dropped on
+/// save rather than stored as a phantom line.
+class QuotationItem extends Equatable {
+  const QuotationItem({this.item, this.quantity, this.rate});
 
-  /// Reads a quotation from an API object, tolerating numbers that arrive as
-  /// strings — the same defensiveness the rest of the parsing layer uses.
-  factory LeadQuotation.fromJson(Map<String, dynamic> json) => LeadQuotation(
-    customerAddress: _text(json['customer_address'] ?? json['address']),
-    item: _text(json['item'] ?? json['product']),
+  factory QuotationItem.fromJson(Map<String, dynamic> json) => QuotationItem(
+    item: _text(json['item'] ?? json['product'] ?? json['name']),
     quantity: _int(json['quantity'] ?? json['qty']),
     rate: _double(json['rate'] ?? json['price']),
   );
 
-  final String? customerAddress;
   final String? item;
   final int? quantity;
   final double? rate;
 
-  /// True when at least one field was filled in. A quotation with nothing in
-  /// it is not saved, and never renders a section on the details screen.
+  /// True when anything at all was typed into the row.
   bool get hasContent =>
-      (customerAddress?.trim().isNotEmpty ?? false) ||
-      (item?.trim().isNotEmpty ?? false) ||
-      quantity != null ||
-      rate != null;
+      (item?.trim().isNotEmpty ?? false) || quantity != null || rate != null;
+
+  /// Quantity × rate, or null when either half is missing — a line may carry
+  /// only a product name.
+  double? get amount =>
+      quantity == null || rate == null ? null : quantity! * rate!;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-    if (customerAddress != null && customerAddress!.trim().isNotEmpty)
-      'customer_address': customerAddress!.trim(),
     if (item != null && item!.trim().isNotEmpty) 'item': item!.trim(),
     if (quantity != null) 'quantity': quantity,
     if (rate != null) 'rate': rate,
   };
 
-  static String? _text(Object? value) {
-    if (value == null) {
-      return null;
+  @override
+  List<Object?> get props => <Object?>[item, quantity, rate];
+}
+
+/// The optional quotation captured alongside a lead.
+///
+/// Holds an address and any number of [items]. The capture screen attaches
+/// one only when something was actually entered, which is what [hasContent]
+/// decides.
+class LeadQuotation extends Equatable {
+  const LeadQuotation({
+    this.customerAddress,
+    this.items = const <QuotationItem>[],
+  });
+
+  /// Reads a quotation from an API object, tolerating numbers that arrive as
+  /// strings — the same defensiveness the rest of the parsing layer uses.
+  ///
+  /// Also accepts the single-line shape this used to have (a flat `item`,
+  /// `quantity` and `rate` on the quotation itself), so quotations saved
+  /// before the list existed still load.
+  factory LeadQuotation.fromJson(Map<String, dynamic> json) {
+    final Object? rawItems = json['items'];
+    final List<QuotationItem> items = rawItems is List
+        ? rawItems
+              .whereType<Map<String, dynamic>>()
+              .map(QuotationItem.fromJson)
+              .where((QuotationItem item) => item.hasContent)
+              .toList()
+        : <QuotationItem>[];
+
+    if (items.isEmpty) {
+      final QuotationItem legacy = QuotationItem.fromJson(json);
+      if (legacy.hasContent) {
+        items.add(legacy);
+      }
     }
-    final String text = value.toString().trim();
-    return text.isEmpty ? null : text;
+
+    return LeadQuotation(
+      customerAddress: _text(json['customer_address'] ?? json['address']),
+      items: items,
+    );
   }
 
-  static int? _int(Object? value) => switch (value) {
-    final num number => number.toInt(),
-    final String text => int.tryParse(text.trim()),
-    _ => null,
-  };
+  final String? customerAddress;
 
-  static double? _double(Object? value) => switch (value) {
-    final num number => number.toDouble(),
-    final String text => double.tryParse(text.trim()),
-    _ => null,
+  /// The quoted lines, in the order the user entered them.
+  final List<QuotationItem> items;
+
+  /// The lines worth saving or showing — blank rows the user added and never
+  /// filled in are not part of the quotation.
+  List<QuotationItem> get filledItems =>
+      items.where((QuotationItem item) => item.hasContent).toList();
+
+  /// True when at least one field was filled in. A quotation with nothing in
+  /// it is not saved, and never renders a section on the details screen.
+  bool get hasContent =>
+      (customerAddress?.trim().isNotEmpty ?? false) || filledItems.isNotEmpty;
+
+  /// The sum of every line that has both a quantity and a rate, or null when
+  /// no line does.
+  double? get total {
+    double? sum;
+    for (final QuotationItem item in filledItems) {
+      final double? amount = item.amount;
+      if (amount != null) {
+        sum = (sum ?? 0) + amount;
+      }
+    }
+    return sum;
+  }
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    if (customerAddress != null && customerAddress!.trim().isNotEmpty)
+      'customer_address': customerAddress!.trim(),
+    'items': filledItems
+        .map((QuotationItem item) => item.toJson())
+        .toList(growable: false),
   };
 
   @override
-  List<Object?> get props => <Object?>[customerAddress, item, quantity, rate];
+  List<Object?> get props => <Object?>[customerAddress, items];
 }
+
+String? _text(Object? value) {
+  if (value == null) {
+    return null;
+  }
+  final String text = value.toString().trim();
+  return text.isEmpty ? null : text;
+}
+
+int? _int(Object? value) => switch (value) {
+  final num number => number.toInt(),
+  final String text => int.tryParse(text.trim()),
+  _ => null,
+};
+
+double? _double(Object? value) => switch (value) {
+  final num number => number.toDouble(),
+  final String text => double.tryParse(text.trim()),
+  _ => null,
+};
 
 /// A sales lead, as the app understands it.
 ///
@@ -220,7 +290,9 @@ class Lead extends Equatable {
       return false;
     }
     final DateTime today = now ?? DateTime.now();
-    return !due.isAfter(DateTime(today.year, today.month, today.day, 23, 59, 59));
+    return !due.isAfter(
+      DateTime(today.year, today.month, today.day, 23, 59, 59),
+    );
   }
 
   Lead copyWith({

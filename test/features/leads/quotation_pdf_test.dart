@@ -13,9 +13,10 @@ void main() {
       mobile: '9961210000',
       quotation: const LeadQuotation(
         customerAddress: 'Marine Drive, Kochi, Ernakulam 682031',
-        item: 'Sigma 85mm 1:4 Lens',
-        quantity: 2,
-        rate: 74500,
+        items: <QuotationItem>[
+          QuotationItem(item: 'Sigma 85mm 1:4 Lens', quantity: 2, rate: 74500),
+          QuotationItem(item: 'Lens Cleaning Kit', quantity: 3, rate: 1250),
+        ],
       ),
       generatedAt: DateTime(2026, 5, 12),
     );
@@ -29,23 +30,35 @@ void main() {
     final Uint8List bytes = await QuotationPdf.build(
       customerName: 'Abin',
       mobile: '8086140010',
-      quotation: const LeadQuotation(item: 'Sony Camera'),
+      quotation: const LeadQuotation(
+        items: <QuotationItem>[QuotationItem(item: 'Sony Camera')],
+      ),
       generatedAt: DateTime(2026, 5, 12),
     );
 
     expect(String.fromCharCodes(bytes.take(5)), '%PDF-');
   });
 
-  test('a name with path characters cannot escape the temp directory', () async {
-    // Guards the file name built for the share sheet: the customer name is
-    // user data and goes straight into a path.
-    final Uint8List bytes = await QuotationPdf.build(
-      customerName: '../../etc/passwd',
-      mobile: '9961210000',
-      quotation: const LeadQuotation(item: 'Lens', quantity: 1, rate: 100),
-    );
-    expect(bytes, isNotEmpty);
-    expect(QuotationPdf.debugFileName('../../etc/passwd'), 'Quotation_.._.._etc_passwd.pdf');
-    expect(QuotationPdf.debugFileName('   '), 'Quotation_Customer.pdf');
-  });
+  test(
+    'a name with path characters cannot escape the temp directory',
+    () async {
+      // Guards the file name built for the share sheet: the customer name is
+      // user data and goes straight into a path.
+      final Uint8List bytes = await QuotationPdf.build(
+        customerName: '../../etc/passwd',
+        mobile: '9961210000',
+        quotation: const LeadQuotation(
+          items: <QuotationItem>[
+            QuotationItem(item: 'Lens', quantity: 1, rate: 100),
+          ],
+        ),
+      );
+      expect(bytes, isNotEmpty);
+      expect(
+        QuotationPdf.debugFileName('../../etc/passwd'),
+        'Quotation_.._.._etc_passwd.pdf',
+      );
+      expect(QuotationPdf.debugFileName('   '), 'Quotation_Customer.pdf');
+    },
+  );
 }

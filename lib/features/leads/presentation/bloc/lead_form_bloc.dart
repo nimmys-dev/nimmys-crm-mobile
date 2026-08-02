@@ -59,9 +59,7 @@ final class LeadFormSubmitted extends LeadFormEvent {
 /// )
 /// ```
 class LeadFormBloc extends ViewModelBloc<LeadFormEvent, Lead> {
-  LeadFormBloc(this._repository, {String? leadId})
-    : _leadId = leadId,
-      super() {
+  LeadFormBloc(this._repository, {String? leadId}) : _leadId = leadId, super() {
     on<LeadFormStarted>(_onStarted);
     on<LeadFormSubmitted>(_onSubmitted);
   }

@@ -152,6 +152,19 @@ String weekdayName(int weekday) => _weekdayNames[weekday]!;
 String weekdayShortName(int weekday) =>
     weekdayName(weekday).substring(0, 3).toUpperCase();
 
+/// Highest day a monthly task can be scheduled on.
+///
+/// 30 rather than 31 by design: a task set for the 31st would skip five months
+/// of the year, so the picker does not offer it.
+const int kMaxMonthDay = 30;
+
+/// The values in the monthly day box, 1–[kMaxMonthDay].
+const List<int> kMonthDayValues = <int>[
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, //
+  11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+  21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+];
+
 /// A from/to pair, either half of which may still be unset.
 ///
 /// Both nullable because the user fills one field at a time, and a quarter
@@ -211,11 +224,14 @@ class TaskDateRange extends Equatable {
 /// safe.
 class TaskSchedule extends Equatable {
   const TaskSchedule({
+    this.repeat = true,
     this.frequency = TaskFrequency.daily,
     this.startTimeMinutes,
     this.endTimeMinutes,
+    this.weeklyRange = const TaskDateRange(),
     this.weekdays = const <int>{},
-    this.monthWeekdays = const <int>{},
+    this.monthlyRange = const TaskDateRange(),
+    this.monthDays = const <int>{},
     this.quarterRanges = const <TaskQuarter, TaskDateRange>{},
     this.yearlyRange = const TaskDateRange(),
   });
@@ -240,11 +256,22 @@ class TaskSchedule extends Equatable {
     }
 
     return TaskSchedule(
+      // Absent means an older task saved before the toggle existed, and every
+      // one of those was recurring.
+      repeat: json['repeat'] as bool? ?? true,
       frequency: TaskFrequency.fromWire(json['frequency'] as String?),
       startTimeMinutes: (json['start_time_minutes'] as num?)?.toInt(),
       endTimeMinutes: (json['end_time_minutes'] as num?)?.toInt(),
+      weeklyRange: TaskDateRange.fromJson(<String, dynamic>{
+        'from': json['weekly_start_date'],
+        'to': json['weekly_end_date'],
+      }),
       weekdays: _intSet(json['weekdays']),
-      monthWeekdays: _intSet(json['month_weekdays']),
+      monthlyRange: TaskDateRange.fromJson(<String, dynamic>{
+        'from': json['monthly_start_date'],
+        'to': json['monthly_end_date'],
+      }),
+      monthDays: _intSet(json['month_days']),
       quarterRanges: quarters,
       yearlyRange: TaskDateRange.fromJson(<String, dynamic>{
         'from': json['start_date'],
@@ -252,6 +279,12 @@ class TaskSchedule extends Equatable {
       }),
     );
   }
+
+  /// Whether the task repeats at all.
+  ///
+  /// On by default. Turned off, the task is a one-off: nothing below applies,
+  /// and [validationError] asks for none of it.
+  final bool repeat;
 
   final TaskFrequency frequency;
 
@@ -261,13 +294,19 @@ class TaskSchedule extends Equatable {
   final int? startTimeMinutes;
   final int? endTimeMinutes;
 
+  /// The window a weekly task runs in.
+  final TaskDateRange weeklyRange;
+
   /// `DateTime.monday`–`DateTime.sunday`, for [TaskFrequency.weekly].
   final Set<int> weekdays;
 
-  /// Days of the week a monthly task runs on. Held separately from
-  /// [weekdays] so switching between the two frequencies does not overwrite
-  /// the other one's selection.
-  final Set<int> monthWeekdays;
+  /// The window a monthly task runs in. Held separately from [weeklyRange] so
+  /// switching between the two frequencies does not overwrite the other one's
+  /// dates.
+  final TaskDateRange monthlyRange;
+
+  /// Days of the month (1–[kMaxMonthDay]) a monthly task runs on.
+  final Set<int> monthDays;
 
   /// The date range chosen inside each selected quarter. A quarter present
   /// with an empty range is selected but not yet filled in — which
@@ -294,6 +333,10 @@ class TaskSchedule extends Equatable {
   /// The single source of truth for "is the recurring part filled in" — the
   /// form shows it inline and blocks submit on it.
   String? get validationError {
+    // A one-off task has no schedule to complete.
+    if (!repeat) {
+      return null;
+    }
     switch (frequency) {
       case TaskFrequency.daily:
         if (startTimeMinutes == null || endTimeMinutes == null) {
@@ -304,10 +347,18 @@ class TaskSchedule extends Equatable {
         }
         return null;
       case TaskFrequency.weekly:
+        final String? window = _rangeError(weeklyRange, 'end');
+        if (window != null) {
+          return window;
+        }
         return weekdays.isEmpty ? 'Select at least one day of the week.' : null;
       case TaskFrequency.monthly:
-        return monthWeekdays.isEmpty
-            ? 'Select at least one day for the monthly task.'
+        final String? window = _rangeError(monthlyRange, 'end');
+        if (window != null) {
+          return window;
+        }
+        return monthDays.isEmpty
+            ? 'Select at least one date between 1 and $kMaxMonthDay.'
             : null;
       case TaskFrequency.quarterly:
         if (selectedQuarters.isEmpty) {
@@ -325,61 +376,87 @@ class TaskSchedule extends Equatable {
         }
         return null;
       case TaskFrequency.yearly:
-        if (yearlyRange.isReversed) {
-          return 'The due date must be on or after the start date.';
-        }
-        return yearlyRange.isComplete
-            ? null
-            : 'Select a start date and a due date.';
+        return _rangeError(yearlyRange, 'due');
     }
+  }
+
+  /// Why a start/end window is not usable yet, or null when it is.
+  ///
+  /// [endLabel] is what that frequency calls the far end — "end" for the
+  /// weekly and monthly windows, "due" for the yearly one.
+  static String? _rangeError(TaskDateRange range, String endLabel) {
+    if (range.isReversed) {
+      return 'The $endLabel date must be on or after the start date.';
+    }
+    return range.isComplete ? null : 'Select a start date and $endLabel date.';
   }
 
   bool get isComplete => validationError == null;
 
   /// Sends only what the chosen [frequency] uses, so a task switched from
-  /// quarterly to daily does not carry its old quarters to the server.
+  /// quarterly to daily does not carry its old quarters to the server — and
+  /// nothing at all beyond the frequency when [repeat] is off.
   Map<String, dynamic> toJson() => <String, dynamic>{
+    'repeat': repeat,
     'frequency': frequency.wireValue,
-    if (frequency == TaskFrequency.daily) ...<String, dynamic>{
-      if (startTimeMinutes != null) 'start_time_minutes': startTimeMinutes,
-      if (endTimeMinutes != null) 'end_time_minutes': endTimeMinutes,
-    },
-    if (frequency == TaskFrequency.weekly)
-      'weekdays': (weekdays.toList()..sort()),
-    if (frequency == TaskFrequency.monthly)
-      'month_weekdays': (monthWeekdays.toList()..sort()),
-    if (frequency == TaskFrequency.quarterly)
-      'quarters': <String, dynamic>{
-        for (final TaskQuarter quarter in selectedQuarters)
-          quarter.wireValue: rangeFor(quarter).toJson(),
+    if (repeat) ...<String, dynamic>{
+      if (frequency == TaskFrequency.daily) ...<String, dynamic>{
+        if (startTimeMinutes != null) 'start_time_minutes': startTimeMinutes,
+        if (endTimeMinutes != null) 'end_time_minutes': endTimeMinutes,
       },
-    if (frequency == TaskFrequency.yearly) ...<String, dynamic>{
-      if (yearlyRange.from != null)
-        'start_date': yearlyRange.from!.toIso8601String(),
-      if (yearlyRange.to != null) 'due_date': yearlyRange.to!.toIso8601String(),
+      if (frequency == TaskFrequency.weekly) ...<String, dynamic>{
+        ..._rangeJson(weeklyRange, 'weekly_start_date', 'weekly_end_date'),
+        'weekdays': (weekdays.toList()..sort()),
+      },
+      if (frequency == TaskFrequency.monthly) ...<String, dynamic>{
+        ..._rangeJson(monthlyRange, 'monthly_start_date', 'monthly_end_date'),
+        'month_days': (monthDays.toList()..sort()),
+      },
+      if (frequency == TaskFrequency.quarterly)
+        'quarters': <String, dynamic>{
+          for (final TaskQuarter quarter in selectedQuarters)
+            quarter.wireValue: rangeFor(quarter).toJson(),
+        },
+      if (frequency == TaskFrequency.yearly)
+        ..._rangeJson(yearlyRange, 'start_date', 'due_date'),
     },
+  };
+
+  static Map<String, dynamic> _rangeJson(
+    TaskDateRange range,
+    String fromKey,
+    String toKey,
+  ) => <String, dynamic>{
+    if (range.from != null) fromKey: range.from!.toIso8601String(),
+    if (range.to != null) toKey: range.to!.toIso8601String(),
   };
 
   /// Copies the schedule. Pass the `clear*` flags to unset a value — a null
   /// argument means "leave it alone", as everywhere else.
   TaskSchedule copyWith({
+    bool? repeat,
     TaskFrequency? frequency,
     int? startTimeMinutes,
     int? endTimeMinutes,
+    TaskDateRange? weeklyRange,
     Set<int>? weekdays,
-    Set<int>? monthWeekdays,
+    TaskDateRange? monthlyRange,
+    Set<int>? monthDays,
     Map<TaskQuarter, TaskDateRange>? quarterRanges,
     TaskDateRange? yearlyRange,
     bool clearStartTime = false,
     bool clearEndTime = false,
   }) => TaskSchedule(
+    repeat: repeat ?? this.repeat,
     frequency: frequency ?? this.frequency,
     startTimeMinutes: clearStartTime
         ? null
         : startTimeMinutes ?? this.startTimeMinutes,
     endTimeMinutes: clearEndTime ? null : endTimeMinutes ?? this.endTimeMinutes,
+    weeklyRange: weeklyRange ?? this.weeklyRange,
     weekdays: weekdays ?? this.weekdays,
-    monthWeekdays: monthWeekdays ?? this.monthWeekdays,
+    monthlyRange: monthlyRange ?? this.monthlyRange,
+    monthDays: monthDays ?? this.monthDays,
     quarterRanges: quarterRanges ?? this.quarterRanges,
     yearlyRange: yearlyRange ?? this.yearlyRange,
   );
@@ -388,9 +465,11 @@ class TaskSchedule extends Equatable {
   TaskSchedule toggleWeekday(int weekday) =>
       copyWith(weekdays: _toggled(weekdays, weekday));
 
-  /// Adds or removes a monthly day.
-  TaskSchedule toggleMonthWeekday(int weekday) =>
-      copyWith(monthWeekdays: _toggled(monthWeekdays, weekday));
+  /// Adds or removes a day of the month. Days outside 1–[kMaxMonthDay] are
+  /// ignored, so nothing the picker cannot show can end up selected.
+  TaskSchedule toggleMonthDay(int day) => day < 1 || day > kMaxMonthDay
+      ? this
+      : copyWith(monthDays: _toggled(monthDays, day));
 
   /// Ticks or unticks a quarter. Unticking drops the range picked under it,
   /// which is what the user means by clearing the quarter.
@@ -453,11 +532,14 @@ class TaskSchedule extends Equatable {
 
   @override
   List<Object?> get props => <Object?>[
+    repeat,
     frequency,
     startTimeMinutes,
     endTimeMinutes,
+    weeklyRange,
     weekdays,
-    monthWeekdays,
+    monthlyRange,
+    monthDays,
     quarterRanges,
     yearlyRange,
   ];

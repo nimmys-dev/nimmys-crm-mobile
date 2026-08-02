@@ -60,16 +60,20 @@ class LeadModel extends Lead {
       source: LeadSource.fromWire(
         json.stringOrNull('source') ?? json.stringOrNull('lead_source'),
       ),
-      quotation: (parsedQuotation?.hasContent ?? false) ? parsedQuotation : null,
+      quotation: (parsedQuotation?.hasContent ?? false)
+          ? parsedQuotation
+          : null,
       requiredItems:
-          json.stringOrNull('required_items') ?? json.stringOrNull('requirement'),
+          json.stringOrNull('required_items') ??
+          json.stringOrNull('requirement'),
       nextFollowUpAt:
           json.dateOrNull('next_follow_up_at') ??
           json.dateOrNull('next_follow_up'),
       assignedToId:
           assignee?.stringOrNull('id') ?? json.stringOrNull('assigned_to_id'),
       assignedToName:
-          assignee?.stringOrNull('name') ?? json.stringOrNull('assigned_to_name'),
+          assignee?.stringOrNull('name') ??
+          json.stringOrNull('assigned_to_name'),
       createdByName:
           creator?.stringOrNull('name') ?? json.stringOrNull('created_by_name'),
       notes: json.stringOrNull('notes'),

@@ -32,9 +32,10 @@ class _TodaysFollowUpScreenState extends State<TodaysFollowUpScreen> {
       isPriority: true,
       quotation: LeadQuotation(
         customerAddress: 'Marine Drive, Kochi, Ernakulam 682031',
-        item: 'Sigma 85mm 1:4 Lens',
-        quantity: 2,
-        rate: 74500,
+        items: <QuotationItem>[
+          QuotationItem(item: 'Sigma 85mm 1:4 Lens', quantity: 2, rate: 74500),
+          QuotationItem(item: 'Lens Cleaning Kit', quantity: 3, rate: 1250),
+        ],
       ),
     ),
     // No quotation saved — this row shows only WhatsApp and Call.
@@ -58,9 +59,13 @@ class _TodaysFollowUpScreenState extends State<TodaysFollowUpScreen> {
       isPriority: true,
       quotation: LeadQuotation(
         customerAddress: 'Kanjikuzhi, Kottayam 686004',
-        item: 'Mac Mini M4 (16GB / 512GB)',
-        quantity: 1,
-        rate: 89900,
+        items: <QuotationItem>[
+          QuotationItem(
+            item: 'Mac Mini M4 (16GB / 512GB)',
+            quantity: 1,
+            rate: 89900,
+          ),
+        ],
       ),
     ),
   ];
