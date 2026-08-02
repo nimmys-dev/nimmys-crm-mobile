@@ -20,6 +20,8 @@ class LeadModel extends Lead {
     required super.status,
     required super.createdAt,
     super.email,
+    super.source,
+    super.quotation,
     super.requiredItems,
     super.nextFollowUpAt,
     super.assignedToId,
@@ -41,6 +43,13 @@ class LeadModel extends Lead {
         json.mapOrNull('assigned_to') ?? json.mapOrNull('assignee');
     final Map<String, dynamic>? creator = json.mapOrNull('created_by');
 
+    // An absent quotation and one that came back empty mean the same thing to
+    // the details screen: no quotation section.
+    final Map<String, dynamic>? quotation = json.mapOrNull('quotation');
+    final LeadQuotation? parsedQuotation = quotation == null
+        ? null
+        : LeadQuotation.fromJson(quotation);
+
     return LeadModel(
       id: json.stringOr('id'),
       name: json.stringOr('name'),
@@ -48,6 +57,10 @@ class LeadModel extends Lead {
       status: LeadStatus.fromWire(json.stringOrNull('status')),
       createdAt: json.dateOrNull('created_at') ?? DateTime.now(),
       email: json.stringOrNull('email'),
+      source: LeadSource.fromWire(
+        json.stringOrNull('source') ?? json.stringOrNull('lead_source'),
+      ),
+      quotation: (parsedQuotation?.hasContent ?? false) ? parsedQuotation : null,
       requiredItems:
           json.stringOrNull('required_items') ?? json.stringOrNull('requirement'),
       nextFollowUpAt:

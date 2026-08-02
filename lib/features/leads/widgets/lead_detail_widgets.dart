@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimens.dart';
 import '../../../shared/widgets/app_avatar.dart';
+import '../domain/entities/lead.dart';
 
 /// Card heading with the red rule, icon and an optional trailing action.
 class LeadSectionTitle extends StatelessWidget {
@@ -121,6 +123,135 @@ class LeadDetailTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Wide tile whose value wraps — for an address, which does not fit the
+/// single ellipsised line a [LeadDetailTile] gives.
+class LeadDetailBlock extends StatelessWidget {
+  const LeadDetailBlock({
+    super.key,
+    required this.label,
+    required this.value,
+    this.icon,
+  });
+
+  final String label;
+  final String value;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 10,
+      ),
+      decoration: BoxDecoration(
+        color: context.palette.surfaceAlt,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: context.palette.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              if (icon != null) ...<Widget>[
+                Icon(icon, size: 12, color: context.palette.muted),
+                const SizedBox(width: 5),
+              ],
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: context.palette.muted,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+              color: context.palette.ink,
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The quotation captured with the lead.
+///
+/// Rendered only when there is a quotation — see how the details screen
+/// guards it — so nothing here has to handle the empty case beyond the
+/// individual fields the user chose to skip.
+class LeadQuotationDetails extends StatelessWidget {
+  const LeadQuotationDetails({super.key, required this.quotation});
+
+  final LeadQuotation quotation;
+
+  /// Indian digit grouping, and paise only when the rate actually has them.
+  static String formatRate(double rate) => NumberFormat.currency(
+    locale: 'en_IN',
+    symbol: '₹',
+    decimalDigits: rate == rate.roundToDouble() ? 0 : 2,
+  ).format(rate);
+
+  @override
+  Widget build(BuildContext context) {
+    const String blank = '—';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LeadDetailBlock(
+          label: 'Customer Address',
+          value: quotation.customerAddress ?? blank,
+          icon: Icons.location_on_outlined,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        LeadDetailTile(
+          label: 'Item / Product',
+          value: quotation.item ?? blank,
+          icon: Icons.inventory_2_outlined,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: LeadDetailTile(
+                label: 'Quantity',
+                value: quotation.quantity?.toString() ?? blank,
+                icon: Icons.numbers_rounded,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: LeadDetailTile(
+                label: 'Rate',
+                value: quotation.rate == null
+                    ? blank
+                    : formatRate(quotation.rate!),
+                icon: Icons.currency_rupee_rounded,
+                isAccent: true,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

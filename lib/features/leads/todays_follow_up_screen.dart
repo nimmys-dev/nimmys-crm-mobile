@@ -11,6 +11,7 @@ import '../../shared/widgets/app_form_field.dart';
 import '../../shared/widgets/app_gradient_header.dart';
 import '../../shared/widgets/app_search_field.dart';
 import '../../shared/widgets/app_section_card.dart';
+import 'domain/entities/lead.dart';
 import 'widgets/follow_up_table.dart';
 
 /// Today's Follow Up — date-scoped list of customers to call back.
@@ -29,7 +30,14 @@ class _TodaysFollowUpScreenState extends State<TodaysFollowUpScreen> {
       requiredItems: 'Sigma 85mm Lens.',
       nextFollowUp: '12-05-2024',
       isPriority: true,
+      quotation: LeadQuotation(
+        customerAddress: 'Marine Drive, Kochi, Ernakulam 682031',
+        item: 'Sigma 85mm 1:4 Lens',
+        quantity: 2,
+        rate: 74500,
+      ),
     ),
+    // No quotation saved — this row shows only WhatsApp and Call.
     FollowUpEntry(
       name: 'Abin',
       mobile: '8086140010',
@@ -48,6 +56,12 @@ class _TodaysFollowUpScreenState extends State<TodaysFollowUpScreen> {
       requiredItems: 'Mac Mini',
       nextFollowUp: '12-05-2024',
       isPriority: true,
+      quotation: LeadQuotation(
+        customerAddress: 'Kanjikuzhi, Kottayam 686004',
+        item: 'Mac Mini M4 (16GB / 512GB)',
+        quantity: 1,
+        rate: 89900,
+      ),
     ),
   ];
 

@@ -8,6 +8,7 @@ import '../../shared/widgets/app_bottom_nav.dart';
 import '../../shared/widgets/app_buttons.dart';
 import '../../shared/widgets/app_gradient_header.dart';
 import '../../shared/widgets/app_section_card.dart';
+import 'domain/entities/lead.dart';
 import 'widgets/lead_detail_widgets.dart';
 
 /// Lead Details — customer profile, requested items and the call history.
@@ -19,6 +20,17 @@ class LeadDetailsScreen extends StatefulWidget {
 }
 
 class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
+  static const LeadSource _source = LeadSource.instagram;
+
+  /// A lead saved without the quotation toggle has nothing here, and the
+  /// section below disappears entirely rather than rendering empty rows.
+  static const LeadQuotation _quotation = LeadQuotation(
+    customerAddress: 'Marine Drive, Kochi, Ernakulam 682031',
+    item: 'Sigma 85mm 1:4 Lens',
+    quantity: 2,
+    rate: 74500,
+  );
+
   static const List<String> _items = <String>[
     'Sigma 85mm 1:4 Lens',
     'Canon Camera 85mm',
@@ -86,7 +98,7 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
                           ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
-                        const LeadDetailsGrid(),
+                        const LeadDetailsGrid(source: _source),
                       ],
                     ),
                   ),
@@ -112,6 +124,26 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
                       ],
                     ),
                   ),
+                  // Only rendered for a lead that was saved with a quotation.
+                  if (_quotation.hasContent)
+                    AppSectionCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          LeadSectionTitle(
+                            title: 'Quotation Details',
+                            icon: Icons.request_quote_outlined,
+                            action: AppPillButton(
+                              label: 'Edit',
+                              icon: Icons.edit_outlined,
+                              onPressed: () {},
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          const LeadQuotationDetails(quotation: _quotation),
+                        ],
+                      ),
+                    ),
                   AppSectionCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -249,13 +281,17 @@ class LeadSummaryCard extends StatelessWidget {
 
 /// Two-column grid of the lead's core attributes.
 class LeadDetailsGrid extends StatelessWidget {
-  const LeadDetailsGrid({super.key});
+  const LeadDetailsGrid({super.key, this.source});
+
+  /// The channel the enquiry came in through. Shown as a dash when the lead
+  /// predates the field or the server sent nothing.
+  final LeadSource? source;
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: const <Widget>[
-        Row(
+      children: <Widget>[
+        const Row(
           children: <Widget>[
             Expanded(
               child: LeadDetailTile(
@@ -274,8 +310,8 @@ class LeadDetailsGrid extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(height: AppSpacing.xs),
-        Row(
+        const SizedBox(height: AppSpacing.xs),
+        const Row(
           children: <Widget>[
             Expanded(
               child: LeadDetailTile(
@@ -294,8 +330,8 @@ class LeadDetailsGrid extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(height: AppSpacing.xs),
-        Row(
+        const SizedBox(height: AppSpacing.xs),
+        const Row(
           children: <Widget>[
             Expanded(
               child: LeadDetailTile(
@@ -313,6 +349,22 @@ class LeadDetailsGrid extends StatelessWidget {
                 isAccent: true,
               ),
             ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: LeadDetailTile(
+                label: 'Source',
+                value: source?.label ?? '—',
+                icon: Icons.campaign_outlined,
+              ),
+            ),
+            // Keeps the tile the same width as the ones above it rather than
+            // letting a lone row stretch across both columns.
+            const SizedBox(width: AppSpacing.xs),
+            const Expanded(child: SizedBox()),
           ],
         ),
       ],

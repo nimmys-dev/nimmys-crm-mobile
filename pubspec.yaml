@@ -71,6 +71,19 @@ dependencies:
   # straight from the list — see core/utils/phone_dialer.dart.
   url_launcher: ^6.3.2
 
+  # Quotation sharing from the follow-up list: `pdf` renders the document,
+  # `path_provider` gives it a temp file to live in, and `share_plus` hands
+  # that file to WhatsApp (or whatever else the user picks) through the
+  # platform share sheet — see features/leads/utils/quotation_pdf.dart.
+  pdf: ^3.13.0
+  path_provider: ^2.1.6
+  share_plus: ^12.0.2
+
+  # Material has no WhatsApp glyph, and the follow-up row needs the real
+  # brand mark to be recognisable at 38dp. Icon fonts are tree-shaken on
+  # release builds, so only the glyphs actually used ship.
+  font_awesome_flutter: ^11.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

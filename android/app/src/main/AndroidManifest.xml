@@ -63,5 +63,20 @@
             <action android:name="android.intent.action.DIAL"/>
             <data android:scheme="tel"/>
         </intent>
+        <!-- Package visibility for the WhatsApp actions on the follow-up
+             list. The https entry covers the wa.me link opened by
+             core/utils/whatsapp_launcher.dart; the SEND entry lets the share
+             sheet see the apps that can take the quotation PDF. Without
+             these, API 30+ hides both and the buttons fail silently. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND"/>
+            <data android:mimeType="application/pdf"/>
+        </intent>
+        <package android:name="com.whatsapp"/>
+        <package android:name="com.whatsapp.w4b"/>
     </queries>
 </manifest>
