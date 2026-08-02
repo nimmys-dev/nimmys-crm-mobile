@@ -9,7 +9,7 @@ class AuthTokens extends Equatable {
     this.refreshToken,
     this.expiresAt,
     this.tokenType = 'Bearer',
-  });
+  }); 
 
   final String accessToken;
 

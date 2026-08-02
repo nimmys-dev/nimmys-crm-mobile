@@ -13,6 +13,11 @@ class AppColors {
   static const Color redDeep = Color(0xFFB3140A);
   static const Color redInk = Color(0xFF7A0C05);
 
+  /// The accent, under the name used by code that runs outside the widget
+  /// tree — notification dialogs, platform surfaces — and so cannot reach the
+  /// theme to ask for `colorScheme.primary`.
+  static const Color primaryColor = red;
+
   // -------------------------------------------------------------- Black/white
   static const Color black = Color(0xFF0A0A0C);
   static const Color blackSoft = Color(0xFF15161A);

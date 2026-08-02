@@ -25,6 +25,21 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- Where a push lands when FCM draws it itself — that is, every
+             message that arrives while the app is backgrounded or dead. The id
+             must match a channel the app actually creates (NotificationService
+             registers "general_channel" via Awesome Notifications); an unknown
+             id makes Android fall back to a low-importance channel with no
+             sound. The icon must be a plain white-on-transparent glyph:
+             Android draws it as a mask on API 21+, so a full-colour launcher
+             icon comes out as a white square. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="general_channel" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

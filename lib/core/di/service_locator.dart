@@ -17,6 +17,7 @@ import '../network/dio_api_client.dart';
 import '../network/network_info.dart';
 import '../network/response_envelope.dart';
 import '../session/session_manager.dart';
+import '../storage/secured_shared_preferences.dart';
 import '../storage/token_storage.dart';
 
 /// The app's service locator.
@@ -62,6 +63,8 @@ void _registerCore(ApiConfig config) {
   _lazy<Connectivity>(Connectivity.new);
   _lazy<NetworkInfo>(() => ConnectivityNetworkInfo(sl<Connectivity>()));
   _lazy<TokenStorage>(SecureTokenStorage.standard);
+  // Loose-key secure storage, currently read only by the notification stack.
+  _lazy<SecuredSharedPreferences>(SecuredSharedPreferences.standard);
   // Eager, not lazy: the interceptor and the session listener both need the
   // *same* instance from the first moment, and restore() runs against it.
   _eager<SessionManager>(() => SessionManager(sl<TokenStorage>()));

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/di/service_locator.dart';
+import 'core/navigation/app_navigator.dart';
 import 'core/session/session_expiry_listener.dart';
 import 'core/session/session_manager.dart';
 import 'core/theme/app_theme.dart';
@@ -27,6 +28,9 @@ class NimmysCrmApp extends StatelessWidget {
           return MaterialApp(
             title: 'NIMMYS CRM',
             debugShowCheckedModeBanner: false,
+            // A notification tap arrives with no BuildContext of its own, so
+            // the navigator has to be reachable from outside the tree.
+            navigatorKey: appNavigatorKey,
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,
             themeMode: themeController.themeMode,
