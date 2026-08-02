@@ -67,6 +67,10 @@ dependencies:
   logger: ^2.7.0
   intl: ^0.20.3
 
+  # Hands `tel:` URIs to the platform dialer so a follow-up can be called
+  # straight from the list — see core/utils/phone_dialer.dart.
+  url_launcher: ^6.3.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

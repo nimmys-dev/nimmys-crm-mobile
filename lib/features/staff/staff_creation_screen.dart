@@ -30,6 +30,12 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
     AppUnderlineTabItem(label: 'Employment', icon: Icons.work_outline_rounded),
   ];
 
+  static const List<String> _branches = <String>[
+    'Ernakulam',
+    'Kottayam',
+    'Ettamanur',
+  ];
+
   static const List<IncrementRecord> _history = <IncrementRecord>[
     IncrementRecord(
       effectiveDate: '15 May 2025',
@@ -53,6 +59,7 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
   final TextEditingController _remarksController = TextEditingController();
 
   int _tabIndex = 0;
+  String? _branch;
   DateTime? _joiningDate;
   DateTime? _nextIncrementDate;
   bool _incrementReminder = true;
@@ -127,6 +134,10 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
                             salaryController: _salaryController,
                             incrementController: _incrementController,
                             remarksController: _remarksController,
+                            branches: _branches,
+                            branch: _branch,
+                            onBranchChanged: (String value) =>
+                                setState(() => _branch = value),
                             joiningDate: _joiningDate,
                             nextIncrementDate: _nextIncrementDate,
                             reminderEnabled: _incrementReminder,
@@ -261,9 +272,12 @@ class StaffEmploymentDetailsForm extends StatelessWidget {
     required this.salaryController,
     required this.incrementController,
     required this.remarksController,
+    required this.branches,
+    required this.branch,
     required this.joiningDate,
     required this.nextIncrementDate,
     required this.reminderEnabled,
+    this.onBranchChanged,
     this.onJoiningDateChanged,
     this.onIncrementDateChanged,
     this.onReminderChanged,
@@ -272,6 +286,9 @@ class StaffEmploymentDetailsForm extends StatelessWidget {
   final TextEditingController salaryController;
   final TextEditingController incrementController;
   final TextEditingController remarksController;
+  final List<String> branches;
+  final String? branch;
+  final ValueChanged<String>? onBranchChanged;
   final DateTime? joiningDate;
   final DateTime? nextIncrementDate;
   final bool reminderEnabled;
@@ -284,6 +301,18 @@ class StaffEmploymentDetailsForm extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
+        AppFormField(
+          label: 'Branch',
+          isRequired: true,
+          child: AppSelectField(
+            hint: 'Select branch',
+            sheetTitle: 'Assign to branch',
+            icon: Icons.storefront_outlined,
+            options: branches,
+            value: branch,
+            onChanged: onBranchChanged,
+          ),
+        ),
         AppFormField(
           label: 'Joining Date',
           isRequired: true,

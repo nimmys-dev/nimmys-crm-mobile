@@ -107,6 +107,7 @@ class ScreenCatalogScreen extends StatelessWidget {
                 },
               ),
             ),
+            SizedBox(height: 50)
           ],
         ),
       ),

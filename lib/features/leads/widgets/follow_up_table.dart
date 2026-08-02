@@ -3,6 +3,7 @@ import '../../../core/theme/app_theme.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimens.dart';
+import '../../../core/utils/phone_dialer.dart';
 import '../../../shared/widgets/app_avatar.dart';
 
 /// One row of the follow-up list.
@@ -24,22 +25,27 @@ class FollowUpEntry {
   final bool isPriority;
 }
 
-/// Column widths shared by the header and every data row so they stay aligned.
-class FollowUpColumnFlex {
-  const FollowUpColumnFlex._();
-
-  static const int name = 30;
-  static const int mobile = 26;
-  static const int items = 26;
-  static const int followUp = 24;
-}
-
-/// Card-wrapped table listing today's follow-ups.
+/// Card-wrapped list of today's follow-ups.
+///
+/// This was a four-column table. On a 360dp phone those columns left the date
+/// about 50dp of width, so every `12-05-2024` came out clipped — and the
+/// columns only got narrower as text scale went up. The row is now two zones:
+/// a stacked customer block that takes the remaining width, and a fixed call
+/// button. Nothing competes for horizontal space, so nothing truncates.
 class FollowUpTable extends StatelessWidget {
-  const FollowUpTable({super.key, required this.entries, this.onEntryTap});
+  const FollowUpTable({
+    super.key,
+    required this.entries,
+    this.onEntryTap,
+    this.onCall,
+  });
 
   final List<FollowUpEntry> entries;
   final ValueChanged<FollowUpEntry>? onEntryTap;
+
+  /// Overrides what the call button does — useful once calls need logging
+  /// against the lead. Left null, the button opens the platform dialer.
+  final ValueChanged<FollowUpEntry>? onCall;
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +73,7 @@ class FollowUpTable extends StatelessWidget {
               onTap: onEntryTap == null
                   ? null
                   : () => onEntryTap!(entries[index]),
+              onCall: onCall == null ? null : () => onCall!(entries[index]),
             ),
           if (entries.isEmpty) const FollowUpEmptyState(),
         ],
@@ -75,7 +82,7 @@ class FollowUpTable extends StatelessWidget {
   }
 }
 
-/// Gradient column headings.
+/// Gradient heading strip above the rows.
 class FollowUpTableHeader extends StatelessWidget {
   const FollowUpTableHeader({super.key});
 
@@ -90,30 +97,12 @@ class FollowUpTableHeader extends StatelessWidget {
       child: Row(
         children: const <Widget>[
           Expanded(
-            flex: FollowUpColumnFlex.name,
             child: FollowUpHeaderCell(
-              label: 'NAME',
+              label: 'CUSTOMER',
               icon: Icons.person_outline_rounded,
             ),
           ),
-          Expanded(
-            flex: FollowUpColumnFlex.mobile,
-            child: FollowUpHeaderCell(
-              label: 'MOBILE',
-              icon: Icons.call_outlined,
-            ),
-          ),
-          Expanded(
-            flex: FollowUpColumnFlex.items,
-            child: FollowUpHeaderCell(
-              label: 'ITEMS',
-              icon: Icons.inventory_2_outlined,
-            ),
-          ),
-          Expanded(
-            flex: FollowUpColumnFlex.followUp,
-            child: FollowUpHeaderCell(label: 'NEXT', icon: Icons.event_rounded),
-          ),
+          FollowUpHeaderCell(label: 'CALL', icon: Icons.call_outlined),
         ],
       ),
     );
@@ -134,6 +123,7 @@ class FollowUpHeaderCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Icon(icon, size: 12, color: AppColors.white.withValues(alpha: 0.75)),
         const SizedBox(width: 4),
@@ -157,110 +147,179 @@ class FollowUpTableRow extends StatelessWidget {
     required this.entry,
     required this.isLast,
     this.onTap,
+    this.onCall,
   });
 
   final FollowUpEntry entry;
   final bool isLast;
   final VoidCallback? onTap;
 
+  /// Null means "just open the dialer" — see [FollowUpTable.onCall].
+  final VoidCallback? onCall;
+
   @override
   Widget build(BuildContext context) {
+    final AppPalette palette = context.palette;
+
     return InkWell(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
           border: isLast
               ? null
-              : Border(bottom: BorderSide(color: context.palette.line)),
+              : Border(bottom: BorderSide(color: palette.line)),
         ),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.sm,
           vertical: AppSpacing.sm,
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            AppInitialBubble(
+              letter: entry.name,
+              size: 34,
+              isAccent: entry.isPriority,
+            ),
+            const SizedBox(width: AppSpacing.xs),
             Expanded(
-              flex: FollowUpColumnFlex.name,
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  AppInitialBubble(
-                    letter: entry.name,
-                    size: 28,
-                    isAccent: entry.isPriority,
-                  ),
-                  const SizedBox(width: 7),
-                  Expanded(
-                    child: Text(
-                      entry.name,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: context.palette.ink,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  Text(
+                    entry.name,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      color: palette.ink,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    entry.requiredItems,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: palette.slate,
+                      height: 1.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  // Wrap, not Row: at large text scales the number and the
+                  // date drop onto separate lines instead of being clipped.
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: 4,
+                    children: <Widget>[
+                      FollowUpMetaChip(
+                        icon: Icons.call_outlined,
+                        label: entry.mobile,
+                      ),
+                      FollowUpMetaChip(
+                        icon: Icons.event_rounded,
+                        label: entry.nextFollowUp,
+                        isAccent: entry.isPriority,
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            Expanded(
-              flex: FollowUpColumnFlex.mobile,
-              child: Text(
-                entry.mobile,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: context.palette.slate,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Expanded(
-              flex: FollowUpColumnFlex.items,
-              child: Text(
-                entry.requiredItems,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: context.palette.ink,
-                  height: 1.3,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Expanded(
-              flex: FollowUpColumnFlex.followUp,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: <Widget>[
-                  Flexible(
-                    child: Text(
-                      entry.nextFollowUp,
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: entry.isPriority
-                            ? AppColors.red
-                            : context.palette.ink,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    size: 15,
-                    color: context.palette.faint,
-                  ),
-                ],
-              ),
+            const SizedBox(width: AppSpacing.xs),
+            FollowUpCallButton(
+              name: entry.name,
+              mobile: entry.mobile,
+              onPressed: onCall,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Icon + value pair used for the mobile number and the next follow-up date.
+class FollowUpMetaChip extends StatelessWidget {
+  const FollowUpMetaChip({
+    super.key,
+    required this.icon,
+    required this.label,
+    this.isAccent = false,
+  });
+
+  final IconData icon;
+  final String label;
+
+  /// Accent meta is red — the treatment priority rows used to get on the date.
+  final bool isAccent;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color tint = isAccent ? AppColors.red : context.palette.muted;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Icon(icon, size: 13, color: tint),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+            color: isAccent ? AppColors.red : context.palette.slate,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Round red call button at the end of a follow-up row.
+class FollowUpCallButton extends StatelessWidget {
+  const FollowUpCallButton({
+    super.key,
+    required this.name,
+    required this.mobile,
+    this.onPressed,
+    this.size = 38,
+  });
+
+  final String name;
+  final String mobile;
+
+  /// Null falls back to [PhoneDialer.call] with [mobile].
+  final VoidCallback? onPressed;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Call $name',
+      child: Material(
+        color: context.palette.redWash,
+        shape: CircleBorder(
+          side: BorderSide(color: context.palette.redBorder),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onPressed ?? () => PhoneDialer.call(context, mobile),
+          customBorder: const CircleBorder(),
+          child: SizedBox(
+            width: size,
+            height: size,
+            child: Icon(
+              Icons.call_rounded,
+              size: size * 0.47,
+              color: AppColors.red,
+            ),
+          ),
         ),
       ),
     );
