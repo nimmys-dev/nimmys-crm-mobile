@@ -228,7 +228,6 @@ class TaskSchedule extends Equatable {
     this.frequency = TaskFrequency.daily,
     this.startTimeMinutes,
     this.endTimeMinutes,
-    this.weeklyRange = const TaskDateRange(),
     this.weekdays = const <int>{},
     this.monthlyRange = const TaskDateRange(),
     this.monthDays = const <int>{},
@@ -262,10 +261,6 @@ class TaskSchedule extends Equatable {
       frequency: TaskFrequency.fromWire(json['frequency'] as String?),
       startTimeMinutes: (json['start_time_minutes'] as num?)?.toInt(),
       endTimeMinutes: (json['end_time_minutes'] as num?)?.toInt(),
-      weeklyRange: TaskDateRange.fromJson(<String, dynamic>{
-        'from': json['weekly_start_date'],
-        'to': json['weekly_end_date'],
-      }),
       weekdays: _intSet(json['weekdays']),
       monthlyRange: TaskDateRange.fromJson(<String, dynamic>{
         'from': json['monthly_start_date'],
@@ -294,13 +289,11 @@ class TaskSchedule extends Equatable {
   final int? startTimeMinutes;
   final int? endTimeMinutes;
 
-  /// The window a weekly task runs in.
-  final TaskDateRange weeklyRange;
-
-  /// `DateTime.monday`–`DateTime.sunday`, for [TaskFrequency.weekly].
+  /// `DateTime.monday`–`DateTime.sunday`, for [TaskFrequency.weekly]. A
+  /// weekly task is only its days: it carries no date window.
   final Set<int> weekdays;
 
-  /// The window a monthly task runs in. Held separately from [weeklyRange] so
+  /// The window a monthly task runs in. Held separately from [yearlyRange] so
   /// switching between the two frequencies does not overwrite the other one's
   /// dates.
   final TaskDateRange monthlyRange;
@@ -347,10 +340,6 @@ class TaskSchedule extends Equatable {
         }
         return null;
       case TaskFrequency.weekly:
-        final String? window = _rangeError(weeklyRange, 'end');
-        if (window != null) {
-          return window;
-        }
         return weekdays.isEmpty ? 'Select at least one day of the week.' : null;
       case TaskFrequency.monthly:
         final String? window = _rangeError(monthlyRange, 'end');
@@ -404,10 +393,8 @@ class TaskSchedule extends Equatable {
         if (startTimeMinutes != null) 'start_time_minutes': startTimeMinutes,
         if (endTimeMinutes != null) 'end_time_minutes': endTimeMinutes,
       },
-      if (frequency == TaskFrequency.weekly) ...<String, dynamic>{
-        ..._rangeJson(weeklyRange, 'weekly_start_date', 'weekly_end_date'),
+      if (frequency == TaskFrequency.weekly)
         'weekdays': (weekdays.toList()..sort()),
-      },
       if (frequency == TaskFrequency.monthly) ...<String, dynamic>{
         ..._rangeJson(monthlyRange, 'monthly_start_date', 'monthly_end_date'),
         'month_days': (monthDays.toList()..sort()),
@@ -438,7 +425,6 @@ class TaskSchedule extends Equatable {
     TaskFrequency? frequency,
     int? startTimeMinutes,
     int? endTimeMinutes,
-    TaskDateRange? weeklyRange,
     Set<int>? weekdays,
     TaskDateRange? monthlyRange,
     Set<int>? monthDays,
@@ -453,7 +439,6 @@ class TaskSchedule extends Equatable {
         ? null
         : startTimeMinutes ?? this.startTimeMinutes,
     endTimeMinutes: clearEndTime ? null : endTimeMinutes ?? this.endTimeMinutes,
-    weeklyRange: weeklyRange ?? this.weeklyRange,
     weekdays: weekdays ?? this.weekdays,
     monthlyRange: monthlyRange ?? this.monthlyRange,
     monthDays: monthDays ?? this.monthDays,
@@ -536,7 +521,6 @@ class TaskSchedule extends Equatable {
     frequency,
     startTimeMinutes,
     endTimeMinutes,
-    weeklyRange,
     weekdays,
     monthlyRange,
     monthDays,

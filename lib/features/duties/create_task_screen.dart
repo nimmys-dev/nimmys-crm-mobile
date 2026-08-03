@@ -110,7 +110,8 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   @override
   Widget build(BuildContext context) {
     final bool repeats = _schedule.repeat;
-    final bool isYearly = repeats && _schedule.frequency == TaskFrequency.yearly;
+    final bool isYearly =
+        repeats && _schedule.frequency == TaskFrequency.yearly;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
@@ -207,8 +208,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                               : 'This task runs once — no recurring schedule',
                           icon: Icons.autorenew_rounded,
                           value: repeats,
-                          onChanged: (bool value) =>
-                              _updateSchedule(_schedule.copyWith(repeat: value)),
+                          onChanged: (bool value) => _updateSchedule(
+                            _schedule.copyWith(repeat: value),
+                          ),
                         ),
                         // Off means a one-off task, so the schedule inputs go
                         // away entirely rather than sitting there unused.
