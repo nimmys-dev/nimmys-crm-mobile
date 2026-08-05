@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nimmys_crm/features/duties/domain/entities/task_schedule.dart';
+import '../../../oldLib/features/duties/domain/entities/task_schedule.dart';
 
 /// Covers the two promises the Create Task form makes about a recurrence:
 /// an incomplete one cannot be saved, and a complete one survives the trip

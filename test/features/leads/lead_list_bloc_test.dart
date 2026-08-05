@@ -1,15 +1,15 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nimmys_crm/core/error/app_exception.dart';
-import 'package:nimmys_crm/core/network/api_client.dart';
-import 'package:nimmys_crm/core/network/api_response.dart';
-import 'package:nimmys_crm/core/presentation/paginated_list_bloc.dart';
-import 'package:nimmys_crm/core/presentation/view_state.dart';
-import 'package:nimmys_crm/core/usecase/use_case.dart';
-import 'package:nimmys_crm/core/utils/result.dart';
-import 'package:nimmys_crm/features/leads/domain/entities/lead.dart';
-import 'package:nimmys_crm/features/leads/domain/repositories/lead_repository.dart';
-import 'package:nimmys_crm/features/leads/presentation/bloc/lead_list_bloc.dart';
+import '../../../oldLib/core/error/app_exception.dart';
+import '../../../oldLib/core/network/api_client.dart';
+import '../../../oldLib/core/network/api_response.dart';
+import '../../../oldLib/core/presentation/paginated_list_bloc.dart';
+import '../../../oldLib/core/presentation/view_state.dart';
+import '../../../oldLib/core/usecase/use_case.dart';
+import '../../../oldLib/core/utils/result.dart';
+import '../../../oldLib/features/leads/domain/entities/lead.dart';
+import '../../../oldLib/features/leads/domain/repositories/lead_repository.dart';
+import '../../../oldLib/features/leads/presentation/bloc/lead_list_bloc.dart';
 
 /// Serves a scripted sequence of results, one per call.
 ///

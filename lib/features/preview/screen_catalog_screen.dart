@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nimmys_crm/features/authentication/login_screen.dart';
 import '../../core/theme/app_theme.dart';
 import 'package:flutter/services.dart';
 
@@ -7,14 +8,14 @@ import '../../core/theme/app_dimens.dart';
 import '../../shared/widgets/app_logo.dart';
 import '../../shared/widgets/app_section_card.dart';
 import '../../shared/widgets/theme_toggle_button.dart';
-import '../auth/login_screen.dart';
+
 import '../dashboard/dashboard_screen.dart';
 import '../duties/add_duty_screen.dart';
 import '../duties/create_task_screen.dart';
 import '../leads/lead_details_screen.dart';
 import '../leads/new_lead_screen.dart';
 import '../leads/todays_follow_up_screen.dart';
-import '../splash/splash_screen.dart';
+import '../splash/branded_splash_screen.dart';
 import '../staff/staff_creation_screen.dart';
 
 /// Development-only index of every screen in the UI kit.
@@ -30,13 +31,13 @@ class ScreenCatalogScreen extends StatelessWidget {
       title: 'Splash',
       subtitle: 'Animated brand intro',
       icon: Icons.auto_awesome_rounded,
-      builder: () => const SplashScreen(),
+      builder: () => const BrandedSplashScreen(),
     ),
     CatalogEntry(
       title: 'Login',
       subtitle: 'Email and password sign-in',
       icon: Icons.lock_outline_rounded,
-      builder: () => const LoginScreen(),
+      builder: () =>  LoginScreen(),
     ),
     CatalogEntry(
       title: 'Dashboard',

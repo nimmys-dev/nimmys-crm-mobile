@@ -84,6 +84,21 @@ dependencies:
   # release builds, so only the glyphs actually used ship.
   font_awesome_flutter: ^11.0.0
   freezed_annotation: ^3.1.0
+  firebase_crashlytics: ^5.2.7
+  flutter_dotenv: ^6.0.1
+  firebase_analytics: ^12.4.6
+  device_info_plus: ^12.4.0
+  package_info_plus: ^9.0.1
+  another_flushbar: ^2.2.4
+  flutter_svg: ^2.3.0
+  lottie: ^3.5.1
+  cached_network_image: ^3.4.1
+  shimmer: ^3.0.0
+  flutter_animate: ^4.5.2
+  image_picker: ^1.2.3
+  dotted_border: ^3.1.0
+  flutter_staggered_grid_view: ^0.7.0
+  file_picker: ^11.0.3
 
 dev_dependencies:
   flutter_test:

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nimmys_crm/core/utils/whatsapp_launcher.dart';
+import '../../oldLib/core/utils/whatsapp_launcher.dart';
 
 /// `wa.me` opens an empty chat rather than erroring when the number is not in
 /// full international form, so the normalisation is what decides whether the

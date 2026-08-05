@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
-import 'package:nimmys_crm/app.dart';
-import 'package:nimmys_crm/core/di/service_locator.dart';
-import 'package:nimmys_crm/core/network/api_config.dart';
-import 'package:nimmys_crm/core/storage/token_storage.dart';
-import 'package:nimmys_crm/core/theme/theme_controller.dart';
+import '../oldLib/app.dart';
+import '../oldLib/core/di/service_locator.dart';
+import '../oldLib/core/network/api_config.dart';
+import '../oldLib/core/storage/token_storage.dart';
+import '../oldLib/core/theme/theme_controller.dart';
 
 /// Boots the real app with only the platform-backed pieces swapped out.
 ///

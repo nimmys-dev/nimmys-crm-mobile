@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nimmys_crm/features/leads/data/models/lead_model.dart';
-import 'package:nimmys_crm/features/leads/domain/entities/lead.dart';
+import '../../../oldLib/features/leads/data/models/lead_model.dart';
+import '../../../oldLib/features/leads/domain/entities/lead.dart';
 
 /// A quotation now carries a list of lines. These cover what the capture
 /// screen relies on: blank rows never reach the payload, and a quotation

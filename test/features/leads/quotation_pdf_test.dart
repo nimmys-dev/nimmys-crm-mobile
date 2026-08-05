@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nimmys_crm/features/leads/domain/entities/lead.dart';
-import 'package:nimmys_crm/features/leads/utils/quotation_pdf.dart';
+import '../../../oldLib/features/leads/domain/entities/lead.dart';
+import '../../../oldLib/features/leads/utils/quotation_pdf.dart';
 
 /// The share path needs a device, but the document itself is pure Dart — so
 /// the part that can silently produce a broken attachment is testable here.

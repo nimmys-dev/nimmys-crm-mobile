@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:nimmys_crm/core/theme/app_theme.dart';
-import 'package:nimmys_crm/features/leads/domain/entities/lead.dart';
-import 'package:nimmys_crm/features/leads/widgets/follow_up_table.dart';
+import '../../../oldLib/core/theme/app_theme.dart';
+import '../../../oldLib/features/leads/domain/entities/lead.dart';
+import '../../../oldLib/features/leads/widgets/follow_up_table.dart';
 
 /// The row's action cluster: WhatsApp and Call always, the quotation PDF only
 /// for a lead that has one.
