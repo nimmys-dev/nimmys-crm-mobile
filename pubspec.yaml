@@ -83,6 +83,7 @@ dependencies:
   # brand mark to be recognisable at 38dp. Icon fonts are tree-shaken on
   # release builds, so only the glyphs actually used ship.
   font_awesome_flutter: ^11.0.0
+  freezed_annotation: ^3.1.0
 
 dev_dependencies:
   flutter_test:
@@ -100,6 +101,8 @@ dev_dependencies:
   # exact sequence of states a bloc emits.
   bloc_test: ^10.0.0
   mocktail: ^1.0.4
+  freezed: 3.2.2
+  build_runner: ^2.15.1
 
 # Launcher icon generation — run `dart run flutter_launcher_icons` after any
 # change here. Source artwork: assets/logo/app_logo.png (1254x1254, opaque).

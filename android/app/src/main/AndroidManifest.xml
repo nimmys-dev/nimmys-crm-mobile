@@ -1,8 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- `usesCleartextTraffic`: the CRM API is served over plain HTTP, and
+         Android blocks cleartext from API 28 up — without it every request
+         fails before it leaves the device. Remove it once the API is on
+         HTTPS. -->
     <application
         android:label="NIMMYS CRM"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"

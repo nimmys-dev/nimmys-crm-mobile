@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/app_buttons.dart';
@@ -22,18 +23,17 @@ class StaffCreationScreen extends StatefulWidget {
 }
 
 class _StaffCreationScreenState extends State<StaffCreationScreen> {
-  static const List<AppUnderlineTabItem> _tabs = <AppUnderlineTabItem>[
-    AppUnderlineTabItem(
-      label: 'Personal Details',
-      icon: Icons.person_outline_rounded,
-    ),
-    AppUnderlineTabItem(label: 'Employment', icon: Icons.work_outline_rounded),
-  ];
-
   static const List<String> _branches = <String>[
     'Ernakulam',
     'Kottayam',
     'Ettamanur',
+  ];
+
+  static const List<String> _roles = <String>[
+    'Manager',
+    'BDE',
+    'Team Lead',
+    'Driver',
   ];
 
   static const List<IncrementRecord> _history = <IncrementRecord>[
@@ -54,12 +54,16 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _altMobileController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final TextEditingController _salaryController = TextEditingController();
   final TextEditingController _incrementController = TextEditingController();
   final TextEditingController _remarksController = TextEditingController();
 
-  int _tabIndex = 0;
   String? _branch;
+  String? _role;
   DateTime? _joiningDate;
   DateTime? _nextIncrementDate;
   bool _incrementReminder = true;
@@ -70,6 +74,9 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
     _nameController.dispose();
     _mobileController.dispose();
     _altMobileController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _salaryController.dispose();
     _incrementController.dispose();
     _remarksController.dispose();
@@ -106,48 +113,51 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
                       MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl,
                 ),
                 children: <Widget>[
+                  // One continuous form: the two groups are sections of the
+                  // same page rather than tabs the user has to switch between.
                   AppSectionCard(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.md,
-                      AppSpacing.sm,
-                      AppSpacing.md,
-                      AppSpacing.md,
-                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
-                        AppUnderlineTabs(
-                          tabs: _tabs,
-                          selectedIndex: _tabIndex,
-                          onChanged: (int index) =>
-                              setState(() => _tabIndex = index),
+                        const StaffSubsectionTitle(title: 'Personal Details'),
+                        StaffPersonalDetailsForm(
+                          nameController: _nameController,
+                          mobileController: _mobileController,
+                          altMobileController: _altMobileController,
+                          emailController: _emailController,
+                          passwordController: _passwordController,
+                          confirmPasswordController: _confirmPasswordController,
                         ),
-                        const SizedBox(height: AppSpacing.md),
-                        if (_tabIndex == 0)
-                          StaffPersonalDetailsForm(
-                            nameController: _nameController,
-                            mobileController: _mobileController,
-                            altMobileController: _altMobileController,
-                          )
-                        else
-                          StaffEmploymentDetailsForm(
-                            salaryController: _salaryController,
-                            incrementController: _incrementController,
-                            remarksController: _remarksController,
-                            branches: _branches,
-                            branch: _branch,
-                            onBranchChanged: (String value) =>
-                                setState(() => _branch = value),
-                            joiningDate: _joiningDate,
-                            nextIncrementDate: _nextIncrementDate,
-                            reminderEnabled: _incrementReminder,
-                            onJoiningDateChanged: (DateTime value) =>
-                                setState(() => _joiningDate = value),
-                            onIncrementDateChanged: (DateTime value) =>
-                                setState(() => _nextIncrementDate = value),
-                            onReminderChanged: (bool value) =>
-                                setState(() => _incrementReminder = value),
-                          ),
+                      ],
+                    ),
+                  ),
+                  AppSectionCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        const StaffSubsectionTitle(title: 'Employment Details'),
+                        StaffEmploymentDetailsForm(
+                          salaryController: _salaryController,
+                          incrementController: _incrementController,
+                          remarksController: _remarksController,
+                          branches: _branches,
+                          branch: _branch,
+                          onBranchChanged: (String value) =>
+                              setState(() => _branch = value),
+                          roles: _roles,
+                          role: _role,
+                          onRoleChanged: (String value) =>
+                              setState(() => _role = value),
+                          joiningDate: _joiningDate,
+                          nextIncrementDate: _nextIncrementDate,
+                          reminderEnabled: _incrementReminder,
+                          onJoiningDateChanged: (DateTime value) =>
+                              setState(() => _joiningDate = value),
+                          onIncrementDateChanged: (DateTime value) =>
+                              setState(() => _nextIncrementDate = value),
+                          onReminderChanged: (bool value) =>
+                              setState(() => _incrementReminder = value),
+                        ),
                       ],
                     ),
                   ),
@@ -201,11 +211,17 @@ class StaffPersonalDetailsForm extends StatelessWidget {
     required this.nameController,
     required this.mobileController,
     required this.altMobileController,
+    required this.emailController,
+    required this.passwordController,
+    required this.confirmPasswordController,
   });
 
   final TextEditingController nameController;
   final TextEditingController mobileController;
   final TextEditingController altMobileController;
+  final TextEditingController emailController;
+  final TextEditingController passwordController;
+  final TextEditingController confirmPasswordController;
 
   @override
   Widget build(BuildContext context) {
@@ -243,9 +259,101 @@ class StaffPersonalDetailsForm extends StatelessWidget {
             maxLength: 10,
           ),
         ),
+        AppFormField(
+          label: 'Email',
+          child: AppTextField(
+            hint: 'Enter email address',
+            controller: emailController,
+            icon: Icons.email_outlined,
+            keyboardType: TextInputType.emailAddress,
+          ),
+        ),
+        AppFormField(
+          label: 'Password',
+          isRequired: true,
+          child: AppPasswordField(
+            hint: 'Enter password',
+            controller: passwordController,
+          ),
+        ),
+        AppFormField(
+          label: 'Confirm Password',
+          isRequired: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              AppPasswordField(
+                hint: 'Re-enter password',
+                controller: confirmPasswordController,
+              ),
+              StaffPasswordMatchHint(
+                passwordController: passwordController,
+                confirmPasswordController: confirmPasswordController,
+              ),
+            ],
+          ),
+        ),
         const AppFieldLabelRow(label: 'Photo'),
         const StaffPhotoPicker(),
       ],
+    );
+  }
+}
+
+/// Tells the user the moment the two passwords stop matching.
+///
+/// Listens to both fields rather than rebuilding the whole form on every
+/// keystroke, and stays silent until the confirmation has something in it —
+/// an empty field is unfinished, not wrong.
+class StaffPasswordMatchHint extends StatelessWidget {
+  const StaffPasswordMatchHint({
+    super.key,
+    required this.passwordController,
+    required this.confirmPasswordController,
+  });
+
+  final TextEditingController passwordController;
+  final TextEditingController confirmPasswordController;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: Listenable.merge(<Listenable>[
+        passwordController,
+        confirmPasswordController,
+      ]),
+      builder: (BuildContext context, Widget? child) {
+        final String confirm = confirmPasswordController.text;
+        if (confirm.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final bool matches = confirm == passwordController.text;
+        return Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Row(
+            children: <Widget>[
+              Icon(
+                matches
+                    ? Icons.check_circle_outline_rounded
+                    : Icons.error_outline_rounded,
+                size: 14,
+                color: matches ? Colors.green.shade600 : AppColors.red,
+              ),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(
+                  matches ? 'Passwords match' : 'Passwords do not match',
+                  style: context.type.caption.copyWith(
+                    color: matches ? Colors.green.shade700 : AppColors.red,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -274,10 +382,13 @@ class StaffEmploymentDetailsForm extends StatelessWidget {
     required this.remarksController,
     required this.branches,
     required this.branch,
+    required this.roles,
+    required this.role,
     required this.joiningDate,
     required this.nextIncrementDate,
     required this.reminderEnabled,
     this.onBranchChanged,
+    this.onRoleChanged,
     this.onJoiningDateChanged,
     this.onIncrementDateChanged,
     this.onReminderChanged,
@@ -289,6 +400,9 @@ class StaffEmploymentDetailsForm extends StatelessWidget {
   final List<String> branches;
   final String? branch;
   final ValueChanged<String>? onBranchChanged;
+  final List<String> roles;
+  final String? role;
+  final ValueChanged<String>? onRoleChanged;
   final DateTime? joiningDate;
   final DateTime? nextIncrementDate;
   final bool reminderEnabled;
@@ -311,6 +425,18 @@ class StaffEmploymentDetailsForm extends StatelessWidget {
             options: branches,
             value: branch,
             onChanged: onBranchChanged,
+          ),
+        ),
+        AppFormField(
+          label: 'Role',
+          isRequired: true,
+          child: AppSelectField(
+            hint: 'Select role',
+            sheetTitle: 'Staff role',
+            icon: Icons.badge_outlined,
+            options: roles,
+            value: role,
+            onChanged: onRoleChanged,
           ),
         ),
         AppFormField(
