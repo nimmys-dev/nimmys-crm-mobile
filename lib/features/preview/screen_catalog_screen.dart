@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:nimmys_crm/features/authentication/login_screen.dart';
 import '../../core/theme/app_theme.dart';
@@ -23,8 +24,30 @@ import '../staff/staff_creation_screen.dart';
 /// The brief asked for screens without an app navigation layer, so this exists
 /// purely so each one can be opened and reviewed. Delete this file — and point
 /// `main.dart` at whichever screen you want — once real routing lands.
-class ScreenCatalogScreen extends StatelessWidget {
+class ScreenCatalogScreen extends StatefulWidget {
   const ScreenCatalogScreen({super.key});
+
+  @override
+  State<ScreenCatalogScreen> createState() => _ScreenCatalogScreenState();
+}
+
+class _ScreenCatalogScreenState extends State<ScreenCatalogScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _printFcmToken();
+  }
+
+  /// Dev aid: dumps this device's FCM registration token to the console so it
+  /// can be pasted straight into a test push.
+  Future<void> _printFcmToken() async {
+    try {
+      final String? token = await FirebaseMessaging.instance.getToken();
+      debugPrint("FCM Token : $token");
+    } catch (e) {
+      debugPrint("FCM Token error : $e");
+    }
+  }
 
   static final List<CatalogEntry> _entries = <CatalogEntry>[
     CatalogEntry(
