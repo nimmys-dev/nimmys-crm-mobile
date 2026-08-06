@@ -3,6 +3,7 @@ import '../../core/theme/app_theme.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/theme/app_dimens.dart';
+import '../../service/push_notification/notification_service.dart';
 import '../../shared/widgets/app_bottom_nav.dart';
 import '../../shared/widgets/app_section_card.dart';
 import 'widgets/dashboard_header.dart';
@@ -108,11 +109,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         body: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
-            const DashboardHeader(
-              userInitials: 'AB',
-              greeting: 'Good morning',
-              userName: 'Abin Babu',
-              notificationCount: 3,
+            // The bell badge tracks the same counter as the launcher badge, so
+            // the two never disagree.
+            ValueListenableBuilder<int>(
+              valueListenable: NotificationService.unreadNotifications,
+              builder: (BuildContext context, int unread, _) =>
+                  DashboardHeader(
+                    userInitials: 'AB',
+                    greeting: 'Good morning',
+                    userName: 'Abin Babu',
+                    notificationCount: unread,
+                  ),
             ),
             Transform.translate(
               offset: const Offset(0, -22),

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:app_badge_plus/app_badge_plus.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +18,7 @@ import 'package:nimmys_crm/utils/app_route.dart';
 import 'package:nimmys_crm/data/storage/secured_shared_preferences.dart';
 import 'package:nimmys_crm/core/theme/app_colors.dart';
 import 'package:nimmys_crm/utils/custom_log.dart';
+import 'badge_counter.dart';
 import 'notification_helper.dart';
 import 'notification_payload.dart';
 import 'notification_session_manager.dart';
@@ -48,8 +48,15 @@ class NotificationService {
   static final FlutterLocalNotificationsPlugin
   _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
-  // Badge management
-  int badgeCount = 0;
+  /// The launcher badge lives in [BadgeCounter] rather than in a field here:
+  /// the background isolate cannot see this object's state, so a field would
+  /// only ever count the notifications that arrived while the app was open.
+  Future<int> get badgeCount => BadgeCounter.current();
+
+  /// Rebuilt whenever the count changes so in-app badges can follow the
+  /// launcher badge. Refreshed on resume, since messages that arrive while the
+  /// app is backgrounded are counted in the other isolate.
+  static final ValueNotifier<int> unreadNotifications = ValueNotifier<int>(0);
 
   /// Whether the custom alert tones are bundled in `android/app/src/main/res/raw/`.
   ///
@@ -136,9 +143,19 @@ class NotificationService {
     // Set up message handlers
     _setupMessageHandlers();
 
+    // Pick up anything the background isolate counted while the app was not
+    // running, and keep doing so on every resume.
+    await refreshBadgeCount();
+    _lifecycleListener ??= AppLifecycleListener(
+      onResume: () => unawaited(refreshBadgeCount()),
+    );
+
     // Check for pending critical alerts after initialization
     _checkForPendingCriticalAlerts();
   }
+
+  /// Held so the singleton keeps one subscription across re-inits.
+  AppLifecycleListener? _lifecycleListener;
 
   /// Check for any pending critical alerts that might have been missed
   void _checkForPendingCriticalAlerts() {
@@ -324,8 +341,6 @@ class NotificationService {
   /// Handle foreground messages
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
     try {
-      await _incrementBadgeCount();
-
       final eventType = message.data['eventType'] ?? 'unknown';
       final mode = message.data['mode'] ?? 'normal';
 
@@ -339,6 +354,13 @@ class NotificationService {
           payload: await _notificationPayload(message),
         );
       }
+
+      // Deliberately after the notification is drawn, not before. The channel
+      // is declared `channelShowBadge: true`, so awesome_notifications bumps
+      // its own global counter as a side effect of `display` above and writes
+      // that number to the launcher. Counting first meant that write always
+      // landed last and clobbered the real total.
+      await _incrementBadgeCount();
     } catch (e) {
       CustomLog.error(this, "Foreground message handling error", e);
     }
@@ -397,16 +419,20 @@ class NotificationService {
   static Future<void> firebaseMessagingBackgroundHandler(
     RemoteMessage message,
   ) async {
+    // This isolate runs nothing but this handler, so the plugin channels
+    // BadgeCounter needs are not wired up until the binding is initialised.
+    WidgetsFlutterBinding.ensureInitialized();
+
     try {
       CustomLog.debug(
         NotificationService,
         "Background notification: ${message.toMap()}",
       );
 
-      // Update badge
-      if (await AppBadgePlus.isSupported()) {
-        await AppBadgePlus.updateBadge(1);
-      }
+      // Bump the shared counter rather than pinning the badge to 1 — this
+      // isolate has no access to the UI isolate's tally, so the stored value is
+      // the only thing the two can agree on.
+      await BadgeCounter.increment();
 
       // Handle payload
       NotificationPayload payload = NotificationPayload.fromJson(message.data);
@@ -940,22 +966,22 @@ class NotificationService {
 
   /// Increment badge count
   Future<void> _incrementBadgeCount() async {
-    badgeCount++;
-    if (await AppBadgePlus.isSupported()) {
-      await AppBadgePlus.updateBadge(badgeCount);
-    } else {
-      CustomLog.debug(this, "App badge not supported on this device");
-    }
-    CustomLog.debug(this, "Badge Count: $badgeCount");
+    unreadNotifications.value = await BadgeCounter.increment();
+  }
+
+  /// Re-reads the persisted count into [unreadNotifications].
+  ///
+  /// Call after a resume: everything that arrived while the app was in the
+  /// background was counted by the other isolate, so this isolate's notifier is
+  /// stale until it reloads.
+  Future<void> refreshBadgeCount() async {
+    unreadNotifications.value = await BadgeCounter.restore();
   }
 
   /// Clear badge count
   Future<void> clearBadgeCount() async {
-    badgeCount = 0;
-    if (await AppBadgePlus.isSupported()) {
-      await AppBadgePlus.updateBadge(0);
-    }
-    CustomLog.debug(this, "Badge Count Cleared: $badgeCount");
+    await BadgeCounter.clear();
+    unreadNotifications.value = 0;
   }
 
   /// Save device name and notification type based on event type
