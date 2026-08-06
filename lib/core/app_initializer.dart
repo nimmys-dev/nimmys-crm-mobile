@@ -1,8 +1,10 @@
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_core/firebase_core.dart';
+// // // // // // // import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:nimmys_crm/dependency_injection/locator.dart';
+import 'package:nimmys_crm/firebase_options.dart';
 
 
 ///  App Initialization Function
@@ -10,21 +12,9 @@ Future<void> initializeApp() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Firebase Initialization
-  // String appName = "App_Name_prod";
-  // if (kDebugMode) {
-  //   appName = "App_Name_Dev";
-  // }
-  // await Firebase.initializeApp(name: appName, options: DefaultFirebaseOptions.currentPlatform);
-
-  // Crashlytics
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
-  PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    return true;
-  };
-
-  // Load Environment Variables
-  await dotenv.load(fileName: kDebugMode ? "./assets/env/.env.dev" : "./assets/env/.env.dev");
+  // Must create the [DEFAULT] app — Crashlytics/Messaging/Analytics below all read
+  // FirebaseX.instance, which resolves the default app rather than a named one.
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Dependency Injection
   initLocator();

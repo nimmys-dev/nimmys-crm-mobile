@@ -99,7 +99,7 @@ class _UploadAttachmentFilesState extends State<UploadAttachmentFiles> {
                         return 0.width;
                       }
                 } else {
-                      final extension = widget.multiFilesList[index].extension.toLowerCase();
+                      widget.multiFilesList[index].extension.toLowerCase();
                       return Card(
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 1.0,

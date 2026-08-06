@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nimmys_crm/features/preview/screen_catalog_screen.dart';
 import 'package:nimmys_crm/routing/app_route_name.dart';
 import 'package:nimmys_crm/utils/app_global_variables.dart';
 import 'package:nimmys_crm/utils/default_screen.dart';
@@ -17,7 +18,7 @@ class AppRoutes{
       GoRoute(
         path: AppRouteName.splash,
         builder: (BuildContext context, GoRouterState state) {
-          return  Container();
+          return  ScreenCatalogScreen();
         },
       ),
 
@@ -25,7 +26,7 @@ class AppRoutes{
       GoRoute(
         path: AppRouteName.notFound,
         builder: (BuildContext context, GoRouterState state) {
-          return const DefaultScreen();
+          return const ScreenCatalogScreen();
         },
       ),
 

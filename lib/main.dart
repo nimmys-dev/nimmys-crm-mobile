@@ -9,6 +9,7 @@ import 'package:nimmys_crm/utils/extensions/state_extension.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
   await initializeApp();
   runApp(const MyApp());
 }

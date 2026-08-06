@@ -84,7 +84,7 @@ dependencies:
   # release builds, so only the glyphs actually used ship.
   font_awesome_flutter: ^11.0.0
   freezed_annotation: ^3.1.0
-  firebase_crashlytics: ^5.2.7
+  # # # # # # # # # # firebase_crashlytics: ^5.2.7
   flutter_dotenv: ^6.0.1
   firebase_analytics: ^12.4.6
   device_info_plus: ^12.4.0

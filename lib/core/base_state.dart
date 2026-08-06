@@ -5,18 +5,10 @@ import 'package:nimmys_crm/utils/custom_log.dart';
 
 abstract class BaseState<T extends StatefulWidget> extends State<T> {
 
-  final AnalyticsHelper analyticsHelper = locator<AnalyticsHelper>();
 
-  @override
-  void initState() {
-    super.initState();
-    logScreenView();
-  }
+ 
 
 
-  void logScreenView() {
-    analyticsHelper.logScreenView(widget.toString(), T.toString());
-  }
 
   @override
   void dispose() {
