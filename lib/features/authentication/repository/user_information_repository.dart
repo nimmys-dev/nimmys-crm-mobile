@@ -6,6 +6,10 @@ class UserInformationRepository {
   UserInformationRepository(this._securedSharedPref);
 
 
+  Future<String?> getUserToken() async {
+    return await _securedSharedPref.get(AppString.sessionKey.userToken);
+  }
+
   Future<String?> getUserID() async {
     return await _securedSharedPref.get(AppString.sessionKey.userId);
   }

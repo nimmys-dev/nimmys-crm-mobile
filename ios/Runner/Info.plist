@@ -59,6 +59,24 @@
 	<!-- Without `remote-notification` iOS never wakes the app for a
 	     content-available push, so firebaseMessagingBackgroundHandler is
 	     simply never called on this platform. -->
+	<!-- The CRM API is served over plain HTTP, and App Transport Security blocks
+	     cleartext by default — without this exception every request fails before
+	     it leaves the device. Scoped to the one host rather than
+	     NSAllowsArbitraryLoads, which App Review pushes back on. Drop it once the
+	     API is on HTTPS. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>crm.nimmysonline.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>

@@ -122,6 +122,7 @@ class PreferenceKey {
   final String userAddress = "userAddress";
   final String userFullName = "userFullName";
   final String userType = "userType";
+  final String userEmail = "userEmail";
   final String userProfilePhoto = "userProfilePhoto";
   final String rememberMe = "rememberMe";
 }

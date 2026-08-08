@@ -6,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:nimmys_crm/core/preferences/app_preferences.dart';
 import 'package:nimmys_crm/data/storage/secured_shared_preferences.dart';
 import 'package:nimmys_crm/dependency_injection/locator.dart';
 import 'package:nimmys_crm/firebase_options.dart';
@@ -16,6 +17,15 @@ import 'package:nimmys_crm/utils/app_global_variables.dart';
 ///  App Initialization Function
 Future<void> initializeApp() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Base URL and any API credentials live in .env.dev. Nothing that talks to
+  // the network can run before this: EnvironmentVariables throws on an empty
+  // base URL, so loading it late turns every request into a launch crash.
+  await dotenv.load(fileName: ".env.dev");
+
+  // Remember-me and the saved email are read synchronously during build on the
+  // login screen, so the store has to be open before the first frame.
+  await AppPreferences.init();
 
   // Firebase Initialization
   // Must create the [DEFAULT] app — Crashlytics/Messaging/Analytics below all read

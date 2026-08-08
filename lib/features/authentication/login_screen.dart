@@ -1,23 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/theme/app_theme.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/preferences/app_preferences.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
+import '../../enum/status.dart';
 import '../../shared/widgets/app_buttons.dart';
 import '../../shared/widgets/app_field_label.dart';
 import '../../shared/widgets/app_logo.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../shared/widgets/theme_toggle_button.dart';
+import '../../utils/toast_messages.dart';
+import '../../utils/validator.dart';
+import '../profile/cubit/profile/profile_cubit.dart';
+import 'api_request/login_api_request.dart';
+import 'cubit/login/login_cubit.dart';
 
 /// Email + password sign-in.
 ///
-/// Black brand stage up top, white credential card below. Validation and auth
-/// are intentionally left to the host app — this is presentation only.
+/// Black brand stage up top, white credential card below. Credentials go to
+/// `POST /api/login` through [LoginCubit]; the token and user land in secure
+/// storage before [onSignedIn] fires.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, this.onSignedIn});
 
+  /// Called once the API has accepted the credentials and the session has been
+  /// persisted — this is where the host app routes on to the dashboard.
   final VoidCallback? onSignedIn;
 
   @override
@@ -28,7 +38,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _rememberMe = true;
-  bool _isSubmitting = false;
+  String? _emailError;
+  String? _passwordError;
 
   @override
   void initState() {
@@ -41,6 +52,13 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text = prefs.savedEmail;
       }
     }
+    // The cubit is a singleton, so a previous visit's SUCCESS/ERROR would still
+    // be sitting in state and fire the listener the moment this screen mounts.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<LoginCubit>().resetLoginState();
+      }
+    });
   }
 
   @override
@@ -64,24 +82,60 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleLogin() async {
     FocusScope.of(context).unfocus();
-    setState(() => _isSubmitting = true);
+
+    final String email = _emailController.text.trim();
+    final String password = _passwordController.text;
+
+    setState(() {
+      _emailError = Validator.email(email);
+      _passwordError = Validator.fieldRequired(password, fieldName: 'Password');
+    });
+    if (_emailError != null || _passwordError != null) {
+      return;
+    }
 
     if (AppPreferences.isReady) {
       final AppPreferences prefs = AppPreferences.instance;
       await prefs.setRememberMe(_rememberMe);
       if (_rememberMe) {
-        await prefs.setSavedEmail(_emailController.text.trim());
+        await prefs.setSavedEmail(email);
       } else {
         await prefs.clearSavedEmail();
       }
     }
 
-    await Future<void>.delayed(const Duration(milliseconds: 700));
     if (!mounted) {
       return;
     }
-    setState(() => _isSubmitting = false);
-    widget.onSignedIn?.call();
+    await context.read<LoginCubit>().login(
+      LoginApiRequest(email: email, password: password),
+    );
+  }
+
+  /// Reacts to the one terminal state per attempt: toast on failure, hand off
+  /// to the host app on success.
+  void _onLoginStateChanged(BuildContext context, LoginState state) {
+    switch (state.loginUIState?.status) {
+      case Status.SUCCESS:
+        final String name = state.loginUIState?.data?.user?.name ?? '';
+        ToastMessages.success(
+          message: name.isEmpty ? 'Login successful' : 'Welcome back, $name',
+        );
+        // The profile cubit is a singleton that outlives this screen: without
+        // clearing it, signing in as a second user would show the first user's
+        // name in the dashboard header until something forced a refresh.
+        context.read<ProfileCubit>().resetProfileState();
+        widget.onSignedIn?.call();
+      case Status.ERROR:
+        ToastMessages.error(
+          message: state.loginUIState?.errorType?.getText(context) ??
+              'Login attempt unsuccessful, Please try again later',
+        );
+      case Status.LOADING:
+      case Status.INITIAL:
+      case null:
+        break;
+    }
   }
 
   @override
@@ -93,60 +147,101 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Scaffold(
         backgroundColor: context.palette.canvas,
         resizeToAvoidBottomInset: true,
-        body: Column(
-          children: <Widget>[
-            const LoginBrandStage(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.only(
-                  left: AppSpacing.lg,
-                  right: AppSpacing.lg,
-                  top: AppSpacing.xl,
-                  bottom:
-                      MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl,
+        body: BlocConsumer<LoginCubit, LoginState>(
+          listener: _onLoginStateChanged,
+          builder: (BuildContext context, LoginState state) {
+            final bool isSubmitting =
+                state.loginUIState?.status == Status.LOADING;
+
+            return Column(
+              children: <Widget>[
+                const LoginBrandStage(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.only(
+                      left: AppSpacing.lg,
+                      right: AppSpacing.lg,
+                      top: AppSpacing.xl,
+                      bottom: MediaQuery.of(context).viewInsets.bottom +
+                          AppSpacing.xl,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        const LoginWelcomeText(),
+                        const SizedBox(height: AppSpacing.xl),
+                        const AppFieldLabel(text: 'Email', isRequired: true),
+                        AppTextField(
+                          hint: 'you@nimmys.com',
+                          controller: _emailController,
+                          icon: Icons.mail_outline_rounded,
+                          keyboardType: TextInputType.emailAddress,
+                          enabled: !isSubmitting,
+                        ),
+                        LoginFieldError(message: _emailError),
+                        const SizedBox(height: AppSpacing.md),
+                        const AppFieldLabel(text: 'Password', isRequired: true),
+                        AppPasswordField(
+                          hint: 'Enter your password',
+                          controller: _passwordController,
+                        ),
+                        LoginFieldError(message: _passwordError),
+                        const SizedBox(height: AppSpacing.xs),
+                        LoginOptionsRow(
+                          rememberMe: _rememberMe,
+                          onRememberChanged: _setRememberMe,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        AppPrimaryButton(
+                          label: 'LOGIN',
+                          icon: Icons.login_rounded,
+                          isLoading: isSubmitting,
+                          onPressed: isSubmitting ? null : _handleLogin,
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
+                        const LoginSecurityNote(),
+                        const SizedBox(height: AppSpacing.lg),
+                        const LoginAppearanceSection(),
+                        const SizedBox(height: AppSpacing.lg),
+                        const LoginFooter(),
+                      ],
+                    ),
+                  ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    const LoginWelcomeText(),
-                    const SizedBox(height: AppSpacing.xl),
-                    const AppFieldLabel(text: 'Email', isRequired: true),
-                    AppTextField(
-                      hint: 'you@nimmys.com',
-                      controller: _emailController,
-                      icon: Icons.mail_outline_rounded,
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    const AppFieldLabel(text: 'Password', isRequired: true),
-                    AppPasswordField(
-                      hint: 'Enter your password',
-                      controller: _passwordController,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    LoginOptionsRow(
-                      rememberMe: _rememberMe,
-                      onRememberChanged: _setRememberMe,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    AppPrimaryButton(
-                      label: 'LOGIN',
-                      icon: Icons.login_rounded,
-                      isLoading: _isSubmitting,
-                      onPressed: _handleLogin,
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                    const LoginSecurityNote(),
-                    const SizedBox(height: AppSpacing.lg),
-                    const LoginAppearanceSection(),
-                    const SizedBox(height: AppSpacing.lg),
-                    const LoginFooter(),
-                  ],
-                ),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         ),
+      ),
+    );
+  }
+}
+
+/// Inline validation message under a credential field. Collapses to nothing
+/// when [message] is null so the form does not jump on every keystroke.
+class LoginFieldError extends StatelessWidget {
+  const LoginFieldError({super.key, this.message});
+
+  final String? message;
+
+  @override
+  Widget build(BuildContext context) {
+    if (message == null) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 6, left: 4),
+      child: Row(
+        children: <Widget>[
+          const Icon(Icons.error_outline_rounded, size: 14, color: AppColors.red),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              message!,
+              style: context.type.caption.copyWith(color: AppColors.red),
+            ),
+          ),
+        ],
       ),
     );
   }

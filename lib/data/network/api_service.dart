@@ -8,6 +8,7 @@ import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/network/api_urls.dart';
 import 'package:nimmys_crm/data/storage/secured_shared_preferences.dart';
 import 'package:nimmys_crm/service/hasInternet/has_internet_connection.dart';
+import 'package:nimmys_crm/utils/app_string.dart';
 import 'package:nimmys_crm/utils/constant_variables.dart';
 import 'package:nimmys_crm/utils/custom_log.dart';
 
@@ -25,20 +26,28 @@ class ApiService {
 
   // Header
   Future<Map<String, String>> _getHeaders({bool isMultipart = false}) async {
-    final username = dotenv.env["API_BASIC_AUTH_USERNAME"];
-    final password = dotenv.env["API_BASIC_AUTH_PASSWORD"];
-
-    if (username == null || password == null) {
-      throw Exception("Missing API credentials in environment variables");
-    }
-
-    final basicAuth = 'Basic ${base64Encode(utf8.encode('$username:$password'))}';
-
-    return {
+    final headers = <String, String>{
       'Content-Type': isMultipart ? 'multipart/form-data' : 'application/json',
       'Accept': 'application/json',
-      'Authorization': basicAuth,
     };
+
+    // Bearer wins when the user is signed in: the CRM API authenticates with a
+    // Sanctum token, and login itself is the one call that legitimately has none.
+    final bearerToken = await _secureSharedPrefs.get(AppString.sessionKey.userToken);
+    if (bearerToken != null && bearerToken.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $bearerToken';
+      return headers;
+    }
+
+    // Basic auth is optional — the CRM API is not behind it, so empty creds mean
+    // "send no Authorization header" rather than a failure.
+    final username = dotenv.env["API_BASIC_AUTH_USERNAME"];
+    final password = dotenv.env["API_BASIC_AUTH_PASSWORD"];
+    if (username != null && username.isNotEmpty && password != null && password.isNotEmpty) {
+      headers['Authorization'] = 'Basic ${base64Encode(utf8.encode('$username:$password'))}';
+    }
+
+    return headers;
   }
 
 
@@ -228,6 +237,9 @@ class ApiService {
   Result<dynamic> _handleHttpError(Response? response) {
     switch (response?.statusCode) {
       case 400:
+      // 422 is the CRM API's validation failure — the body names the offending
+      // field, which is far more useful than a generic error.
+      case 422:
         return Error(ErrorWithMessage.fromApiResponse(response?.data));
       case 401:
         return Error(UnauthenticatedError());

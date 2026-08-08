@@ -4,7 +4,6 @@ import 'package:nimmys_crm/utils/app_colors.dart';
 import 'package:nimmys_crm/utils/app_global_variables.dart';
 import 'package:nimmys_crm/utils/app_text_style.dart';
 import 'package:nimmys_crm/utils/extensions/widget_extensions.dart';
-import 'package:nimmys_crm/utils/global_variables.dart';
 
 
 class ToastMessages{
@@ -57,7 +56,7 @@ class ToastMessages{
       boxShadows: _boxShadows,
       duration: _duration,
       icon: const Icon(Icons.error, size : 25, color:  Colors.red).paddingAll(10).paddingLeft(5),
-    ).show(appContext);
+    ).show(navigatorKey.currentState!.context);
   }
 
   // Error Msg

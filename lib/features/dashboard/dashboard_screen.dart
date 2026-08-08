@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/theme/app_theme.dart';
 import 'package:flutter/services.dart';
 
@@ -6,6 +7,9 @@ import '../../core/theme/app_dimens.dart';
 import '../../service/push_notification/notification_service.dart';
 import '../../shared/widgets/app_bottom_nav.dart';
 import '../../shared/widgets/app_section_card.dart';
+import '../profile/cubit/profile/profile_cubit.dart';
+import '../profile/model/profile_model.dart';
+import '../profile/profile_sheet.dart';
 import 'widgets/dashboard_header.dart';
 import 'widgets/dashboard_panels.dart';
 import 'widgets/stat_cards.dart';
@@ -20,6 +24,32 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _navIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Named header, real account. Cached after the first call, so returning to
+    // the dashboard does not re-hit the API — the profile sheet forces a refresh
+    // when the details actually matter.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<ProfileCubit>().getProfile();
+      }
+    });
+  }
+
+  /// "Good morning" until noon, "Good afternoon" until 17:00, "Good evening"
+  /// after — the header greeted every user with "Good morning" before.
+  String get _greeting {
+    final int hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Good morning';
+    }
+    if (hour < 17) {
+      return 'Good afternoon';
+    }
+    return 'Good evening';
+  }
 
   static const List<StatItem> _duties = <StatItem>[
     StatItem(
@@ -113,13 +143,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
             // the two never disagree.
             ValueListenableBuilder<int>(
               valueListenable: NotificationService.unreadNotifications,
-              builder: (BuildContext context, int unread, _) =>
-                  DashboardHeader(
-                    userInitials: 'AB',
-                    greeting: 'Good morning',
-                    userName: 'Abin Babu',
-                    notificationCount: unread,
-                  ),
+              builder: (BuildContext context, int unread, _) {
+                return BlocBuilder<ProfileCubit, ProfileState>(
+                  builder: (BuildContext context, ProfileState state) {
+                    final ProfileUser? user = state.profileUIState?.data?.user;
+                    return DashboardHeader(
+                      // Placeholders only until the profile call lands; the
+                      // header is drawn before the response either way.
+                      userInitials: user?.initials ?? '··',
+                      greeting: _greeting,
+                      userName: user?.name ?? 'Loading…',
+                      notificationCount: unread,
+                      onAvatarTap: () => showProfileSheet(context),
+                    );
+                  },
+                );
+              },
             ),
             Transform.translate(
               offset: const Offset(0, -22),

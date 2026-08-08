@@ -14,6 +14,8 @@ class ApiUrls {
   // End Point
   static String sendOtpWithPhoneNumber = "$_baseUrl/otpSend/phoneNumber";
   static String login = "$_baseUrl/login";
+  static String logout = "$_baseUrl/logout";
+  static String profile = "$_baseUrl/profile";
 
 
 }

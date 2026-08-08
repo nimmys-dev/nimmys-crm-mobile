@@ -8,7 +8,7 @@ class LoginRepository {
   LoginRepository(this._service);
 
   // Login Repo
-  Future<Result<LoginModel>> login(LoginApiRequest request) async {
+  Future<Result<LoginSuccessModel>> login(LoginApiRequest request) async {
     try {
       return await _service.login(request);
     } catch (e) {

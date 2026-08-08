@@ -30,19 +30,26 @@ class ErrorWithMessage extends ErrorType {
   final String message;
   ErrorWithMessage({this.code, required this.message});
 
+  // Server-authored copy, shown to the user as-is. The bare code is appended
+  // only when there is one — the old "Message: ..." prefix read as debug output
+  // in a toast.
   @override
   String getText(BuildContext context) {
     if(code != null){
-      return "Message: $message, Code: $code";
+      return "$message ($code)";
     }else{
-      return "Message: $message";
+      return message;
     }
   }
 
-  factory ErrorWithMessage.fromApiResponse(Map<String, dynamic> response) {
-    return ErrorWithMessage(
-      message: response['message'] ?? "",
-    );
+  // Takes `dynamic`: an error body is not always the JSON envelope. A gateway or
+  // a framework error page arrives as an HTML string, and a typed Map parameter
+  // would throw on the very responses this is meant to describe.
+  factory ErrorWithMessage.fromApiResponse(dynamic response) {
+    if (response is Map && response['message'] is String) {
+      return ErrorWithMessage(message: response['message'] as String);
+    }
+    return ErrorWithMessage(message: AppString.errorType.somethingWentWrong);
   }
 
 }

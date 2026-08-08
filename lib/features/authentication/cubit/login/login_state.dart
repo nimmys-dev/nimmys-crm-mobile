@@ -1,22 +1,24 @@
 part of 'login_cubit.dart';
 
 class LoginState extends Equatable {
-  final UIState<LoginModel>? loginUIState;
+  final UIState<LoginSuccessModel>? loginUIState;
   const LoginState({
     this.loginUIState,
  });
 
   LoginState copyWith({
-    UIState<LoginModel>? sendOtpState,
+    UIState<LoginSuccessModel>? loginUIState,
   }) {
     return LoginState(
-      loginUIState: sendOtpState ?? this.loginUIState,
+      loginUIState: loginUIState ?? this.loginUIState,
     );
   }
 
   @override
   List<Object?> get props => [
-    loginUIState
+    loginUIState,
+    loginUIState?.status,
+    loginUIState?.data,
+    loginUIState?.errorType,
   ];
 }
-

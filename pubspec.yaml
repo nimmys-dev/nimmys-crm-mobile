@@ -164,6 +164,9 @@ flutter:
   # the painted lockup instead. Add the line back alongside the artwork.
   assets:
     - assets/logo/app_logo.png
+    # Bundled so flutter_dotenv can read it at runtime — an unlisted .env is
+    # simply absent from the app bundle and `dotenv.load` fails.
+    - .env.dev
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
