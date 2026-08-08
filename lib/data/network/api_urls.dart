@@ -9,7 +9,7 @@ class ApiUrls {
 
   // Base URL
   static String get _baseUrl => "$_fetchUrl$_path";
-  static String  baseUrl = _baseUrl;
+  static String baseUrl = _baseUrl;
 
   // End Point
   static String sendOtpWithPhoneNumber = "$_baseUrl/otpSend/phoneNumber";
@@ -20,6 +20,7 @@ class ApiUrls {
   static String userRoles = "$_baseUrl/user-roles";
   static String createStaff = "$_baseUrl/create-staff";
   static String staffList = "$_baseUrl/staff";
-
-
+  static String viewStaff(int id) => "$_baseUrl/view-staff/$id";
+  static String updateStaff(int id) => "$_baseUrl/update-staff/$id";
+  static String deleteStaff(int id) => "$_baseUrl/delete-staff/$id";
 }

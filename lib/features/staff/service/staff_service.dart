@@ -3,6 +3,9 @@ import 'package:nimmys_crm/data/network/api_service.dart';
 import 'package:nimmys_crm/data/network/api_urls.dart';
 import 'package:nimmys_crm/features/staff/api_request/create_staff_api_request.dart';
 import 'package:nimmys_crm/features/staff/model/create_staffsuccess_model.dart';
+import 'package:nimmys_crm/features/staff/api_request/update_staff_api_request.dart';
+import 'package:nimmys_crm/features/staff/model/delete_staff_model.dart';
+import 'package:nimmys_crm/features/staff/model/staff_details_model.dart';
 import 'package:nimmys_crm/features/staff/model/staff_list_model.dart';
 import 'package:nimmys_crm/features/staff/model/store_success_model.dart';
 import 'package:nimmys_crm/features/staff/model/user_role_model.dart';
@@ -118,4 +121,82 @@ class StaffService {
     }
   }
 
+  // View Staff Service
+  //
+  // GET /api/view-staff/{id}. Shares its response shape — and so its model —
+  // with the update call below.
+  Future<Result<StaffDetailsSuccess>> getStaffDetails(int id) async {
+    try {
+      final url = ApiUrls.viewStaff(id);
+      final result = await _apiService.get(url);
+      if (result is Success) {
+        return await _apiService.getResponseStatus<StaffDetailsSuccess>(
+          result.value,
+          (json) => StaffDetailsSuccess.fromJson(json),
+        );
+      } else if (result is Error) {
+        return Error(result.type);
+      } else {
+        return Error(GenericError());
+      }
+    } catch (e) {
+      return Error(DeserializationError());
+    }
+  }
+
+  // Update Staff Service
+  //
+  // POST /api/update-staff/{id} as multipart/form-data, same shape as create.
+  // A null photo means "no file part attached", which leaves the staff
+  // member's existing photo untouched server-side.
+  Future<Result<StaffDetailsSuccess>> updateStaff(
+    int id,
+    UpdateStaffApiRequest request,
+  ) async {
+    try {
+      final url = ApiUrls.updateStaff(id);
+      final result = await _apiService.multipart(
+        url,
+        request.photo,
+        fields: request.toFormFields(),
+        pathName: "photo",
+      );
+      if (result is Success) {
+        return await _apiService.getResponseStatus<StaffDetailsSuccess>(
+          result.value,
+          (json) => StaffDetailsSuccess.fromJson(json),
+        );
+      } else if (result is Error) {
+        return Error(result.type);
+      } else {
+        return Error(GenericError());
+      }
+    } catch (e) {
+      return Error(DeserializationError());
+    }
+  }
+
+  // Delete Staff Service
+  //
+  // DELETE /api/delete-staff/{id}, authorised by the bearer token ApiService
+  // attaches. Uses the existing `ApiService.delete` — no earlier caller had
+  // needed it before this.
+  Future<Result<DeleteStaffSuccess>> deleteStaff(int id) async {
+    try {
+      final url = ApiUrls.deleteStaff(id);
+      final result = await _apiService.delete(url);
+      if (result is Success) {
+        return await _apiService.getResponseStatus<DeleteStaffSuccess>(
+          result.value,
+          (json) => DeleteStaffSuccess.fromJson(json),
+        );
+      } else if (result is Error) {
+        return Error(result.type);
+      } else {
+        return Error(GenericError());
+      }
+    } catch (e) {
+      return Error(DeserializationError());
+    }
+  }
 }

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
+import '../../data/model/result.dart';
 import '../../data/ui_state/ui_state.dart';
 import '../../enum/status.dart';
 import '../../helpers/date_helper.dart';
@@ -26,24 +27,42 @@ import '../../utils/upload_images_and_documents/image_picker_from.dart';
 import '../../utils/upload_images_and_documents/picked_images_and_documents_model.dart';
 import '../../utils/validator.dart';
 import 'api_request/create_staff_api_request.dart';
+import 'api_request/update_staff_api_request.dart';
 import 'cubit/staff/staff_cubit.dart';
 import 'model/create_staffsuccess_model.dart';
+import 'model/staff_details_model.dart';
 import 'model/store_success_model.dart';
 import 'model/user_role_model.dart';
+import 'staff_list_screen.dart';
 import 'widgets/staff_widgets.dart';
 
 /// Staff Creation — personal profile plus employment and increment settings.
 ///
-/// Branches come from `GET /api/branches` and the form posts to
-/// `POST /api/create-staff` through [StaffCubit].
+/// Also Edit Staff: passing [staffId] switches the same form to edit mode. The
+/// two share every field, so one screen prefilled from
+/// `GET /api/view-staff/{id}` and posting to `PUT /api/update-staff/{id}`
+/// avoids maintaining the form twice — see `_isEditMode` throughout.
+///
+/// Branches and roles come from `GET /api/branches` / `GET /api/user-roles`;
+/// the form posts to `POST /api/create-staff` or `POST /api/update-staff/{id}`
+/// through [StaffCubit].
 class StaffCreationScreen extends StatefulWidget {
-  const StaffCreationScreen({super.key, this.onStaffCreated});
+  const StaffCreationScreen({super.key, this.staffId, this.onStaffCreated});
+
+  /// Non-null switches the form to Edit Staff: the id is what
+  /// `GET /api/view-staff/{id}` fetches and `POST /api/update-staff/{id}`
+  /// writes back to.
+  final int? staffId;
 
   /// Called once the API has accepted the new staff member, with the full
   /// response — `message` for a toast, `data` for the created record. Screens
   /// that own a staff list pass a callback here to refresh themselves; when it
   /// is null the screen pops and hands the same response back as the route
   /// result, so an `await context.push(...)` can do the same thing.
+  ///
+  /// Create-only: edit mode always pops rather than calling back, since it can
+  /// be opened from more than one place (Staff Details, the catalog) and none
+  /// of them needs anything richer than "something changed, refetch".
   final ValueChanged<CreateStaffSuccess?>? onStaffCreated;
 
   @override
@@ -102,6 +121,20 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
   String? _salaryError;
   String? _incrementAmountError;
 
+  bool get _isEditMode => widget.staffId != null;
+
+  /// True once [_prefillFrom] has populated the text controllers, dates and
+  /// toggles from the fetched record. Guards against re-running that on every
+  /// rebuild and clobbering whatever the user has since typed. Branch and role
+  /// are prefilled independently of this flag — see [_tryPrefillSelections] —
+  /// since they depend on branches/roles having loaded, which can land after
+  /// the staff record does.
+  bool _textFieldsPrefilled = false;
+
+  /// The staff member's current photo, shown by [StaffPhotoPicker] until the
+  /// user picks a replacement. Null in create mode.
+  String? _existingPhotoUrl;
+
   @override
   void initState() {
     super.initState();
@@ -109,12 +142,88 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
     // be sitting in state and fire the listener the moment this screen mounts.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<StaffCubit>()
+        final StaffCubit cubit = context.read<StaffCubit>()
           ..resetCreateStaffState()
+          ..resetUpdateStaffState()
           ..getBranches()
           ..getUserRoles();
+        if (_isEditMode) {
+          cubit.getStaffDetails(widget.staffId!);
+        }
       }
     });
+  }
+
+  /// Fills every field that does not depend on branches/roles having loaded —
+  /// called once, guarded by [_textFieldsPrefilled].
+  void _prefillFrom(StaffDetailsData details) {
+    _nameController.text = details.name ?? '';
+    _mobileController.text = details.phone ?? '';
+    _altMobileController.text = details.alternatePhone ?? '';
+    _emailController.text = details.email ?? '';
+    _salaryController.text = _formatAmountForEditing(details.salary);
+    _incrementController.text = _formatAmountForEditing(
+      details.incrementAmount,
+    );
+    _remarksController.text = details.description ?? '';
+    setState(() {
+      _joiningDate = details.joiningDate;
+      _nextIncrementDate = details.incrementDate;
+      _incrementReminder = details.incrementNotification ?? true;
+      _leadManagement = details.leadModuleAccess ?? true;
+      _existingPhotoUrl = details.photoUrl;
+      _textFieldsPrefilled = true;
+    });
+  }
+
+  /// Resolves [_branch]/[_role] from the fetched record once their source
+  /// lists are available. Called from the listener on every relevant state
+  /// change rather than once, because branches/roles and the staff record load
+  /// independently and can land in either order; each check is a no-op once
+  /// its target is already set, so repeat calls are harmless.
+  void _tryPrefillSelections(StaffState state) {
+    final StaffDetailsData? details = state.staffDetailsUIState?.data?.data;
+    if (details == null) {
+      return;
+    }
+
+    if (_branch == null && details.shopId != null) {
+      final List<StoreResponseData> branches =
+          state.branchesUIState?.data?.activeBranches ?? <StoreResponseData>[];
+      for (final StoreResponseData branch in branches) {
+        if (branch.id == details.shopId) {
+          setState(() => _branch = branch);
+          break;
+        }
+      }
+    }
+
+    if (_role == null && details.role != null) {
+      final List<UserRoleOption> roles =
+          state.userRolesUIState?.data?.selectableRoles ?? <UserRoleOption>[];
+      for (final UserRoleOption role in roles) {
+        if (role.value == details.role) {
+          setState(() => _role = role);
+          break;
+        }
+      }
+    }
+  }
+
+  /// `"20000.00"` → `"20000"` for a text field: a trailing `.00` reads as
+  /// clutter the user did not type, but a genuine fraction like `"1234.50"` is
+  /// kept.
+  String _formatAmountForEditing(String? raw) {
+    if (raw == null || raw.trim().isEmpty) {
+      return '';
+    }
+    final double? value = double.tryParse(raw);
+    if (value == null) {
+      return raw;
+    }
+    return value == value.roundToDouble()
+        ? value.toStringAsFixed(0)
+        : value.toString();
   }
 
   @override
@@ -181,7 +290,13 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
     final String email = _emailController.text.trim();
     final String salary = _salaryController.text.trim();
     final String incrementAmount = _incrementController.text.trim();
-    final bool passwordsMatch = confirmPassword == password;
+    // On edit, a blank pair means "keep the current password" — it is only
+    // "provided" once either field has something in it, at which point both
+    // become subject to the normal rules.
+    final bool passwordProvided =
+        !_isEditMode || password.isNotEmpty || confirmPassword.isNotEmpty;
+    final bool passwordsMatch =
+        !passwordProvided || confirmPassword == password;
 
     setState(() {
       _nameError = Validator.fieldRequired(
@@ -191,14 +306,25 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
       _mobileError = Validator.phone(_mobileController.text.trim());
       _altMobileError = altMobile.isEmpty ? null : Validator.phone(altMobile);
       _emailError = email.isEmpty ? null : Validator.email(email);
-      _passwordError = Validator.password(password);
-      // A mismatch is left to StaffPasswordMatchHint, which is already showing
-      // it live under the field — repeating it here would print it twice.
-      _confirmPasswordError =
-          confirmPassword.isEmpty ? 'Confirm password is required' : null;
+      if (passwordProvided) {
+        _passwordError = Validator.password(password);
+        // A mismatch is left to StaffPasswordMatchHint, which is already
+        // showing it live under the field — repeating it here would print it
+        // twice.
+        _confirmPasswordError = confirmPassword.isEmpty
+            ? (_isEditMode
+                  ? 'Confirm the new password'
+                  : 'Confirm password is required')
+            : null;
+      } else {
+        _passwordError = null;
+        _confirmPasswordError = null;
+      }
       _branchError = _branch?.id == null ? 'Branch is required' : null;
       _roleError = _role?.value == null ? 'Role is required' : null;
-      _joiningDateError = _joiningDate == null ? 'Joining date is required' : null;
+      _joiningDateError = _joiningDate == null
+          ? 'Joining date is required'
+          : null;
       // Required, and actually a number: the field takes a numeric keyboard but
       // a paste can still leave text behind, and `salary` is `numeric` on the
       // API — better to catch it here than to spend a round trip on a 422.
@@ -208,8 +334,8 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
       }
       _incrementAmountError =
           incrementAmount.isNotEmpty && _amountForApi(incrementAmount).isEmpty
-              ? 'Enter a valid increment salary'
-              : null;
+          ? 'Enter a valid increment salary'
+          : null;
     });
 
     final bool hasFieldError = <String?>[
@@ -241,12 +367,44 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
     final String altMobile = _altMobileController.text.trim();
     final String incrementAmount = _incrementController.text.trim();
     final String description = _remarksController.text.trim();
+    final String password = _passwordController.text;
+    final String confirmPassword = _confirmPasswordController.text;
+
+    if (_isEditMode) {
+      final UpdateStaffApiRequest request = UpdateStaffApiRequest(
+        name: _nameController.text.trim(),
+        phone: _mobileController.text.trim(),
+        shopId: _branch!.id!,
+        role: _role!.value!,
+        joiningDate: DateTimeHelper.getApiDateFormat(_joiningDate!),
+        salary: _amountForApi(_salaryController.text.trim()),
+        incrementNotification: _incrementReminder,
+        leadModuleAccess: _leadManagement,
+        email: email.isEmpty ? null : email,
+        alternatePhone: altMobile.isEmpty ? null : altMobile,
+        incrementDate: _nextIncrementDate == null
+            ? null
+            : DateTimeHelper.getApiDateFormat(_nextIncrementDate!),
+        incrementAmount: incrementAmount.isEmpty
+            ? null
+            : _amountForApi(incrementAmount),
+        description: description.isEmpty ? null : description,
+        // Null keeps the existing photo — only a freshly picked file is sent.
+        photo: _photo,
+        // Blank means "leave the password unchanged"; `_validate` has already
+        // confirmed the two match whenever either one was actually typed.
+        password: password.isEmpty ? null : password,
+        passwordConfirmation: password.isEmpty ? null : confirmPassword,
+      );
+      await context.read<StaffCubit>().updateStaff(widget.staffId!, request);
+      return;
+    }
 
     final CreateStaffApiRequest request = CreateStaffApiRequest(
       name: _nameController.text.trim(),
       phone: _mobileController.text.trim(),
-      password: _passwordController.text,
-      passwordConfirmation: _confirmPasswordController.text,
+      password: password,
+      passwordConfirmation: confirmPassword,
       shopId: _branch!.id!,
       role: _role!.value!,
       joiningDate: DateTimeHelper.getApiDateFormat(_joiningDate!),
@@ -258,8 +416,9 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
       incrementDate: _nextIncrementDate == null
           ? null
           : DateTimeHelper.getApiDateFormat(_nextIncrementDate!),
-      incrementAmount:
-          incrementAmount.isEmpty ? null : _amountForApi(incrementAmount),
+      incrementAmount: incrementAmount.isEmpty
+          ? null
+          : _amountForApi(incrementAmount),
       description: description.isEmpty ? null : description,
       photo: _photo,
     );
@@ -267,34 +426,57 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
     await context.read<StaffCubit>().createStaff(request);
   }
 
-  /// Reacts to the one terminal state per attempt. Both branches clear the
-  /// state afterwards so the singleton cubit does not replay it on the next
-  /// visit — or, on failure, keep the Save button spinning.
-  void _onCreateStaffStateChanged(BuildContext context, StaffState state) {
+  /// Reacts to the one terminal state per attempt — of whichever of create or
+  /// update this instance is running — and, in edit mode, keeps trying to
+  /// resolve the branch/role selections as their source lists arrive. Both
+  /// terminal branches clear their state afterwards so the singleton cubit
+  /// does not replay them on the next visit, or, on failure, leave the Save
+  /// button stuck spinning.
+  void _onStaffStateChanged(BuildContext context, StaffState state) {
     if (!mounted) {
       return;
     }
-    final UIState<CreateStaffSuccess>? uiState = state.createStaffUIState;
-    switch (uiState?.status) {
+
+    if (_isEditMode) {
+      final StaffDetailsData? details = state.staffDetailsUIState?.data?.data;
+      if (details != null && !_textFieldsPrefilled) {
+        _prefillFrom(details);
+      }
+      _tryPrefillSelections(state);
+    }
+
+    final Status? status = _isEditMode
+        ? state.updateStaffUIState?.status
+        : state.createStaffUIState?.status;
+
+    switch (status) {
       case Status.SUCCESS:
-        final CreateStaffSuccess? response = uiState?.data;
-        ToastMessages.success(
-          message: response?.message ?? 'Staff created successfully.',
-        );
-        context.read<StaffCubit>().resetCreateStaffState();
-        if (widget.onStaffCreated != null) {
-          widget.onStaffCreated!.call(response);
+        final String message = _isEditMode
+            ? (state.updateStaffUIState?.data?.message ??
+                  'Staff updated successfully.')
+            : (state.createStaffUIState?.data?.message ??
+                  'Staff created successfully.');
+        ToastMessages.success(message: message);
+
+        if (_isEditMode) {
+          context.read<StaffCubit>().resetUpdateStaffState();
+        } else {
+          context.read<StaffCubit>().resetCreateStaffState();
+        }
+
+        if (!_isEditMode && widget.onStaffCreated != null) {
+          widget.onStaffCreated!.call(state.createStaffUIState?.data);
         } else if (context.canPop()) {
           // GoRouter's pop, not the Navigator's: this screen was pushed with
           // `context.push`, and popping the raw Navigator underneath GoRouter
-          // leaves its route stack believing `/staff/create` is still up. The
-          // next back gesture then runs `willPop()` against a scope that has
+          // leaves its route stack believing this route is still up. The next
+          // back gesture then runs `willPop()` against a scope that has
           // already been disposed — the `'scope != null'` assertion.
           //
-          // The whole response rather than just `data`: it is never null on
-          // success, so a caller can treat "popped something" as "a staff
-          // member was created".
-          context.pop(response);
+          // `true` is enough of a payload: whoever awaited this push (Staff
+          // Details, mainly) only needs to know that something was saved, not
+          // what — it re-fetches its own copy either way.
+          context.pop(true);
         } else {
           // Opened directly — a deep link, or a route restored on relaunch —
           // so there is nothing to go back to. Land on the list rather than on
@@ -304,11 +486,19 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
       case Status.ERROR:
         // Laravel's 422 body is unpacked by ApiService into an ErrorWithMessage,
         // so a field-level validation failure arrives here as its own text.
+        final ErrorType? errorType = _isEditMode
+            ? state.updateStaffUIState?.errorType
+            : state.createStaffUIState?.errorType;
         ToastMessages.error(
-          message: uiState?.errorType?.getText(context) ??
-              'Could not create staff, Please try again later',
+          message:
+              errorType?.getText(context) ??
+              'Could not save staff, Please try again later',
         );
-        context.read<StaffCubit>().resetCreateStaffState();
+        if (_isEditMode) {
+          context.read<StaffCubit>().resetUpdateStaffState();
+        } else {
+          context.read<StaffCubit>().resetCreateStaffState();
+        }
       case Status.LOADING:
       case Status.INITIAL:
       case null:
@@ -325,12 +515,21 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
       child: Scaffold(
         backgroundColor: context.palette.canvas,
         body: BlocConsumer<StaffCubit, StaffState>(
-          // Branch loading emits too, and it must not replay the create-staff
-          // toast every time it does.
+          // Branch/role loading emits too, and in edit mode so does the staff
+          // details fetch — all three matter to `_onStaffStateChanged` (the
+          // prefill), not just create/update finishing.
           listenWhen: (StaffState previous, StaffState current) =>
               previous.createStaffUIState?.status !=
-              current.createStaffUIState?.status,
-          listener: _onCreateStaffStateChanged,
+                  current.createStaffUIState?.status ||
+              previous.updateStaffUIState?.status !=
+                  current.updateStaffUIState?.status ||
+              previous.staffDetailsUIState?.status !=
+                  current.staffDetailsUIState?.status ||
+              previous.branchesUIState?.status !=
+                  current.branchesUIState?.status ||
+              previous.userRolesUIState?.status !=
+                  current.userRolesUIState?.status,
+          listener: _onStaffStateChanged,
           builder: (BuildContext context, StaffState state) {
             final UIState<StoreModelSuccess>? branchesState =
                 state.branchesUIState;
@@ -338,14 +537,28 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
                 branchesState?.status == Status.LOADING;
             final List<StoreResponseData> branches =
                 branchesState?.data?.activeBranches ?? <StoreResponseData>[];
-            final bool isSubmitting =
-                state.createStaffUIState?.status == Status.LOADING;
+            final bool isSubmitting = _isEditMode
+                ? state.updateStaffUIState?.status == Status.LOADING
+                : state.createStaffUIState?.status == Status.LOADING;
+
+            // Edit mode only: the form has nothing to show until the record
+            // arrives, so it replaces the whole body with a spinner or a
+            // retry rather than rendering blank fields that then snap-fill.
+            final bool isLoadingStaffDetails =
+                _isEditMode &&
+                !_textFieldsPrefilled &&
+                state.staffDetailsUIState?.status == Status.LOADING;
+            final bool staffDetailsFailed =
+                _isEditMode &&
+                !_textFieldsPrefilled &&
+                state.staffDetailsUIState?.status == Status.ERROR;
 
             // A successful call with nothing selectable is as much a dead end
             // as a failed one, so both surface a message with a retry.
             final String? branchLoadError;
             if (branchesState?.status == Status.ERROR) {
-              branchLoadError = branchesState?.errorType?.getText(context) ??
+              branchLoadError =
+                  branchesState?.errorType?.getText(context) ??
                   'Could not load branches';
             } else if (branchesState?.status == Status.SUCCESS &&
                 branches.isEmpty) {
@@ -375,11 +588,11 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
 
             return Column(
               children: <Widget>[
-                const AppGradientHeader(
-                  title: 'Staff Creation',
+                AppGradientHeader(
+                  title: _isEditMode ? 'Edit Staff' : 'Staff Creation',
                   eyebrow: 'TEAM',
-                  leading: AppBackButton(),
-                  actions: <Widget>[
+                  leading: const AppBackButton(),
+                  actions: const <Widget>[
                     AppHeaderIconButton(
                       icon: Icons.local_fire_department_rounded,
                     ),
@@ -388,136 +601,174 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
                   ],
                 ),
                 Expanded(
-                  child: ListView(
-                    padding: EdgeInsets.only(
-                      left: AppSpacing.gutter,
-                      right: AppSpacing.gutter,
-                      top: AppSpacing.md,
-                      bottom: MediaQuery.of(context).viewInsets.bottom +
-                          AppSpacing.xl,
-                    ),
-                    children: <Widget>[
-                      // One continuous form: the two groups are sections of the
-                      // same page rather than tabs the user has to switch between.
-                      AppSectionCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: <Widget>[
-                            const StaffSubsectionTitle(
-                              title: 'Personal Details',
+                  child: isLoadingStaffDetails
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.6,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.red,
                             ),
-                            StaffPersonalDetailsForm(
-                              nameController: _nameController,
-                              mobileController: _mobileController,
-                              altMobileController: _altMobileController,
-                              emailController: _emailController,
-                              passwordController: _passwordController,
-                              confirmPasswordController:
-                                  _confirmPasswordController,
-                              photoPath: _photo?.path,
-                              onPickPhoto: isSubmitting ? null : _pickPhoto,
-                              nameError: _nameError,
-                              mobileError: _mobileError,
-                              altMobileError: _altMobileError,
-                              emailError: _emailError,
-                              passwordError: _passwordError,
-                              confirmPasswordError: _confirmPasswordError,
+                          ),
+                        )
+                      : staffDetailsFailed
+                      ? StaffListMessage(
+                          icon: Icons.cloud_off_rounded,
+                          title: 'Could not load staff details',
+                          message:
+                              state.staffDetailsUIState?.errorType?.getText(
+                                context,
+                              ) ??
+                              'Something went wrong. Please try again.',
+                          actionLabel: 'Retry',
+                          actionIcon: Icons.refresh_rounded,
+                          onAction: () async => context
+                              .read<StaffCubit>()
+                              .getStaffDetails(widget.staffId!),
+                        )
+                      : ListView(
+                          padding: EdgeInsets.only(
+                            left: AppSpacing.gutter,
+                            right: AppSpacing.gutter,
+                            top: AppSpacing.md,
+                            bottom:
+                                MediaQuery.of(context).viewInsets.bottom +
+                                AppSpacing.xl,
+                          ),
+                          children: <Widget>[
+                            // One continuous form: the two groups are sections of the
+                            // same page rather than tabs the user has to switch between.
+                            AppSectionCard(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: <Widget>[
+                                  const StaffSubsectionTitle(
+                                    title: 'Personal Details',
+                                  ),
+                                  StaffPersonalDetailsForm(
+                                    nameController: _nameController,
+                                    mobileController: _mobileController,
+                                    altMobileController: _altMobileController,
+                                    emailController: _emailController,
+                                    passwordController: _passwordController,
+                                    confirmPasswordController:
+                                        _confirmPasswordController,
+                                    photoPath: _photo?.path,
+                                    networkPhotoUrl: _existingPhotoUrl,
+                                    onPickPhoto: isSubmitting
+                                        ? null
+                                        : _pickPhoto,
+                                    isEditMode: _isEditMode,
+                                    nameError: _nameError,
+                                    mobileError: _mobileError,
+                                    altMobileError: _altMobileError,
+                                    emailError: _emailError,
+                                    passwordError: _passwordError,
+                                    confirmPasswordError: _confirmPasswordError,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            AppSectionCard(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: <Widget>[
+                                  const StaffSubsectionTitle(
+                                    title: 'Employment Details',
+                                  ),
+                                  StaffEmploymentDetailsForm(
+                                    salaryController: _salaryController,
+                                    incrementController: _incrementController,
+                                    remarksController: _remarksController,
+                                    branches: branches,
+                                    branch: _branch,
+                                    isLoadingBranches: isLoadingBranches,
+                                    branchLoadError: branchLoadError,
+                                    onRetryBranches: () => context
+                                        .read<StaffCubit>()
+                                        .getBranches(force: true),
+                                    onBranchChanged:
+                                        (StoreResponseData value) =>
+                                            setState(() {
+                                              _branch = value;
+                                              _branchError = null;
+                                            }),
+                                    roles: roles,
+                                    role: _role,
+                                    isLoadingRoles: isLoadingRoles,
+                                    roleLoadError: roleLoadError,
+                                    onRetryRoles: () => context
+                                        .read<StaffCubit>()
+                                        .getUserRoles(force: true),
+                                    onRoleChanged: (UserRoleOption value) =>
+                                        setState(() {
+                                          _role = value;
+                                          _roleError = null;
+                                        }),
+                                    joiningDate: _joiningDate,
+                                    nextIncrementDate: _nextIncrementDate,
+                                    reminderEnabled: _incrementReminder,
+                                    onJoiningDateChanged: (DateTime value) =>
+                                        setState(() {
+                                          _joiningDate = value;
+                                          _joiningDateError = null;
+                                        }),
+                                    onIncrementDateChanged: (DateTime value) =>
+                                        setState(
+                                          () => _nextIncrementDate = value,
+                                        ),
+                                    onReminderChanged: (bool value) => setState(
+                                      () => _incrementReminder = value,
+                                    ),
+                                    branchError: _branchError,
+                                    roleError: _roleError,
+                                    joiningDateError: _joiningDateError,
+                                    salaryError: _salaryError,
+                                    incrementAmountError: _incrementAmountError,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            AppSectionCard(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: <Widget>[
+                                  const StaffSubsectionTitle(title: 'Optional'),
+                                  AppToggleRow(
+                                    title: 'Lead Management',
+                                    subtitle:
+                                        'Allow this staff member to own leads',
+                                    icon: Icons.groups_outlined,
+                                    value: _leadManagement,
+                                    onChanged: (bool value) =>
+                                        setState(() => _leadManagement = value),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            AppPrimaryButton(
+                              label: _isEditMode
+                                  ? 'Update Staff'
+                                  : 'Save Staff',
+                              icon: Icons.save_outlined,
+                              isLoading: isSubmitting,
+                              onPressed: isSubmitting ? null : _handleSave,
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            AppSectionCard(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: <Widget>[
+                                  const AppSectionHeader(
+                                    title: 'Increment History',
+                                  ),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  IncrementHistoryTable(records: _history),
+                                ],
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                      AppSectionCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: <Widget>[
-                            const StaffSubsectionTitle(
-                              title: 'Employment Details',
-                            ),
-                            StaffEmploymentDetailsForm(
-                              salaryController: _salaryController,
-                              incrementController: _incrementController,
-                              remarksController: _remarksController,
-                              branches: branches,
-                              branch: _branch,
-                              isLoadingBranches: isLoadingBranches,
-                              branchLoadError: branchLoadError,
-                              onRetryBranches: () => context
-                                  .read<StaffCubit>()
-                                  .getBranches(force: true),
-                              onBranchChanged: (StoreResponseData value) =>
-                                  setState(() {
-                                    _branch = value;
-                                    _branchError = null;
-                                  }),
-                              roles: roles,
-                              role: _role,
-                              isLoadingRoles: isLoadingRoles,
-                              roleLoadError: roleLoadError,
-                              onRetryRoles: () => context
-                                  .read<StaffCubit>()
-                                  .getUserRoles(force: true),
-                              onRoleChanged: (UserRoleOption value) =>
-                                  setState(() {
-                                    _role = value;
-                                    _roleError = null;
-                                  }),
-                              joiningDate: _joiningDate,
-                              nextIncrementDate: _nextIncrementDate,
-                              reminderEnabled: _incrementReminder,
-                              onJoiningDateChanged: (DateTime value) =>
-                                  setState(() {
-                                    _joiningDate = value;
-                                    _joiningDateError = null;
-                                  }),
-                              onIncrementDateChanged: (DateTime value) =>
-                                  setState(() => _nextIncrementDate = value),
-                              onReminderChanged: (bool value) =>
-                                  setState(() => _incrementReminder = value),
-                              branchError: _branchError,
-                              roleError: _roleError,
-                              joiningDateError: _joiningDateError,
-                              salaryError: _salaryError,
-                              incrementAmountError: _incrementAmountError,
-                            ),
-                          ],
-                        ),
-                      ),
-                      AppSectionCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: <Widget>[
-                            const StaffSubsectionTitle(title: 'Optional'),
-                            AppToggleRow(
-                              title: 'Lead Management',
-                              subtitle: 'Allow this staff member to own leads',
-                              icon: Icons.groups_outlined,
-                              value: _leadManagement,
-                              onChanged: (bool value) =>
-                                  setState(() => _leadManagement = value),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      AppPrimaryButton(
-                        label: 'Save Staff',
-                        icon: Icons.save_outlined,
-                        isLoading: isSubmitting,
-                        onPressed: isSubmitting ? null : _handleSave,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      AppSectionCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: <Widget>[
-                            const AppSectionHeader(title: 'Increment History'),
-                            const SizedBox(height: AppSpacing.sm),
-                            IncrementHistoryTable(records: _history),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ],
             );
@@ -539,7 +790,9 @@ class StaffPersonalDetailsForm extends StatelessWidget {
     required this.passwordController,
     required this.confirmPasswordController,
     this.photoPath,
+    this.networkPhotoUrl,
     this.onPickPhoto,
+    this.isEditMode = false,
     this.nameError,
     this.mobileError,
     this.altMobileError,
@@ -555,7 +808,18 @@ class StaffPersonalDetailsForm extends StatelessWidget {
   final TextEditingController passwordController;
   final TextEditingController confirmPasswordController;
   final String? photoPath;
+
+  /// The staff member's current photo, shown until a new one is picked.
+  /// Always null on Staff Creation.
+  final String? networkPhotoUrl;
+
   final VoidCallback? onPickPhoto;
+
+  /// Edit Staff leaves the password fields optional — a blank pair means
+  /// "keep the current password" — so their labels/hints say so rather than
+  /// carrying the create screen's "required" copy verbatim.
+  final bool isEditMode;
+
   final String? nameError;
   final String? mobileError;
   final String? altMobileError;
@@ -634,12 +898,14 @@ class StaffPersonalDetailsForm extends StatelessWidget {
         ),
         AppFormField(
           label: 'Password',
-          isRequired: true,
+          isRequired: !isEditMode,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               AppPasswordField(
-                hint: 'Enter password',
+                hint: isEditMode
+                    ? 'Leave blank to keep current password'
+                    : 'Enter password',
                 controller: passwordController,
               ),
               StaffFieldError(message: passwordError),
@@ -648,7 +914,7 @@ class StaffPersonalDetailsForm extends StatelessWidget {
         ),
         AppFormField(
           label: 'Confirm Password',
-          isRequired: true,
+          isRequired: !isEditMode,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -665,7 +931,11 @@ class StaffPersonalDetailsForm extends StatelessWidget {
           ),
         ),
         const AppFieldLabelRow(label: 'Photo'),
-        StaffPhotoPicker(imagePath: photoPath, onEdit: onPickPhoto),
+        StaffPhotoPicker(
+          imagePath: photoPath,
+          networkImageUrl: networkPhotoUrl,
+          onEdit: onPickPhoto,
+        ),
       ],
     );
   }
@@ -788,6 +1058,7 @@ class StaffEmploymentDetailsForm extends StatelessWidget {
   final bool isLoadingBranches;
   final String? branchLoadError;
   final VoidCallback? onRetryBranches;
+
   /// Roles from `GET /api/user-roles`. The picker shows each `label` and the
   /// screen keeps the record so Save can send its `value` as `role`.
   final List<UserRoleOption> roles;

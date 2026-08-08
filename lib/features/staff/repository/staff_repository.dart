@@ -1,6 +1,9 @@
 import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/features/staff/api_request/create_staff_api_request.dart';
 import 'package:nimmys_crm/features/staff/model/create_staffsuccess_model.dart';
+import 'package:nimmys_crm/features/staff/api_request/update_staff_api_request.dart';
+import 'package:nimmys_crm/features/staff/model/delete_staff_model.dart';
+import 'package:nimmys_crm/features/staff/model/staff_details_model.dart';
 import 'package:nimmys_crm/features/staff/model/staff_list_model.dart';
 import 'package:nimmys_crm/features/staff/model/store_success_model.dart';
 import 'package:nimmys_crm/features/staff/model/user_role_model.dart';
@@ -51,4 +54,33 @@ class StaffRepository {
     }
   }
 
+  // View Staff Repo
+  Future<Result<StaffDetailsSuccess>> getStaffDetails(int id) async {
+    try {
+      return await _service.getStaffDetails(id);
+    } catch (e) {
+      return Error(ErrorWithMessage(message: e.toString()));
+    }
+  }
+
+  // Update Staff Repo
+  Future<Result<StaffDetailsSuccess>> updateStaff(
+    int id,
+    UpdateStaffApiRequest request,
+  ) async {
+    try {
+      return await _service.updateStaff(id, request);
+    } catch (e) {
+      return Error(ErrorWithMessage(message: e.toString()));
+    }
+  }
+
+  // Delete Staff Repo
+  Future<Result<DeleteStaffSuccess>> deleteStaff(int id) async {
+    try {
+      return await _service.deleteStaff(id);
+    } catch (e) {
+      return Error(ErrorWithMessage(message: e.toString()));
+    }
+  }
 }

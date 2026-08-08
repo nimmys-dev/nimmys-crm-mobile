@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -9,13 +10,16 @@ import '../../../core/theme/app_dimens.dart';
 /// Square photo well with an overlaid edit affordance.
 ///
 /// Shows the picked file once there is one, so the user can see what will be
-/// uploaded as the `photo` part of Create Staff.
+/// uploaded as the `photo` part of Create/Update Staff. On Edit Staff, before
+/// the user picks a replacement, it shows the staff member's current photo
+/// from the server instead — see [networkImageUrl].
 class StaffPhotoPicker extends StatelessWidget {
   const StaffPhotoPicker({
     super.key,
     this.onEdit,
     this.size = 108,
     this.imagePath,
+    this.networkImageUrl,
   });
 
   final VoidCallback? onEdit;
@@ -24,9 +28,19 @@ class StaffPhotoPicker extends StatelessWidget {
   /// Absolute path of the picked image, or null while the well is empty.
   final String? imagePath;
 
+  /// The existing `photo_url` to show while there is no freshly picked file.
+  /// Ignored once [imagePath] is set — the local file is what Save will
+  /// actually upload, so it always wins the display.
+  final String? networkImageUrl;
+
   @override
   Widget build(BuildContext context) {
-    final bool hasPhoto = imagePath != null && imagePath!.isNotEmpty;
+    final bool hasLocalPhoto = imagePath != null && imagePath!.isNotEmpty;
+    final bool hasNetworkPhoto =
+        !hasLocalPhoto &&
+        networkImageUrl != null &&
+        networkImageUrl!.isNotEmpty;
+    final bool hasPhoto = hasLocalPhoto || hasNetworkPhoto;
 
     return SizedBox(
       width: size,
@@ -42,10 +56,12 @@ class StaffPhotoPicker extends StatelessWidget {
               color: context.palette.inkWash,
               borderRadius: BorderRadius.circular(AppRadius.md),
               border: Border.all(
-                color: hasPhoto ? context.palette.redBorder : context.palette.line,
+                color: hasPhoto
+                    ? context.palette.redBorder
+                    : context.palette.line,
               ),
             ),
-            child: hasPhoto
+            child: hasLocalPhoto
                 // A picked file can vanish before the form is saved — a cleared
                 // camera cache, say — so the placeholder stays the fallback
                 // rather than letting the tile throw.
@@ -55,7 +71,22 @@ class StaffPhotoPicker extends StatelessWidget {
                     height: size,
                     fit: BoxFit.cover,
                     errorBuilder:
-                        (BuildContext context, Object error, StackTrace? stack) =>
+                        (
+                          BuildContext context,
+                          Object error,
+                          StackTrace? stack,
+                        ) => const StaffPhotoPlaceholder(),
+                  )
+                : hasNetworkPhoto
+                ? CachedNetworkImage(
+                    imageUrl: networkImageUrl!,
+                    width: size,
+                    height: size,
+                    fit: BoxFit.cover,
+                    placeholder: (BuildContext context, String url) =>
+                        const StaffPhotoPlaceholder(),
+                    errorWidget:
+                        (BuildContext context, String url, Object error) =>
                             const StaffPhotoPlaceholder(),
                   )
                 : const StaffPhotoPlaceholder(),
@@ -134,7 +165,11 @@ class StaffFieldError extends StatelessWidget {
       padding: const EdgeInsets.only(top: 6, left: 2),
       child: Row(
         children: <Widget>[
-          const Icon(Icons.error_outline_rounded, size: 14, color: AppColors.red),
+          const Icon(
+            Icons.error_outline_rounded,
+            size: 14,
+            color: AppColors.red,
+          ),
           const SizedBox(width: 4),
           Expanded(
             child: Text(
@@ -152,11 +187,7 @@ class StaffFieldError extends StatelessWidget {
 /// with nothing selectable. Both are dead ends for the form, so both offer a
 /// retry rather than leaving the user tapping an inert field.
 class StaffBranchLoadError extends StatelessWidget {
-  const StaffBranchLoadError({
-    super.key,
-    required this.message,
-    this.onRetry,
-  });
+  const StaffBranchLoadError({super.key, required this.message, this.onRetry});
 
   final String message;
   final VoidCallback? onRetry;
@@ -192,9 +223,16 @@ class StaffBranchLoadError extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  const Icon(Icons.refresh_rounded, size: 14, color: AppColors.red),
+                  const Icon(
+                    Icons.refresh_rounded,
+                    size: 14,
+                    color: AppColors.red,
+                  ),
                   const SizedBox(width: 3),
-                  Text('Retry', style: context.type.link.copyWith(fontSize: 12)),
+                  Text(
+                    'Retry',
+                    style: context.type.link.copyWith(fontSize: 12),
+                  ),
                 ],
               ),
             ),

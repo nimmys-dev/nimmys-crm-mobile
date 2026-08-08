@@ -19,6 +19,7 @@ import 'package:nimmys_crm/features/preview/screen_catalog_screen.dart';
 import 'package:nimmys_crm/features/reports/reports_screen.dart';
 import 'package:nimmys_crm/features/splash/splash_screen.dart';
 import 'package:nimmys_crm/features/staff/staff_creation_screen.dart';
+import 'package:nimmys_crm/features/staff/staff_details_screen.dart';
 import 'package:nimmys_crm/features/staff/staff_list_screen.dart';
 import 'package:nimmys_crm/routing/app_route_name.dart';
 import 'package:nimmys_crm/routing/route_permissions.dart';
@@ -26,7 +27,7 @@ import 'package:nimmys_crm/utils/app_global_variables.dart';
 import 'package:nimmys_crm/utils/custom_log.dart';
 import 'package:go_router/go_router.dart';
 
-class AppRoutes{
+class AppRoutes {
   AppRoutes._();
 
   /// Single permission gate for the whole app.
@@ -72,7 +73,6 @@ class AppRoutes{
     navigatorKey: navigatorKey,
     redirect: _permissionGuard,
     routes: <RouteBase>[
-
       // Splash
       // Decides between home and signIn once the session check completes.
       GoRoute(
@@ -88,9 +88,7 @@ class AppRoutes{
         builder: (BuildContext context, GoRouterState state) {
           // `go` replaces the login entry: once the token is stored, backing
           // into the form would show a screen the user is already past.
-          return LoginScreen(
-            onSignedIn: () => context.go(AppRouteName.home),
-          );
+          return LoginScreen(onSignedIn: () => context.go(AppRouteName.home));
         },
       ),
 
@@ -127,6 +125,26 @@ class AppRoutes{
         path: AppRouteName.staffCreate,
         builder: (BuildContext context, GoRouterState state) {
           return const StaffCreationScreen();
+        },
+      ),
+      GoRoute(
+        path: AppRouteName.staffDetails,
+        builder: (BuildContext context, GoRouterState state) {
+          final int? id = int.tryParse(state.uri.queryParameters['id'] ?? '');
+          // No id means there is nothing to look up — fall back to the list
+          // rather than build a details screen with nothing to show.
+          return id == null
+              ? const StaffListScreen()
+              : StaffDetailsScreen(staffId: id);
+        },
+      ),
+      GoRoute(
+        path: AppRouteName.staffEdit,
+        builder: (BuildContext context, GoRouterState state) {
+          final int? id = int.tryParse(state.uri.queryParameters['id'] ?? '');
+          return id == null
+              ? const StaffListScreen()
+              : StaffCreationScreen(staffId: id);
         },
       ),
 
@@ -208,9 +226,6 @@ class AppRoutes{
           return const ScreenCatalogScreen();
         },
       ),
-
     ],
   );
-
-
 }

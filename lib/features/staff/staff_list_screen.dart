@@ -8,14 +8,17 @@ import '../../core/auth/app_permission.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/ui_state/ui_state.dart';
 import '../../enum/status.dart';
 import '../../routing/app_route_name.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/app_buttons.dart';
 import '../../shared/widgets/app_gradient_header.dart';
 import '../../shared/widgets/app_section_card.dart';
+import '../../utils/toast_messages.dart';
 import '../authentication/cubit/session/session_cubit.dart';
 import 'cubit/staff/staff_cubit.dart';
+import 'model/delete_staff_model.dart';
 import 'model/staff_list_model.dart';
 
 /// Staff list — every team member, newest first, from `GET /api/staff`.
@@ -82,6 +85,79 @@ class _StaffListScreenState extends State<StaffListScreen> {
     context.push(AppRouteName.staffCreate);
   }
 
+  /// Confirms before calling the API — deleting a staff account is
+  /// permanent, and this is the only confirmation gate it gets.
+  Future<void> _confirmAndDelete(StaffListItem staff) async {
+    final int? id = staff.id;
+    if (id == null) {
+      return;
+    }
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: dialogContext.palette.surface,
+          title: Text(
+            'Delete ${staff.name ?? 'this staff member'}?',
+            style: dialogContext.type.cardTitle,
+          ),
+          content: Text(
+            'This permanently removes their account. This cannot be undone.',
+            style: dialogContext.type.bodyMuted,
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(
+                'Cancel',
+                style: dialogContext.type.link.copyWith(
+                  color: dialogContext.palette.muted,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(
+                'Delete',
+                style: dialogContext.type.link.copyWith(color: AppColors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    await context.read<StaffCubit>().deleteStaff(id);
+  }
+
+  /// Fires once per attempt — the row's own spinner is driven separately by
+  /// `state.deletingStaffId`, this only owns the toast.
+  void _onDeleteStaffStateChanged(BuildContext context, StaffState state) {
+    final UIState<DeleteStaffSuccess>? uiState = state.deleteStaffUIState;
+    switch (uiState?.status) {
+      case Status.SUCCESS:
+        ToastMessages.success(
+          message: uiState?.data?.message ?? 'Staff deleted successfully.',
+        );
+        context.read<StaffCubit>().resetDeleteStaffState();
+      case Status.ERROR:
+        ToastMessages.error(
+          message:
+              uiState?.errorType?.getText(context) ??
+              'Could not delete staff, Please try again later',
+        );
+        context.read<StaffCubit>().resetDeleteStaffState();
+      case Status.LOADING:
+      case Status.INITIAL:
+      case null:
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -91,6 +167,7 @@ class _StaffListScreenState extends State<StaffListScreen> {
       child: BlocBuilder<SessionCubit, SessionState>(
         builder: (BuildContext context, SessionState session) {
           final bool canCreate = session.role.canCreateStaff;
+          final bool canDelete = session.role.canDeleteStaff;
 
           return Scaffold(
             backgroundColor: context.palette.canvas,
@@ -109,15 +186,24 @@ class _StaffListScreenState extends State<StaffListScreen> {
                   ],
                 ),
                 Expanded(
-                  child: BlocBuilder<StaffCubit, StaffState>(
+                  child: BlocConsumer<StaffCubit, StaffState>(
+                    // Everything else this cubit does (list pagination, branch
+                    // loading elsewhere) emits too, and none of it should
+                    // replay the delete toast.
+                    listenWhen: (StaffState previous, StaffState current) =>
+                        previous.deleteStaffUIState?.status !=
+                        current.deleteStaffUIState?.status,
+                    listener: _onDeleteStaffStateChanged,
                     builder: (BuildContext context, StaffState state) {
                       return _StaffListBody(
                         state: state,
                         canCreate: canCreate,
+                        canDelete: canDelete,
                         scrollController: _scrollController,
                         onRefresh: _refresh,
                         onCreate: _openCreateStaff,
                         onRetry: _refresh,
+                        onDelete: _confirmAndDelete,
                       );
                     },
                   ),
@@ -140,18 +226,22 @@ class _StaffListBody extends StatelessWidget {
   const _StaffListBody({
     required this.state,
     required this.canCreate,
+    required this.canDelete,
     required this.scrollController,
     required this.onRefresh,
     required this.onCreate,
     required this.onRetry,
+    required this.onDelete,
   });
 
   final StaffState state;
   final bool canCreate;
+  final bool canDelete;
   final ScrollController scrollController;
   final Future<void> Function() onRefresh;
   final VoidCallback onCreate;
   final Future<void> Function() onRetry;
+  final Future<void> Function(StaffListItem staff) onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -221,7 +311,17 @@ class _StaffListBody extends StatelessWidget {
               hasMore: state.staffPagination?.hasNextPage ?? false,
             );
           }
-          return StaffListTile(staff: staff[index - 1]);
+          final StaffListItem item = staff[index - 1];
+          return StaffListTile(
+            staff: item,
+            onTap: item.id == null
+                ? null
+                : () => context.push(AppRouteName.staffDetailsFor(item.id!)),
+            onDelete: canDelete && item.id != null
+                ? () => onDelete(item)
+                : null,
+            isDeleting: item.id != null && state.deletingStaffId == item.id,
+          );
         },
       ),
     );
@@ -256,10 +356,25 @@ class StaffListCount extends StatelessWidget {
 
 /// One staff member.
 class StaffListTile extends StatelessWidget {
-  const StaffListTile({super.key, required this.staff, this.onTap});
+  const StaffListTile({
+    super.key,
+    required this.staff,
+    this.onTap,
+    this.onDelete,
+    this.isDeleting = false,
+  });
 
   final StaffListItem staff;
   final VoidCallback? onTap;
+
+  /// Null hides the delete button entirely — used both when the signed-in
+  /// role cannot delete staff and when the row has no id to delete by.
+  final VoidCallback? onDelete;
+
+  /// True while this specific row's delete is in flight. A separate flag
+  /// rather than a shared loading bool because only one row at a time is ever
+  /// deleting — see `StaffState.deletingStaffId`.
+  final bool isDeleting;
 
   @override
   Widget build(BuildContext context) {
@@ -334,7 +449,63 @@ class StaffListTile extends StatelessWidget {
                   ],
                 ),
               ),
+              if (onDelete != null) ...<Widget>[
+                const SizedBox(width: AppSpacing.xs),
+                StaffDeleteButton(
+                  isDeleting: isDeleting,
+                  onPressed: isDeleting ? null : onDelete,
+                ),
+              ],
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Trailing delete action on [StaffListTile]. Same circular-icon-button shape
+/// used across the app (see `LeadCallButton`), swapped for a small spinner
+/// while [isDeleting].
+class StaffDeleteButton extends StatelessWidget {
+  const StaffDeleteButton({
+    super.key,
+    required this.isDeleting,
+    this.onPressed,
+    this.size = 36,
+  });
+
+  final bool isDeleting;
+  final VoidCallback? onPressed;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: context.palette.redWash,
+      shape: CircleBorder(side: BorderSide(color: context.palette.redBorder)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onPressed,
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Center(
+            child: isDeleting
+                ? SizedBox(
+                    width: size * 0.4,
+                    height: size * 0.4,
+                    child: const CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.red),
+                    ),
+                  )
+                : const Icon(
+                    Icons.delete_outline_rounded,
+                    size: 18,
+                    color: AppColors.red,
+                  ),
           ),
         ),
       ),

@@ -6,7 +6,10 @@ import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/ui_state/ui_state.dart';
 import 'package:nimmys_crm/enum/status.dart';
 import 'package:nimmys_crm/features/staff/api_request/create_staff_api_request.dart';
+import 'package:nimmys_crm/features/staff/api_request/update_staff_api_request.dart';
 import 'package:nimmys_crm/features/staff/model/create_staffsuccess_model.dart';
+import 'package:nimmys_crm/features/staff/model/delete_staff_model.dart';
+import 'package:nimmys_crm/features/staff/model/staff_details_model.dart';
 import 'package:nimmys_crm/features/staff/model/staff_list_model.dart';
 import 'package:nimmys_crm/features/staff/model/store_success_model.dart';
 import 'package:nimmys_crm/features/staff/model/user_role_model.dart';
@@ -17,9 +20,8 @@ class StaffCubit extends BaseCubit<StaffState> {
   final StaffRepository _repository;
   StaffCubit(this._repository) : super(const StaffState());
 
-
   // Branches Api Call
-  void _setBranchesUIState(UIState<StoreModelSuccess>? uiState){
+  void _setBranchesUIState(UIState<StoreModelSuccess>? uiState) {
     emit(state.copyWith(branchesUIState: uiState));
   }
 
@@ -40,9 +42,8 @@ class StaffCubit extends BaseCubit<StaffState> {
     }
   }
 
-
   // User Roles Api Call
-  void _setUserRolesUIState(UIState<UserRoleSuccess>? uiState){
+  void _setUserRolesUIState(UIState<UserRoleSuccess>? uiState) {
     emit(state.copyWith(userRolesUIState: uiState));
   }
 
@@ -62,7 +63,6 @@ class StaffCubit extends BaseCubit<StaffState> {
       _setUserRolesUIState(UIState.error(result.type));
     }
   }
-
 
   // Staff List Api Call
   //
@@ -87,12 +87,14 @@ class StaffCubit extends BaseCubit<StaffState> {
       perPage: _pageSize,
     );
     if (result is Success<StaffListSuccess>) {
-      emit(state.copyWith(
-        staffListUIState: UIState.success(result.value),
-        staffList: result.value.data,
-        staffPagination: result.value.pagination,
-        isLoadingMoreStaff: false,
-      ));
+      emit(
+        state.copyWith(
+          staffListUIState: UIState.success(result.value),
+          staffList: result.value.data,
+          staffPagination: result.value.pagination,
+          isLoadingMoreStaff: false,
+        ),
+      );
     }
     // `Error<StaffListSuccess>`, not a bare `Error`: a `Result<StaffListSuccess>`
     // is not a subtype of `Error<dynamic>`, so the bare form never promotes and
@@ -120,22 +122,23 @@ class StaffCubit extends BaseCubit<StaffState> {
       perPage: _pageSize,
     );
     if (result is Success<StaffListSuccess>) {
-      emit(state.copyWith(
-        // A new list instance, not an in-place add: Equatable compares the
-        // contents, so mutating the existing one would emit a state the UI
-        // considers unchanged.
-        staffList: <StaffListItem>[...state.staffList, ...result.value.data],
-        staffPagination: result.value.pagination,
-        isLoadingMoreStaff: false,
-      ));
+      emit(
+        state.copyWith(
+          // A new list instance, not an in-place add: Equatable compares the
+          // contents, so mutating the existing one would emit a state the UI
+          // considers unchanged.
+          staffList: <StaffListItem>[...state.staffList, ...result.value.data],
+          staffPagination: result.value.pagination,
+          isLoadingMoreStaff: false,
+        ),
+      );
       return;
     }
     emit(state.copyWith(isLoadingMoreStaff: false));
   }
 
-
   // Create Staff Api Call
-  void _setCreateStaffUIState(UIState<CreateStaffSuccess>? uiState){
+  void _setCreateStaffUIState(UIState<CreateStaffSuccess>? uiState) {
     emit(state.copyWith(createStaffUIState: uiState));
   }
 
@@ -170,7 +173,113 @@ class StaffCubit extends BaseCubit<StaffState> {
   /// singleton, so without this the loaded branches would be the only thing
   /// worth keeping between visits.
   void resetCreateStaffState() {
-    _setCreateStaffUIState(resetUIState<CreateStaffSuccess>(state.createStaffUIState));
+    _setCreateStaffUIState(
+      resetUIState<CreateStaffSuccess>(state.createStaffUIState),
+    );
+  }
+
+  // View Staff Api Call
+  void _setStaffDetailsUIState(UIState<StaffDetailsSuccess>? uiState) {
+    emit(state.copyWith(staffDetailsUIState: uiState));
+  }
+
+  /// Always fetches fresh — no "already loaded" guard, unlike branches/roles.
+  /// This is a per-record view: the id changes between visits, and a guard
+  /// keyed only on "is something loaded" would show a previously viewed staff
+  /// member's data while a different one's request is in flight.
+  Future<void> getStaffDetails(int id) async {
+    _setStaffDetailsUIState(UIState.loading());
+    Result result = await _repository.getStaffDetails(id);
+    if (result is Success<StaffDetailsSuccess>) {
+      _setStaffDetailsUIState(UIState.success(result.value));
+    }
+    if (result is Error) {
+      _setStaffDetailsUIState(UIState.error(result.type));
+    }
+  }
+
+  void resetStaffDetailsState() {
+    _setStaffDetailsUIState(
+      resetUIState<StaffDetailsSuccess>(state.staffDetailsUIState),
+    );
+  }
+
+  // Update Staff Api Call
+  void _setUpdateStaffUIState(UIState<StaffDetailsSuccess>? uiState) {
+    emit(state.copyWith(updateStaffUIState: uiState));
+  }
+
+  Future<void> updateStaff(int id, UpdateStaffApiRequest request) async {
+    if (state.updateStaffUIState?.status == Status.LOADING) {
+      return;
+    }
+    _setUpdateStaffUIState(UIState.loading());
+    Result result = await _repository.updateStaff(id, request);
+    if (result is Success<StaffDetailsSuccess>) {
+      _setUpdateStaffUIState(UIState.success(result.value));
+      // Same reasoning as createStaff: whichever screen the user lands back
+      // on after saving should already show the edited name/role/status.
+      unawaited(getStaffList(refresh: true));
+    }
+    if (result is Error) {
+      _setUpdateStaffUIState(UIState.error(result.type));
+    }
+  }
+
+  void resetUpdateStaffState() {
+    _setUpdateStaffUIState(
+      resetUIState<StaffDetailsSuccess>(state.updateStaffUIState),
+    );
+  }
+
+  // Delete Staff Api Call
+  void _setDeleteStaffUIState(UIState<DeleteStaffSuccess>? uiState) {
+    emit(state.copyWith(deleteStaffUIState: uiState));
+  }
+
+  /// `state.deletingStaffId` is what a specific row reads to show its own
+  /// spinner — the shared `deleteStaffUIState` alone cannot say *which* staff
+  /// member is mid-delete when the list has several rows on screen.
+  Future<void> deleteStaff(int id) async {
+    // One delete at a time — also the guard against a double tap on the same
+    // row landing between the tap and the button disabling.
+    if (state.deletingStaffId != null) {
+      return;
+    }
+    emit(
+      state.copyWith(
+        deletingStaffId: id,
+        deleteStaffUIState: UIState.loading(),
+      ),
+    );
+    Result result = await _repository.deleteStaff(id);
+    if (result is Success<DeleteStaffSuccess>) {
+      emit(
+        state.copyWith(
+          deleteStaffUIState: UIState.success(result.value),
+          clearDeletingStaffId: true,
+        ),
+      );
+      // Same reasoning as create/update: whichever screen is showing the list
+      // next should already be missing the deleted row, not carrying it until
+      // something else happens to trigger a reload.
+      unawaited(getStaffList(refresh: true));
+      return;
+    }
+    if (result is Error) {
+      emit(
+        state.copyWith(
+          deleteStaffUIState: UIState.error(result.type),
+          clearDeletingStaffId: true,
+        ),
+      );
+    }
+  }
+
+  void resetDeleteStaffState() {
+    _setDeleteStaffUIState(
+      resetUIState<DeleteStaffSuccess>(state.deleteStaffUIState),
+    );
   }
 
   /// Called on sign-out. Branches are scoped to the account that fetched them,
@@ -179,5 +288,4 @@ class StaffCubit extends BaseCubit<StaffState> {
   void resetStaffState() {
     emit(const StaffState());
   }
-
 }

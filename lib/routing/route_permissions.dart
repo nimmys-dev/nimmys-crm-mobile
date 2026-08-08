@@ -17,6 +17,8 @@ class RoutePermissions {
   static const Map<String, AppPermission> _required = <String, AppPermission>{
     AppRouteName.staffList: AppPermission.viewStaff,
     AppRouteName.staffCreate: AppPermission.createStaff,
+    AppRouteName.staffDetails: AppPermission.viewStaff,
+    AppRouteName.staffEdit: AppPermission.editStaff,
     AppRouteName.taskCreate: AppPermission.createTask,
     // Adding a recurring duty is creating work for someone else, which is the
     // same right as creating a task.

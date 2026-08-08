@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
 import '../../shared/widgets/app_avatar.dart';
-import '../../shared/widgets/app_bottom_nav.dart';
 import '../../shared/widgets/app_buttons.dart';
 import '../../shared/widgets/app_form_field.dart';
 import '../../shared/widgets/app_gradient_header.dart';
@@ -72,7 +71,6 @@ class _TodaysFollowUpScreenState extends State<TodaysFollowUpScreen> {
 
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
-  int _navIndex = 0;
 
   List<FollowUpEntry> get _visibleEntries {
     if (_query.trim().isEmpty) {
@@ -149,32 +147,6 @@ class _TodaysFollowUpScreenState extends State<TodaysFollowUpScreen> {
           ],
         ),
         floatingActionButton: const FollowUpFab(),
-        bottomNavigationBar: AppBottomNav(
-          items: const <AppNavItem>[
-            AppNavItem(
-              label: 'Followup',
-              icon: Icons.list_alt_outlined,
-              activeIcon: Icons.list_alt_rounded,
-            ),
-            AppNavItem(
-              label: 'Calendar',
-              icon: Icons.calendar_month_outlined,
-              activeIcon: Icons.calendar_month_rounded,
-            ),
-            AppNavItem(
-              label: 'Contacts',
-              icon: Icons.groups_outlined,
-              activeIcon: Icons.groups_rounded,
-            ),
-            AppNavItem(
-              label: 'Reports',
-              icon: Icons.bar_chart_outlined,
-              activeIcon: Icons.bar_chart_rounded,
-            ),
-          ],
-          currentIndex: _navIndex,
-          onTap: (int index) => setState(() => _navIndex = index),
-        ),
       ),
     );
   }

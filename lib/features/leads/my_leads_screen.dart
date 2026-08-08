@@ -14,6 +14,7 @@ import '../../shared/widgets/app_search_field.dart';
 import '../../shared/widgets/app_section_card.dart';
 import '../../shared/widgets/app_segmented_tabs.dart';
 import 'domain/entities/lead.dart';
+import 'widgets/lead_contact_actions.dart';
 
 /// My Leads — the enquiries assigned to the signed-in user.
 ///
@@ -44,6 +45,13 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
       source: LeadSource.instagram,
       requiredItems: 'Sigma 85mm Lens',
       nextFollowUpAt: _daysAgo(0),
+      quotation: const LeadQuotation(
+        customerAddress: 'Marine Drive, Kochi, Ernakulam 682031',
+        items: <QuotationItem>[
+          QuotationItem(item: 'Sigma 85mm 1:4 Lens', quantity: 2, rate: 74500),
+          QuotationItem(item: 'Lens Cleaning Kit', quantity: 3, rate: 1250),
+        ],
+      ),
     ),
     Lead(
       id: '2',
@@ -72,6 +80,16 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
       createdAt: _daysAgo(9),
       source: LeadSource.facebook,
       requiredItems: 'Mac Mini M4',
+      quotation: const LeadQuotation(
+        customerAddress: 'Kanjikuzhi, Kottayam 686004',
+        items: <QuotationItem>[
+          QuotationItem(
+            item: 'Mac Mini M4 (16GB / 512GB)',
+            quantity: 1,
+            rate: 89900,
+          ),
+        ],
+      ),
     ),
     Lead(
       id: '5',
@@ -317,14 +335,16 @@ class MyLeadTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.xs),
-              // The one action worth a tap of its own from a list: the whole
-              // point of a lead row is ringing the customer back.
-              IconButton(
-                onPressed: onCall,
-                icon: const Icon(Icons.call_rounded, size: 19),
-                color: AppColors.red,
-                tooltip: 'Call ${lead.name}',
-                splashRadius: 20,
+              // The same cluster the follow-up list uses — WhatsApp, share
+              // quotation, call — so a lead offers the identical actions
+              // wherever it is shown. The quotation button appears only on
+              // leads that actually have one.
+              LeadContactActions(
+                name: lead.name,
+                mobile: lead.mobile,
+                enquiry: lead.requiredItems,
+                quotation: lead.quotation,
+                onCall: onCall,
               ),
             ],
           ),

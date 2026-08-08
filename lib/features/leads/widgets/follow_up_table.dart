@@ -1,19 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimens.dart';
-import '../../../core/utils/phone_dialer.dart';
-import '../../../core/utils/whatsapp_launcher.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../domain/entities/lead.dart';
-import '../utils/quotation_pdf.dart';
-
-/// WhatsApp's own green. Kept here rather than on [AppColors], which is for
-/// NIMMYS' brand anchors — this is another company's mark, used only so the
-/// action is recognisable on sight.
-const Color kWhatsAppGreen = Color(0xFF25D366);
+import 'lead_contact_actions.dart';
 
 /// One row of the follow-up list.
 class FollowUpEntry {
@@ -273,8 +265,11 @@ class FollowUpTableRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.xs),
-            FollowUpRowActions(
-              entry: entry,
+            LeadContactActions(
+              name: entry.name,
+              mobile: entry.mobile,
+              enquiry: entry.requiredItems,
+              quotation: entry.quotation,
               onCall: onCall,
               onWhatsApp: onWhatsApp,
               onSendQuotation: onSendQuotation,
@@ -319,238 +314,6 @@ class FollowUpMetaChip extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// The action cluster at the end of a follow-up row.
-///
-/// WhatsApp, then Send Quotation, then Call — the two new actions sit to the
-/// left of the call button, which keeps its red treatment and its behaviour.
-/// Send Quotation is absent, not disabled, on a lead with no quotation: a
-/// dead button on every second row is noise, and the row already tells the
-/// user nothing was quoted.
-class FollowUpRowActions extends StatelessWidget {
-  const FollowUpRowActions({
-    super.key,
-    required this.entry,
-    this.onCall,
-    this.onWhatsApp,
-    this.onSendQuotation,
-    this.spacing = 6,
-  });
-
-  final FollowUpEntry entry;
-  final VoidCallback? onCall;
-  final VoidCallback? onWhatsApp;
-  final VoidCallback? onSendQuotation;
-  final double spacing;
-
-  /// "Sigma 85mm Lens." reads badly mid-sentence, so the trailing stop goes.
-  String get _enquiry =>
-      entry.requiredItems.trim().replaceAll(RegExp(r'\.+$'), '');
-
-  String get _greeting => _enquiry.isEmpty
-      ? 'Hi ${entry.name}, following up on your enquiry.'
-      : 'Hi ${entry.name}, following up on your enquiry for $_enquiry.';
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        if (entry.hasQuotation) ...<Widget>[
-          FollowUpActionButton(
-            // Neutral fill so the red glyph reads as "PDF" without competing
-            // with the red-filled call button beside it.
-            icon: const Icon(
-              Icons.picture_as_pdf_rounded,
-              size: 18,
-              color: AppColors.red,
-            ),
-            badge: const FollowUpActionBadge(icon: Icons.share_rounded),
-            semanticLabel: 'Send quotation PDF to ${entry.name}',
-            tooltip: 'Share quotation PDF',
-            onPressed:
-                onSendQuotation ??
-                () => QuotationPdf.share(
-                  context,
-                  customerName: entry.name,
-                  mobile: entry.mobile,
-                  quotation: entry.quotation!,
-                ),
-          ),
-          SizedBox(width: spacing),
-        ],
-        FollowUpActionButton(
-          // A shade larger than the Material glyphs beside it: the brand mark
-          // is drawn tighter, so it needs the extra to match their weight.
-          icon: const FaIcon(
-            FontAwesomeIcons.whatsapp,
-            size: 20,
-            color: kWhatsAppGreen,
-          ),
-          fill: kWhatsAppGreen.withValues(alpha: 0.12),
-          border: kWhatsAppGreen.withValues(alpha: 0.32),
-          semanticLabel: 'WhatsApp ${entry.name}',
-          tooltip: 'WhatsApp message',
-          onPressed:
-              onWhatsApp ??
-              () => WhatsAppLauncher.openChat(
-                context,
-                entry.mobile,
-                message: _greeting,
-              ),
-        ),
-        SizedBox(width: spacing),
-
-        FollowUpCallButton(
-          name: entry.name,
-          mobile: entry.mobile,
-          onPressed: onCall,
-        ),
-      ],
-    );
-  }
-}
-
-/// Round button used by the secondary row actions.
-///
-/// Same circle and size as [FollowUpCallButton] so the three actions read as
-/// one set, but each carries its own tint: WhatsApp green for the chat, brand
-/// red for the quotation PDF. The call button stays the only *filled* red
-/// one, so the row's primary action is still obvious at a glance.
-class FollowUpActionButton extends StatelessWidget {
-  const FollowUpActionButton({
-    super.key,
-    required this.icon,
-    required this.semanticLabel,
-    this.fill,
-    this.border,
-    this.badge,
-    this.tooltip,
-    this.onPressed,
-    this.size = 38,
-  });
-
-  /// The glyph, already sized and tinted. A widget rather than an `IconData`
-  /// because the WhatsApp mark comes from Font Awesome, whose icons are not
-  /// square and so ship their own `FaIcon` renderer.
-  final Widget icon;
-
-  final String semanticLabel;
-  final Color? fill;
-  final Color? border;
-
-  /// Small overlay in the bottom-right corner — the share mark on the PDF
-  /// button. Sits outside the clipped circle, so it is not cut off.
-  final Widget? badge;
-
-  final String? tooltip;
-  final VoidCallback? onPressed;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    Widget button = Material(
-      color: fill ?? context.palette.inkWash,
-      shape: CircleBorder(
-        side: BorderSide(color: border ?? context.palette.inkBorder),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onPressed,
-        customBorder: const CircleBorder(),
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: Center(child: icon),
-        ),
-      ),
-    );
-
-    if (badge != null) {
-      button = Stack(
-        clipBehavior: Clip.none,
-        children: <Widget>[
-          button,
-          // Pushed just past the circle's edge so it sits in the corner the
-          // glyph does not use, rather than on top of it.
-          Positioned(right: -2, bottom: -2, child: badge!),
-        ],
-      );
-    }
-
-    button = Semantics(button: true, label: semanticLabel, child: button);
-
-    return tooltip == null ? button : Tooltip(message: tooltip!, child: button);
-  }
-}
-
-/// The little share mark that rides on the corner of the quotation button.
-class FollowUpActionBadge extends StatelessWidget {
-  const FollowUpActionBadge({super.key, required this.icon, this.size = 14});
-
-  final IconData icon;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: AppColors.red,
-        shape: BoxShape.circle,
-        // Ringed in the card colour so the badge separates from the button
-        // underneath it in both themes.
-        border: Border.all(color: context.palette.surface, width: 1.5),
-      ),
-      child: Icon(icon, size: size * 0.56, color: AppColors.white),
-    );
-  }
-}
-
-/// Round red call button at the end of a follow-up row.
-class FollowUpCallButton extends StatelessWidget {
-  const FollowUpCallButton({
-    super.key,
-    required this.name,
-    required this.mobile,
-    this.onPressed,
-    this.size = 38,
-  });
-
-  final String name;
-  final String mobile;
-
-  /// Null falls back to [PhoneDialer.call] with [mobile].
-  final VoidCallback? onPressed;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'Call $name',
-      child: Material(
-        color: context.palette.redWash,
-        shape: CircleBorder(side: BorderSide(color: context.palette.redBorder)),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onPressed ?? () => PhoneDialer.call(context, mobile),
-          customBorder: const CircleBorder(),
-          child: SizedBox(
-            width: size,
-            height: size,
-            child: Icon(
-              Icons.call_rounded,
-              size: size * 0.47,
-              color: AppColors.red,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

@@ -135,12 +135,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     icon: Icons.home_outlined,
     activeIcon: Icons.home_rounded,
   );
-  static final AppNavItem _dutyNav = AppNavItem(
-    label: 'My Duty',
-    icon: Icons.assignment_outlined,
-    activeIcon: Icons.assignment_rounded,
-    route: AppRouteName.dutiesFiltered('today'),
-  );
   static const AppNavItem _leadsNav = AppNavItem(
     label: 'Leads',
     icon: Icons.groups_outlined,
@@ -160,15 +154,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     route: AppRouteName.reports,
   );
 
-  /// Destinations the role can actually reach. Reports is the org-wide
-  /// performance view, so it follows the full-dashboard permission; duties and
-  /// leads stay for everyone because both scope themselves to "mine" for an
-  /// employee. Staff is admin/manager only — it is the one destination here
-  /// that currently has a screen behind it.
+  /// Destinations the role can actually reach.
+  ///
+  /// Duties are deliberately absent for every role: the three duty tiles on the
+  /// dashboard already open the same list, and a nav item pointing at a screen
+  /// the page above it also links to is a second door onto one room. Leads
+  /// stays because it scopes itself to "mine" for an employee; Reports follows
+  /// the full-dashboard permission; Staff is admin/manager only.
   static List<AppNavItem> _navItemsFor(UserRole role) {
     return <AppNavItem>[
       _dashboardNav,
-      if (role.canViewTasks) _dutyNav,
       if (role.canViewLeads) _leadsNav,
       if (role.canAccessStaff) _staffNav,
       if (role.hasFullDashboard) _reportsNav,
