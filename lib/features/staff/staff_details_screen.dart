@@ -108,6 +108,7 @@ class _StaffDetailsScreenState extends State<StaffDetailsScreen> {
                     },
                   ),
                 ),
+                SizedBox(height: MediaQuery.of(context).padding.bottom),
               ],
             ),
           );

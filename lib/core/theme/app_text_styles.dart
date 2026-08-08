@@ -104,10 +104,10 @@ class AppTypography extends ThemeExtension<AppTypography> {
         height: 1.4,
       ),
       bodyMuted: GoogleFonts.montserrat(
-        fontSize: 12.5,
+        fontSize: 10.5,
         fontWeight: FontWeight.w500,
         color: palette.slate,
-        height: 1.4,
+        height: 1.1,
       ),
       caption: GoogleFonts.montserrat(
         fontSize: 11.5,

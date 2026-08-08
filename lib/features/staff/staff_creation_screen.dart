@@ -755,18 +755,6 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
                               onPressed: isSubmitting ? null : _handleSave,
                             ),
                             const SizedBox(height: AppSpacing.md),
-                            AppSectionCard(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: <Widget>[
-                                  const AppSectionHeader(
-                                    title: 'Increment History',
-                                  ),
-                                  const SizedBox(height: AppSpacing.sm),
-                                  IncrementHistoryTable(records: _history),
-                                ],
-                              ),
-                            ),
                           ],
                         ),
                 ),

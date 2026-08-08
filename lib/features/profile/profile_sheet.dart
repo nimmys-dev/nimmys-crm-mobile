@@ -330,20 +330,30 @@ class ProfileDetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String? shown = value;
+    final String shown = value ?? '';
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Icon(icon, size: 18, color: context.palette.muted),
           const SizedBox(width: AppSpacing.sm),
-          Text(label, style: context.type.bodyMuted),
-          const Spacer(),
-          Flexible(
+
+          // Fixed label area
+          SizedBox(
+            width: 110,
+            child: Text(label, style: context.type.bodyMuted),
+          ),
+
+          const SizedBox(width: 12),
+
+          // Value
+          Expanded(
             child: Text(
-              (shown == null || shown.isEmpty) ? '—' : shown,
-              textAlign: TextAlign.right,
-              maxLines: 1,
+              shown.isEmpty ? '—' : shown,
+              textAlign: TextAlign.left,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: context.type.body.copyWith(fontWeight: FontWeight.w700),
             ),
