@@ -2,16 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:nimmys_crm/core/auth/app_permission.dart';
 import 'package:nimmys_crm/core/auth/user_role.dart';
 import 'package:nimmys_crm/dependency_injection/locator.dart';
+import 'package:nimmys_crm/features/approvals/approvals_screen.dart';
 import 'package:nimmys_crm/features/authentication/access_denied_screen.dart';
 import 'package:nimmys_crm/features/authentication/cubit/session/session_cubit.dart';
 import 'package:nimmys_crm/features/authentication/login_screen.dart';
 import 'package:nimmys_crm/features/dashboard/dashboard_screen.dart';
 import 'package:nimmys_crm/features/duties/add_duty_screen.dart';
 import 'package:nimmys_crm/features/duties/create_task_screen.dart';
+import 'package:nimmys_crm/features/duties/domain/entities/duty_item.dart';
+import 'package:nimmys_crm/features/duties/duty_list_screen.dart';
 import 'package:nimmys_crm/features/leads/lead_details_screen.dart';
+import 'package:nimmys_crm/features/leads/my_leads_screen.dart';
 import 'package:nimmys_crm/features/leads/new_lead_screen.dart';
 import 'package:nimmys_crm/features/leads/todays_follow_up_screen.dart';
 import 'package:nimmys_crm/features/preview/screen_catalog_screen.dart';
+import 'package:nimmys_crm/features/reports/reports_screen.dart';
 import 'package:nimmys_crm/features/splash/splash_screen.dart';
 import 'package:nimmys_crm/features/staff/staff_creation_screen.dart';
 import 'package:nimmys_crm/features/staff/staff_list_screen.dart';
@@ -126,6 +131,20 @@ class AppRoutes{
       ),
 
       // Duties / Tasks
+      //
+      // One list screen for today / overdue / upcoming, opened on the tab named
+      // by `?filter=` — see DutyFilter. Three routes onto three near-identical
+      // screens would be three copies to keep in step.
+      GoRoute(
+        path: AppRouteName.duties,
+        builder: (BuildContext context, GoRouterState state) {
+          return DutyListScreen(
+            initialFilter: DutyFilter.fromWire(
+              state.uri.queryParameters['filter'],
+            ),
+          );
+        },
+      ),
       GoRoute(
         path: AppRouteName.taskCreate,
         builder: (BuildContext context, GoRouterState state) {
@@ -140,6 +159,12 @@ class AppRoutes{
       ),
 
       // Leads
+      GoRoute(
+        path: AppRouteName.leads,
+        builder: (BuildContext context, GoRouterState state) {
+          return const MyLeadsScreen();
+        },
+      ),
       GoRoute(
         path: AppRouteName.leadNew,
         builder: (BuildContext context, GoRouterState state) {
@@ -156,6 +181,22 @@ class AppRoutes{
         path: AppRouteName.followUpToday,
         builder: (BuildContext context, GoRouterState state) {
           return const TodaysFollowUpScreen();
+        },
+      ),
+
+      // Approvals
+      GoRoute(
+        path: AppRouteName.approvals,
+        builder: (BuildContext context, GoRouterState state) {
+          return const ApprovalsScreen();
+        },
+      ),
+
+      // Reports
+      GoRoute(
+        path: AppRouteName.reports,
+        builder: (BuildContext context, GoRouterState state) {
+          return const ReportsScreen();
         },
       ),
 

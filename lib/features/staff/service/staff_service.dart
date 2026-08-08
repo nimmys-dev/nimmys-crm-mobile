@@ -5,6 +5,7 @@ import 'package:nimmys_crm/features/staff/api_request/create_staff_api_request.d
 import 'package:nimmys_crm/features/staff/model/create_staffsuccess_model.dart';
 import 'package:nimmys_crm/features/staff/model/staff_list_model.dart';
 import 'package:nimmys_crm/features/staff/model/store_success_model.dart';
+import 'package:nimmys_crm/features/staff/model/user_role_model.dart';
 
 class StaffService {
   final ApiService _apiService;
@@ -22,6 +23,29 @@ class StaffService {
         return await _apiService.getResponseStatus<StoreModelSuccess>(
           result.value,
           (json) => StoreModelSuccess.fromJson(json),
+        );
+      } else if (result is Error) {
+        return Error(result.type);
+      } else {
+        return Error(GenericError());
+      }
+    } catch (e) {
+      return Error(DeserializationError());
+    }
+  }
+
+  // User Roles Service
+  //
+  // GET /api/user-roles. Supplies both halves of each role — the label the
+  // picker shows and the value Create Staff sends — so neither is hard-coded.
+  Future<Result<UserRoleSuccess>> getUserRoles() async {
+    try {
+      final url = ApiUrls.userRoles;
+      final result = await _apiService.get(url);
+      if (result is Success) {
+        return await _apiService.getResponseStatus<UserRoleSuccess>(
+          result.value,
+          (json) => UserRoleSuccess.fromJson(json),
         );
       } else if (result is Error) {
         return Error(result.type);

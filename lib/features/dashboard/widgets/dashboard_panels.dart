@@ -13,6 +13,7 @@ class DashboardTotalsCard extends StatelessWidget {
     super.key,
     required this.yourLeads,
     required this.totalLeads,
+    this.onTap,
   });
 
   final String yourLeads;
@@ -20,8 +21,24 @@ class DashboardTotalsCard extends StatelessWidget {
   /// Null hides the second half of the panel entirely.
   final String? totalLeads;
 
+  /// Opens the leads list. Null leaves the panel as a read-only summary, which
+  /// is how the reports screen uses it.
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
+    final Widget panel = _buildPanel(context);
+    if (onTap == null) {
+      return panel;
+    }
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: panel,
+    );
+  }
+
+  Widget _buildPanel(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,

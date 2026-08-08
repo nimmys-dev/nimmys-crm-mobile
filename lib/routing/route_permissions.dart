@@ -26,6 +26,11 @@ class RoutePermissions {
     // *whose* leads these are is the backend's call, not the router's.
     AppRouteName.leadDetails: AppPermission.viewOwnLeads,
     AppRouteName.followUpToday: AppPermission.viewOwnFollowUps,
+    // Both are reached from dashboard components that are already role-gated —
+    // the "Approval Pending" counter and the Report card. Guarding the routes
+    // too keeps the tile and its destination from ever disagreeing.
+    AppRouteName.approvals: AppPermission.viewApprovals,
+    AppRouteName.reports: AppPermission.viewDashboardFull,
   };
 
   /// The permission [location] needs, or null when the route is open.

@@ -28,8 +28,8 @@ import '../../utils/validator.dart';
 import 'api_request/create_staff_api_request.dart';
 import 'cubit/staff/staff_cubit.dart';
 import 'model/create_staffsuccess_model.dart';
-import 'model/staff_role.dart';
 import 'model/store_success_model.dart';
+import 'model/user_role_model.dart';
 import 'widgets/staff_widgets.dart';
 
 /// Staff Creation — personal profile plus employment and increment settings.
@@ -80,7 +80,10 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
   /// The whole branch record, not its name: `shop_id` is what the API wants and
   /// two shops are free to share a display name.
   StoreResponseData? _branch;
-  String? _role;
+
+  /// The whole role record, not its label: `role` sends `value` ("manager")
+  /// while the picker shows `label` ("Manager").
+  UserRoleOption? _role;
   DateTime? _joiningDate;
   DateTime? _nextIncrementDate;
   bool _incrementReminder = true;
@@ -108,7 +111,8 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
       if (mounted) {
         context.read<StaffCubit>()
           ..resetCreateStaffState()
-          ..getBranches();
+          ..getBranches()
+          ..getUserRoles();
       }
     });
   }
@@ -193,7 +197,7 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
       _confirmPasswordError =
           confirmPassword.isEmpty ? 'Confirm password is required' : null;
       _branchError = _branch?.id == null ? 'Branch is required' : null;
-      _roleError = _role == null ? 'Role is required' : null;
+      _roleError = _role?.value == null ? 'Role is required' : null;
       _joiningDateError = _joiningDate == null ? 'Joining date is required' : null;
       // Required, and actually a number: the field takes a numeric keyboard but
       // a paste can still leave text behind, and `salary` is `numeric` on the
@@ -244,7 +248,7 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
       password: _passwordController.text,
       passwordConfirmation: _confirmPasswordController.text,
       shopId: _branch!.id!,
-      role: StaffRoles.apiValue(_role),
+      role: _role!.value!,
       joiningDate: DateTimeHelper.getApiDateFormat(_joiningDate!),
       salary: _amountForApi(_salaryController.text.trim()),
       incrementNotification: _incrementReminder,
@@ -267,6 +271,9 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
   /// state afterwards so the singleton cubit does not replay it on the next
   /// visit — or, on failure, keep the Save button spinning.
   void _onCreateStaffStateChanged(BuildContext context, StaffState state) {
+    if (!mounted) {
+      return;
+    }
     final UIState<CreateStaffSuccess>? uiState = state.createStaffUIState;
     switch (uiState?.status) {
       case Status.SUCCESS:
@@ -277,12 +284,17 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
         context.read<StaffCubit>().resetCreateStaffState();
         if (widget.onStaffCreated != null) {
           widget.onStaffCreated!.call(response);
-        } else if (Navigator.of(context).canPop()) {
-          // Back to whatever opened this — normally the staff list, which the
-          // cubit has already put a refresh in flight for. The whole response
-          // rather than just `data`: it is never null on success, so a caller
-          // can treat "popped something" as "a staff member was created".
-          Navigator.of(context).pop(response);
+        } else if (context.canPop()) {
+          // GoRouter's pop, not the Navigator's: this screen was pushed with
+          // `context.push`, and popping the raw Navigator underneath GoRouter
+          // leaves its route stack believing `/staff/create` is still up. The
+          // next back gesture then runs `willPop()` against a scope that has
+          // already been disposed — the `'scope != null'` assertion.
+          //
+          // The whole response rather than just `data`: it is never null on
+          // success, so a caller can treat "popped something" as "a staff
+          // member was created".
+          context.pop(response);
         } else {
           // Opened directly — a deep link, or a route restored on relaunch —
           // so there is nothing to go back to. Land on the list rather than on
@@ -340,6 +352,25 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
               branchLoadError = 'No active branches available';
             } else {
               branchLoadError = null;
+            }
+
+            // Roles get the same treatment as branches: loaded from the API,
+            // inert while loading, and offering a retry when the call fails or
+            // comes back with nothing selectable.
+            final UIState<UserRoleSuccess>? rolesState = state.userRolesUIState;
+            final bool isLoadingRoles = rolesState?.status == Status.LOADING;
+            final List<UserRoleOption> roles =
+                rolesState?.data?.selectableRoles ?? <UserRoleOption>[];
+
+            final String? roleLoadError;
+            if (rolesState?.status == Status.ERROR) {
+              roleLoadError =
+                  rolesState?.errorType?.getText(context) ??
+                  'Could not load roles';
+            } else if (rolesState?.status == Status.SUCCESS && roles.isEmpty) {
+              roleLoadError = 'No roles available';
+            } else {
+              roleLoadError = null;
             }
 
             return Column(
@@ -418,12 +449,18 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
                                     _branch = value;
                                     _branchError = null;
                                   }),
-                              roles: StaffRoles.options,
+                              roles: roles,
                               role: _role,
-                              onRoleChanged: (String value) => setState(() {
-                                _role = value;
-                                _roleError = null;
-                              }),
+                              isLoadingRoles: isLoadingRoles,
+                              roleLoadError: roleLoadError,
+                              onRetryRoles: () => context
+                                  .read<StaffCubit>()
+                                  .getUserRoles(force: true),
+                              onRoleChanged: (UserRoleOption value) =>
+                                  setState(() {
+                                    _role = value;
+                                    _roleError = null;
+                                  }),
                               joiningDate: _joiningDate,
                               nextIncrementDate: _nextIncrementDate,
                               reminderEnabled: _incrementReminder,
@@ -724,6 +761,9 @@ class StaffEmploymentDetailsForm extends StatelessWidget {
     this.isLoadingBranches = false,
     this.branchLoadError,
     this.onRetryBranches,
+    this.isLoadingRoles = false,
+    this.roleLoadError,
+    this.onRetryRoles,
     this.onBranchChanged,
     this.onRoleChanged,
     this.onJoiningDateChanged,
@@ -748,9 +788,14 @@ class StaffEmploymentDetailsForm extends StatelessWidget {
   final bool isLoadingBranches;
   final String? branchLoadError;
   final VoidCallback? onRetryBranches;
-  final List<String> roles;
-  final String? role;
-  final ValueChanged<String>? onRoleChanged;
+  /// Roles from `GET /api/user-roles`. The picker shows each `label` and the
+  /// screen keeps the record so Save can send its `value` as `role`.
+  final List<UserRoleOption> roles;
+  final UserRoleOption? role;
+  final ValueChanged<UserRoleOption>? onRoleChanged;
+  final bool isLoadingRoles;
+  final String? roleLoadError;
+  final VoidCallback? onRetryRoles;
   final DateTime? joiningDate;
   final DateTime? nextIncrementDate;
   final bool reminderEnabled;
@@ -774,12 +819,24 @@ class StaffEmploymentDetailsForm extends StatelessWidget {
     }
   }
 
+  /// Same mapping for roles: the sheet returns a label, the API wants `value`.
+  void _handleRolePicked(String label) {
+    final int index = roles.indexWhere(
+      (UserRoleOption item) => item.displayLabel == label,
+    );
+    if (index != -1) {
+      onRoleChanged?.call(roles[index]);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // A null onChanged makes AppSelectField inert, which is exactly what an
     // empty or still-loading branch list should be.
     final bool canPickBranch =
         !isLoadingBranches && branches.isNotEmpty && onBranchChanged != null;
+    final bool canPickRole =
+        !isLoadingRoles && roles.isNotEmpty && onRoleChanged != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -817,14 +874,22 @@ class StaffEmploymentDetailsForm extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               AppSelectField(
-                hint: 'Select role',
+                hint: isLoadingRoles ? 'Loading roles…' : 'Select role',
                 sheetTitle: 'Staff role',
                 icon: Icons.badge_outlined,
-                options: roles,
-                value: role,
-                onChanged: onRoleChanged,
+                options: roles
+                    .map((UserRoleOption item) => item.displayLabel)
+                    .toList(),
+                value: role?.displayLabel,
+                onChanged: canPickRole ? _handleRolePicked : null,
               ),
-              StaffFieldError(message: roleError),
+              if (roleLoadError != null)
+                StaffBranchLoadError(
+                  message: roleLoadError!,
+                  onRetry: onRetryRoles,
+                )
+              else
+                StaffFieldError(message: roleError),
             ],
           ),
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -225,6 +226,25 @@ class AppBackButton extends StatelessWidget {
   /// [Brightness.dark] renders for a dark header, [Brightness.light] for paper.
   final Brightness tone;
 
+  /// GoRouter owns the page stack, so it is asked first.
+  ///
+  /// `Navigator.maybePop` calls `ModalRoute.willPop()`, which asserts its modal
+  /// scope is still mounted. Popping the raw Navigator underneath GoRouter
+  /// leaves GoRouter's route list out of step with it, and the next back press
+  /// then hits that assertion — `'scope != null'` — as a red screen.
+  ///
+  /// Falls back to `maybePop` when there is no router above this button, or
+  /// nothing for the router to pop: screens pushed imperatively still need a
+  /// working back button.
+  static void _goBack(BuildContext context) {
+    final GoRouter? router = GoRouter.maybeOf(context);
+    if (router != null && router.canPop()) {
+      router.pop();
+      return;
+    }
+    Navigator.of(context).maybePop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool onDark = tone == Brightness.dark;
@@ -241,7 +261,7 @@ class AppBackButton extends StatelessWidget {
             : context.palette.inkWash,
         shape: const CircleBorder(),
         child: InkWell(
-          onTap: onPressed ?? () => Navigator.of(context).maybePop(),
+          onTap: onPressed ?? () => _goBack(context),
           customBorder: const CircleBorder(),
           child: SizedBox(
             width: 40,

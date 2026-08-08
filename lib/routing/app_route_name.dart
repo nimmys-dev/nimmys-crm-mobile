@@ -1,4 +1,4 @@
-class AppRouteName{
+class AppRouteName {
   AppRouteName._();
 
   static const String intro = "/intro";
@@ -18,7 +18,11 @@ class AppRouteName{
   static const String staffCreate = "/staff/create";
   static const String taskCreate = "/task/create";
   static const String dutyAdd = "/duty/add";
+  static const String duties = "/duties";
   static const String leadNew = "/lead/new";
+  static const String leads = "/leads";
+  static const String approvals = "/approvals";
+  static const String reports = "/reports";
   static const String leadDetails = "/lead/details";
   static const String followUpToday = "/followUp/today";
 
@@ -26,4 +30,10 @@ class AppRouteName{
   /// carry the permission for.
   static const String accessDenied = "/accessDenied";
 
+  /// [duties] opened on one of its tabs — `/duties?filter=overdue`.
+  ///
+  /// Built here rather than at the call sites so the query key lives next to
+  /// the path it belongs to. [filter] is a `DutyFilter.wireValue`; an
+  /// unrecognised one simply opens the default tab.
+  static String dutiesFiltered(String filter) => "$duties?filter=$filter";
 }

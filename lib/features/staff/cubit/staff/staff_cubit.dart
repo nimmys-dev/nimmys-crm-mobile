@@ -9,6 +9,7 @@ import 'package:nimmys_crm/features/staff/api_request/create_staff_api_request.d
 import 'package:nimmys_crm/features/staff/model/create_staffsuccess_model.dart';
 import 'package:nimmys_crm/features/staff/model/staff_list_model.dart';
 import 'package:nimmys_crm/features/staff/model/store_success_model.dart';
+import 'package:nimmys_crm/features/staff/model/user_role_model.dart';
 import 'package:nimmys_crm/features/staff/repository/staff_repository.dart';
 part 'staff_state.dart';
 
@@ -36,6 +37,29 @@ class StaffCubit extends BaseCubit<StaffState> {
     }
     if (result is Error) {
       _setBranchesUIState(UIState.error(result.type));
+    }
+  }
+
+
+  // User Roles Api Call
+  void _setUserRolesUIState(UIState<UserRoleSuccess>? uiState){
+    emit(state.copyWith(userRolesUIState: uiState));
+  }
+
+  /// [force] re-fetches even when the roles are already loaded. Staff Creation
+  /// calls this on every mount, so without the guard the role picker would
+  /// blank out and refill each time the screen is opened.
+  Future<void> getUserRoles({bool force = false}) async {
+    if (!force && state.userRolesUIState?.data != null) {
+      return;
+    }
+    _setUserRolesUIState(UIState.loading());
+    Result result = await _repository.getUserRoles();
+    if (result is Success<UserRoleSuccess>) {
+      _setUserRolesUIState(UIState.success(result.value));
+    }
+    if (result is Error) {
+      _setUserRolesUIState(UIState.error(result.type));
     }
   }
 

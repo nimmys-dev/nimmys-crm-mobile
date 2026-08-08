@@ -15,12 +15,18 @@ class StatItem {
     required this.value,
     required this.icon,
     this.tone = StatTone.red,
+    this.route,
   });
 
   final String label;
   final String value;
   final IconData icon;
   final StatTone tone;
+
+  /// Named route this tile opens. Null leaves the tile inert, which is what a
+  /// counter with no screen behind it should be — a tap that does nothing reads
+  /// as a broken button.
+  final String? route;
 }
 
 /// Compact duty tile — four of these sit side by side under "MY DUTIES".

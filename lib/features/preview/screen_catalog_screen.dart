@@ -69,6 +69,18 @@ class _ScreenCatalogScreenState extends State<ScreenCatalogScreen> {
       builder: () => const DashboardScreen(),
     ),
     CatalogEntry(
+      title: 'My Duties',
+      subtitle: 'Today, overdue and upcoming duties',
+      icon: Icons.fact_check_outlined,
+      route: AppRouteName.duties,
+    ),
+    CatalogEntry(
+      title: 'My Leads',
+      subtitle: 'Assigned leads by pipeline stage',
+      icon: Icons.groups_outlined,
+      route: AppRouteName.leads,
+    ),
+    CatalogEntry(
       title: "Today's Follow Up",
       subtitle: 'Searchable follow-up list',
       icon: Icons.list_alt_rounded,
@@ -102,6 +114,20 @@ class _ScreenCatalogScreenState extends State<ScreenCatalogScreen> {
       icon: Icons.event_repeat_rounded,
       route: AppRouteName.dutyAdd,
       permission: AppPermission.createTask,
+    ),
+    CatalogEntry(
+      title: 'Approvals',
+      subtitle: 'Requests awaiting a decision',
+      icon: Icons.assignment_turned_in_outlined,
+      route: AppRouteName.approvals,
+      permission: AppPermission.viewApprovals,
+    ),
+    CatalogEntry(
+      title: 'Reports',
+      subtitle: 'Team performance by period',
+      icon: Icons.bar_chart_rounded,
+      route: AppRouteName.reports,
+      permission: AppPermission.viewDashboardFull,
     ),
     CatalogEntry(
       title: 'Staff',

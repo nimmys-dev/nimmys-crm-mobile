@@ -2,6 +2,7 @@ part of 'staff_cubit.dart';
 
 class StaffState extends Equatable {
   final UIState<StoreModelSuccess>? branchesUIState;
+  final UIState<UserRoleSuccess>? userRolesUIState;
   final UIState<CreateStaffSuccess>? createStaffUIState;
 
   /// Status of the *current page request*. The rows themselves live in
@@ -18,6 +19,7 @@ class StaffState extends Equatable {
 
   const StaffState({
     this.branchesUIState,
+    this.userRolesUIState,
     this.createStaffUIState,
     this.staffListUIState,
     this.staffList = const <StaffListItem>[],
@@ -27,6 +29,7 @@ class StaffState extends Equatable {
 
   StaffState copyWith({
     UIState<StoreModelSuccess>? branchesUIState,
+    UIState<UserRoleSuccess>? userRolesUIState,
     UIState<CreateStaffSuccess>? createStaffUIState,
     UIState<StaffListSuccess>? staffListUIState,
     List<StaffListItem>? staffList,
@@ -35,6 +38,7 @@ class StaffState extends Equatable {
   }) {
     return StaffState(
       branchesUIState: branchesUIState ?? this.branchesUIState,
+      userRolesUIState: userRolesUIState ?? this.userRolesUIState,
       createStaffUIState: createStaffUIState ?? this.createStaffUIState,
       staffListUIState: staffListUIState ?? this.staffListUIState,
       staffList: staffList ?? this.staffList,
@@ -49,6 +53,10 @@ class StaffState extends Equatable {
     branchesUIState?.status,
     branchesUIState?.data,
     branchesUIState?.errorType,
+    userRolesUIState,
+    userRolesUIState?.status,
+    userRolesUIState?.data,
+    userRolesUIState?.errorType,
     createStaffUIState,
     createStaffUIState?.status,
     createStaffUIState?.data,

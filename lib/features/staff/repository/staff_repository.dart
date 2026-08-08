@@ -3,6 +3,7 @@ import 'package:nimmys_crm/features/staff/api_request/create_staff_api_request.d
 import 'package:nimmys_crm/features/staff/model/create_staffsuccess_model.dart';
 import 'package:nimmys_crm/features/staff/model/staff_list_model.dart';
 import 'package:nimmys_crm/features/staff/model/store_success_model.dart';
+import 'package:nimmys_crm/features/staff/model/user_role_model.dart';
 import 'package:nimmys_crm/features/staff/service/staff_service.dart';
 
 class StaffRepository {
@@ -13,6 +14,15 @@ class StaffRepository {
   Future<Result<StoreModelSuccess>> getBranches() async {
     try {
       return await _service.getBranches();
+    } catch (e) {
+      return Error(ErrorWithMessage(message: e.toString()));
+    }
+  }
+
+  // User Roles Repo
+  Future<Result<UserRoleSuccess>> getUserRoles() async {
+    try {
+      return await _service.getUserRoles();
     } catch (e) {
       return Error(ErrorWithMessage(message: e.toString()));
     }

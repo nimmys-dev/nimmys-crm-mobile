@@ -56,29 +56,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return 'Good evening';
   }
 
-  static const StatItem _todaysDuty = StatItem(
+  static final StatItem _todaysDuty = StatItem(
     label: "Today's My Duty",
     value: '12',
     icon: Icons.fact_check_outlined,
     tone: StatTone.red,
+    route: AppRouteName.dutiesFiltered('today'),
   );
-  static const StatItem _overdueDuty = StatItem(
+  static final StatItem _overdueDuty = StatItem(
     label: 'Overdue Duty',
     value: '5',
     icon: Icons.event_busy_outlined,
     tone: StatTone.ink,
+    route: AppRouteName.dutiesFiltered('overdue'),
   );
-  static const StatItem _upcomingDuty = StatItem(
+  static final StatItem _upcomingDuty = StatItem(
     label: 'Upcoming Duty',
     value: '8',
     icon: Icons.schedule_rounded,
     tone: StatTone.red,
+    route: AppRouteName.dutiesFiltered('upcoming'),
   );
-  static const StatItem _approvalPending = StatItem(
+  static final StatItem _approvalPending = StatItem(
     label: 'Approval Pending',
     value: '3',
     icon: Icons.assignment_turned_in_outlined,
     tone: StatTone.ink,
+    route: AppRouteName.approvals,
   );
 
   /// Approvals are an admin/manager concern, so the counter that leads into
@@ -93,30 +97,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ];
   }
 
-  static const List<StatItem> _leads = <StatItem>[
+  /// The "My Leads" tiles. All four open the leads list except today's
+  /// follow-up, which has a screen of its own already.
+  static final List<StatItem> _leads = <StatItem>[
     StatItem(
       label: 'Unattended Leads',
       value: '12',
       icon: Icons.groups_outlined,
       tone: StatTone.red,
+      route: AppRouteName.leads,
     ),
     StatItem(
       label: "Today's Follow Up",
       value: '18',
       icon: Icons.person_add_alt_1_outlined,
       tone: StatTone.ink,
+      route: AppRouteName.followUpToday,
     ),
     StatItem(
       label: 'Overdue Follow Up',
       value: '7',
       icon: Icons.history_toggle_off_rounded,
       tone: StatTone.ink,
+      route: AppRouteName.leads,
     ),
     StatItem(
       label: 'Upcoming Follow Up',
       value: '9',
       icon: Icons.event_available_outlined,
       tone: StatTone.red,
+      route: AppRouteName.leads,
     ),
   ];
 
@@ -125,15 +135,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     icon: Icons.home_outlined,
     activeIcon: Icons.home_rounded,
   );
-  static const AppNavItem _dutyNav = AppNavItem(
+  static final AppNavItem _dutyNav = AppNavItem(
     label: 'My Duty',
     icon: Icons.assignment_outlined,
     activeIcon: Icons.assignment_rounded,
+    route: AppRouteName.dutiesFiltered('today'),
   );
   static const AppNavItem _leadsNav = AppNavItem(
     label: 'Leads',
     icon: Icons.groups_outlined,
     activeIcon: Icons.groups_rounded,
+    route: AppRouteName.leads,
   );
   static const AppNavItem _staffNav = AppNavItem(
     label: 'Staff',
@@ -145,6 +157,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     label: 'Reports',
     icon: Icons.bar_chart_outlined,
     activeIcon: Icons.bar_chart_rounded,
+    route: AppRouteName.reports,
   );
 
   /// Destinations the role can actually reach. Reports is the org-wide
@@ -162,8 +175,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ];
   }
 
-  /// Items that own a route navigate; the rest only move the selection, which
-  /// is all they have ever done — their screens do not exist yet.
+  /// Items that own a route navigate; Dashboard is the screen already showing,
+  /// so it only moves the selection.
   void _onNavTap(BuildContext context, List<AppNavItem> items, int index) {
     final String? route = items[index].route;
     if (route != null) {
@@ -223,7 +236,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Column(
                       children: <Widget>[
                         DashboardDutySection(items: _dutyStatsFor(role)),
-                        const DashboardLeadsSection(items: _leads),
+                        DashboardLeadsSection(items: _leads),
                         AppSectionCard(
                           // "Total Leads" is the org-wide figure. An employee sees
                           // their own count only, so the tile is dropped rather
@@ -233,19 +246,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             totalLeads: role.can(AppPermission.viewAllLeads)
                                 ? '126'
                                 : null,
+                            onTap: () => context.push(AppRouteName.leads),
                           ),
                         ),
                         // The performance report spans the whole team.
                         if (role.hasFullDashboard)
                           AppSectionCard(
                             child: Column(
-                              children: const <Widget>[
+                              children: <Widget>[
                                 AppSectionHeader(
                                   title: 'Report',
                                   actionLabel: 'View All',
+                                  onAction: () =>
+                                      context.push(AppRouteName.reports),
                                 ),
-                                SizedBox(height: AppSpacing.sm),
-                                DashboardReportCard(),
+                                const SizedBox(height: AppSpacing.sm),
+                                DashboardReportCard(
+                                  onTap: () =>
+                                      context.push(AppRouteName.reports),
+                                ),
                               ],
                             ),
                           ),
@@ -277,6 +296,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 /// "MY DUTIES" card holding the four duty counters in one row.
+///
+/// Every tile carrying a [StatItem.route] is tappable and opens the duty list
+/// on the matching tab.
 class DashboardDutySection extends StatelessWidget {
   const DashboardDutySection({super.key, required this.items});
 
@@ -287,13 +309,22 @@ class DashboardDutySection extends StatelessWidget {
     return AppSectionCard(
       child: Column(
         children: <Widget>[
-          const AppSectionHeader(title: 'My Duties', actionLabel: 'View All'),
+          AppSectionHeader(
+            title: 'My Duties',
+            actionLabel: 'View All',
+            onAction: () => context.push(AppRouteName.dutiesFiltered('today')),
+          ),
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: <Widget>[
               for (int index = 0; index < items.length; index++) ...<Widget>[
                 if (index > 0) const SizedBox(width: 7),
-                Expanded(child: DutyStatCard(item: items[index])),
+                Expanded(
+                  child: DutyStatCard(
+                    item: items[index],
+                    onTap: openStatRoute(context, items[index]),
+                  ),
+                ),
               ],
             ],
           ),
@@ -301,6 +332,19 @@ class DashboardDutySection extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Tap handler for a stat tile, or null when the tile has no screen behind it.
+///
+/// Shared by both dashboard sections so a counter is wired the same way
+/// wherever it appears — and so a tile with no route stays visibly inert
+/// instead of swallowing taps.
+VoidCallback? openStatRoute(BuildContext context, StatItem item) {
+  final String? route = item.route;
+  if (route == null) {
+    return null;
+  }
+  return () => context.push(route);
 }
 
 /// "MY LEADS" card holding the four lead counters as a 2×2 grid.
@@ -314,7 +358,11 @@ class DashboardLeadsSection extends StatelessWidget {
     return AppSectionCard(
       child: Column(
         children: <Widget>[
-          const AppSectionHeader(title: 'My Leads', actionLabel: 'View All'),
+          AppSectionHeader(
+            title: 'My Leads',
+            actionLabel: 'View All',
+            onAction: () => context.push(AppRouteName.leads),
+          ),
           const SizedBox(height: AppSpacing.sm),
           GridView.builder(
             shrinkWrap: true,
@@ -327,8 +375,10 @@ class DashboardLeadsSection extends StatelessWidget {
               crossAxisSpacing: AppSpacing.xs,
               mainAxisExtent: 134,
             ),
-            itemBuilder: (BuildContext context, int index) =>
-                LeadStatCard(item: items[index]),
+            itemBuilder: (BuildContext context, int index) => LeadStatCard(
+              item: items[index],
+              onTap: openStatRoute(context, items[index]),
+            ),
           ),
         ],
       ),

@@ -110,6 +110,11 @@ class _ProfileSheetState extends State<ProfileSheet> {
       return;
     }
 
+    // Resolved before the sheet is popped: `GoRouter.of` is an inherited-widget
+    // lookup, and doing it through a context that is already being torn down is
+    // how a sign-out ends up navigating nowhere.
+    final GoRouter router = GoRouter.of(context);
+
     if (status == Status.SUCCESS) {
       ToastMessages.success(
         message: state.logoutUIState?.data?.message ?? 'Logout successful',
@@ -133,7 +138,7 @@ class _ProfileSheetState extends State<ProfileSheet> {
     locator<StaffCubit>().resetStaffState();
 
     Navigator.of(context).pop();
-    GoRouter.of(context).go(AppRouteName.signIn);
+    router.go(AppRouteName.signIn);
   }
 
   @override
