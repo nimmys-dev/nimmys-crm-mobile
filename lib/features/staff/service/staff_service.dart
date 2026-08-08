@@ -68,13 +68,18 @@ class StaffService {
   Future<Result<StaffListSuccess>> getStaffList({
     required int page,
     required int perPage,
+    String? search,
   }) async {
     try {
       final url = ApiUrls.staffList;
-      final result = await _apiService.get(
-        url,
-        queryParams: <String, dynamic>{"page": page, "per_page": perPage},
-      );
+      final Map<String, dynamic> queryParams = <String, dynamic>{
+        "page": page,
+        "per_page": perPage,
+      };
+      if (search != null && search.trim().isNotEmpty) {
+        queryParams["search"] = search.trim();
+      }
+      final result = await _apiService.get(url, queryParams: queryParams);
       if (result is Success) {
         return await _apiService.getResponseStatus<StaffListSuccess>(
           result.value,

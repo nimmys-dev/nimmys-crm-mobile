@@ -288,6 +288,34 @@ class _StaffDetailsBody extends StatelessWidget {
             ],
           ),
         ),
+        AppSectionCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              const AppSectionHeader(title: 'Record Information'),
+              const SizedBox(height: AppSpacing.xs),
+              ProfileDetailRow(
+                icon: Icons.tag_outlined,
+                label: 'Staff ID',
+                value: staff.id?.toString(),
+              ),
+              ProfileDetailRow(
+                icon: Icons.schedule_outlined,
+                label: 'Created',
+                value: staff.createdAt == null
+                    ? null
+                    : AppDateField.format(staff.createdAt!),
+              ),
+              ProfileDetailRow(
+                icon: Icons.update_outlined,
+                label: 'Last Updated',
+                value: staff.updatedAt == null
+                    ? null
+                    : AppDateField.format(staff.updatedAt!),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }

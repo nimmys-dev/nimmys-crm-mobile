@@ -21,6 +21,7 @@ class StaffState extends Equatable {
   /// Every row loaded so far, page 1 first.
   final List<StaffListItem> staffList;
   final StaffPagination? staffPagination;
+  final String staffSearchQuery;
 
   /// True only while a follow-on page is in flight, so the footer spinner is
   /// separate from the full-screen loading state.
@@ -42,6 +43,7 @@ class StaffState extends Equatable {
     this.staffListUIState,
     this.staffList = const <StaffListItem>[],
     this.staffPagination,
+    this.staffSearchQuery = '',
     this.isLoadingMoreStaff = false,
     this.deleteStaffUIState,
     this.deletingStaffId,
@@ -56,6 +58,7 @@ class StaffState extends Equatable {
     UIState<StaffListSuccess>? staffListUIState,
     List<StaffListItem>? staffList,
     StaffPagination? staffPagination,
+    String? staffSearchQuery,
     bool? isLoadingMoreStaff,
     UIState<DeleteStaffSuccess>? deleteStaffUIState,
     int? deletingStaffId,
@@ -73,6 +76,7 @@ class StaffState extends Equatable {
       staffListUIState: staffListUIState ?? this.staffListUIState,
       staffList: staffList ?? this.staffList,
       staffPagination: staffPagination ?? this.staffPagination,
+      staffSearchQuery: staffSearchQuery ?? this.staffSearchQuery,
       isLoadingMoreStaff: isLoadingMoreStaff ?? this.isLoadingMoreStaff,
       deleteStaffUIState: deleteStaffUIState ?? this.deleteStaffUIState,
       deletingStaffId: clearDeletingStaffId
@@ -109,6 +113,7 @@ class StaffState extends Equatable {
     staffListUIState?.errorType,
     staffList,
     staffPagination,
+    staffSearchQuery,
     isLoadingMoreStaff,
     deleteStaffUIState,
     deleteStaffUIState?.status,

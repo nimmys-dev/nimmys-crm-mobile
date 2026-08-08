@@ -35,9 +35,14 @@ class StaffRepository {
   Future<Result<StaffListSuccess>> getStaffList({
     required int page,
     required int perPage,
+    String? search,
   }) async {
     try {
-      return await _service.getStaffList(page: page, perPage: perPage);
+      return await _service.getStaffList(
+        page: page,
+        perPage: perPage,
+        search: search,
+      );
     } catch (e) {
       return Error(ErrorWithMessage(message: e.toString()));
     }

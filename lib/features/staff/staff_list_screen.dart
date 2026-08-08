@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +17,7 @@ import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/app_buttons.dart';
 import '../../shared/widgets/app_gradient_header.dart';
 import '../../shared/widgets/app_section_card.dart';
+import '../../shared/widgets/app_search_field.dart';
 import '../../utils/toast_messages.dart';
 import '../authentication/cubit/session/session_cubit.dart';
 import 'cubit/staff/staff_cubit.dart';
@@ -34,6 +37,8 @@ class StaffListScreen extends StatefulWidget {
 
 class _StaffListScreenState extends State<StaffListScreen> {
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
 
   /// How close to the bottom the list gets before the next page is requested.
   /// Roughly two rows, which is enough for the fetch to land before the user
@@ -53,6 +58,8 @@ class _StaffListScreenState extends State<StaffListScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
     _scrollController
       ..removeListener(_onScroll)
       ..dispose();
@@ -73,6 +80,23 @@ class _StaffListScreenState extends State<StaffListScreen> {
 
   Future<void> _refresh() async {
     await context.read<StaffCubit>().getStaffList(refresh: true);
+  }
+
+  void _searchStaff([String? query]) {
+    _searchDebounce?.cancel();
+    context.read<StaffCubit>().getStaffList(search: query ?? _searchController.text);
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(
+      const Duration(milliseconds: 350),
+      () {
+        if (mounted) {
+          _searchStaff(value);
+        }
+      },
+    );
   }
 
   /// Opens Staff Creation by route, so the permission guard runs.
@@ -204,6 +228,9 @@ class _StaffListScreenState extends State<StaffListScreen> {
                         onCreate: _openCreateStaff,
                         onRetry: _refresh,
                         onDelete: _confirmAndDelete,
+                        searchController: _searchController,
+                        onSearchChanged: _onSearchChanged,
+                        onSearchSubmitted: _searchStaff,
                       );
                     },
                   ),
@@ -232,6 +259,9 @@ class _StaffListBody extends StatelessWidget {
     required this.onCreate,
     required this.onRetry,
     required this.onDelete,
+    required this.searchController,
+    required this.onSearchChanged,
+    required this.onSearchSubmitted,
   });
 
   final StaffState state;
@@ -242,23 +272,25 @@ class _StaffListBody extends StatelessWidget {
   final VoidCallback onCreate;
   final Future<void> Function() onRetry;
   final Future<void> Function(StaffListItem staff) onDelete;
+  final TextEditingController searchController;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onSearchSubmitted;
 
   @override
   Widget build(BuildContext context) {
     final List<StaffListItem> staff = state.staffList;
     final Status? status = state.staffListUIState?.status;
 
+    Widget content;
     if (staff.isEmpty && status == Status.LOADING) {
-      return const Center(
+      content = const Center(
         child: CircularProgressIndicator(
           strokeWidth: 2.6,
           valueColor: AlwaysStoppedAnimation<Color>(AppColors.red),
         ),
       );
-    }
-
-    if (staff.isEmpty && status == Status.ERROR) {
-      return StaffListMessage(
+    } else if (staff.isEmpty && status == Status.ERROR) {
+      content = StaffListMessage(
         icon: Icons.cloud_off_rounded,
         title: 'Could not load staff',
         message:
@@ -268,62 +300,81 @@ class _StaffListBody extends StatelessWidget {
         actionIcon: Icons.refresh_rounded,
         onAction: onRetry,
       );
-    }
-
-    if (staff.isEmpty) {
-      return StaffListMessage(
+    } else if (staff.isEmpty) {
+      content = StaffListMessage(
         icon: Icons.groups_outlined,
-        title: 'No staff yet',
-        message: canCreate
-            ? 'Add your first team member to get started.'
-            : 'No team members have been added yet.',
-        actionLabel: canCreate ? 'Add Staff' : null,
+        title: state.staffSearchQuery.isEmpty ? 'No staff yet' : 'No staff found',
+        message: state.staffSearchQuery.isEmpty
+            ? (canCreate
+                  ? 'Add your first team member to get started.'
+                  : 'No team members have been added yet.')
+            : 'No staff match "${state.staffSearchQuery}".',
+        actionLabel: state.staffSearchQuery.isEmpty && canCreate ? 'Add Staff' : null,
         actionIcon: Icons.person_add_alt_1_rounded,
         onAction: canCreate ? () async => onCreate() : null,
       );
+    } else {
+      final int? total = state.staffPagination?.total;
+      content = RefreshIndicator(
+        onRefresh: onRefresh,
+        color: AppColors.red,
+        child: ListView.builder(
+          controller: scrollController,
+          // A list shorter than the viewport is not scrollable by default, and an
+          // unscrollable list cannot be pulled to refresh.
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(
+            left: AppSpacing.gutter,
+            right: AppSpacing.gutter,
+            top: AppSpacing.md,
+            bottom: AppSpacing.xl,
+          ),
+          // One extra row for the count caption, one for the footer.
+          itemCount: staff.length + 2,
+          itemBuilder: (BuildContext context, int index) {
+            if (index == 0) {
+              return StaffListCount(loaded: staff.length, total: total);
+            }
+            if (index == staff.length + 1) {
+              return StaffListFooter(
+                isLoading: state.isLoadingMoreStaff,
+                hasMore: state.staffPagination?.hasNextPage ?? false,
+              );
+            }
+            final StaffListItem item = staff[index - 1];
+            return StaffListTile(
+              staff: item,
+              onTap: item.id == null
+                  ? null
+                  : () => context.push(AppRouteName.staffDetailsFor(item.id!)),
+              onDelete: canDelete && item.id != null
+                  ? () => onDelete(item)
+                  : null,
+              isDeleting: item.id != null && state.deletingStaffId == item.id,
+            );
+          },
+        ),
+      );
     }
 
-    final int? total = state.staffPagination?.total;
-
-    return RefreshIndicator(
-      onRefresh: onRefresh,
-      color: AppColors.red,
-      child: ListView.builder(
-        controller: scrollController,
-        // A list shorter than the viewport is not scrollable by default, and an
-        // unscrollable list cannot be pulled to refresh.
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(
-          left: AppSpacing.gutter,
-          right: AppSpacing.gutter,
-          top: AppSpacing.md,
-          bottom: AppSpacing.xl,
+    return Column(
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.gutter,
+            AppSpacing.md,
+            AppSpacing.gutter,
+            AppSpacing.xs,
+          ),
+          child: AppSearchField(
+            hint: 'Search name, code, phone or email',
+            controller: searchController,
+            onChanged: onSearchChanged,
+            onSubmit: onSearchSubmitted,
+          ),
         ),
-        // One extra row for the count caption, one for the footer.
-        itemCount: staff.length + 2,
-        itemBuilder: (BuildContext context, int index) {
-          if (index == 0) {
-            return StaffListCount(loaded: staff.length, total: total);
-          }
-          if (index == staff.length + 1) {
-            return StaffListFooter(
-              isLoading: state.isLoadingMoreStaff,
-              hasMore: state.staffPagination?.hasNextPage ?? false,
-            );
-          }
-          final StaffListItem item = staff[index - 1];
-          return StaffListTile(
-            staff: item,
-            onTap: item.id == null
-                ? null
-                : () => context.push(AppRouteName.staffDetailsFor(item.id!)),
-            onDelete: canDelete && item.id != null
-                ? () => onDelete(item)
-                : null,
-            isDeleting: item.id != null && state.deletingStaffId == item.id,
-          );
-        },
-      ),
+        Expanded(child: content),
+      ],
     );
   }
 }

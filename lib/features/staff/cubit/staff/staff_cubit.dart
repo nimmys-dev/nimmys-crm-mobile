@@ -71,20 +71,31 @@ class StaffCubit extends BaseCubit<StaffState> {
   // the last response only ever holds one page.
   static const int _pageSize = 10;
 
-  Future<void> getStaffList({bool refresh = false}) async {
+  Future<void> getStaffList({bool refresh = false, String? search}) async {
     if (state.staffListUIState?.status == Status.LOADING) {
       return;
     }
+    final String query = (search ?? state.staffSearchQuery).trim();
+    final bool searchChanged = query != state.staffSearchQuery;
     // A refresh keeps the current rows on screen while it reloads, so pulling
     // down does not blank the list it is refreshing.
-    if (!refresh && state.staffList.isNotEmpty) {
+    if (!refresh && !searchChanged && state.staffList.isNotEmpty) {
       return;
     }
-    emit(state.copyWith(staffListUIState: UIState.loading()));
+    emit(
+      state.copyWith(
+        staffListUIState: UIState.loading(),
+        staffSearchQuery: query,
+        // Results for a previous search must never remain visible while the
+        // new server-side search is in flight.
+        staffList: searchChanged ? <StaffListItem>[] : state.staffList,
+      ),
+    );
 
     final Result<StaffListSuccess> result = await _repository.getStaffList(
       page: 1,
       perPage: _pageSize,
+      search: query,
     );
     if (result is Success<StaffListSuccess>) {
       emit(
@@ -120,6 +131,7 @@ class StaffCubit extends BaseCubit<StaffState> {
     final Result<StaffListSuccess> result = await _repository.getStaffList(
       page: pagination.nextPage,
       perPage: _pageSize,
+      search: state.staffSearchQuery,
     );
     if (result is Success<StaffListSuccess>) {
       emit(
