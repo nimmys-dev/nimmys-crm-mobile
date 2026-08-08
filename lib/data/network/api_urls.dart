@@ -16,6 +16,9 @@ class ApiUrls {
   static String login = "$_baseUrl/login";
   static String logout = "$_baseUrl/logout";
   static String profile = "$_baseUrl/profile";
+  static String branches = "$_baseUrl/branches";
+  static String createStaff = "$_baseUrl/create-staff";
+  static String staffList = "$_baseUrl/staff";
 
 
 }

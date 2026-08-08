@@ -5,6 +5,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimens.dart';
 
 /// Split panel showing "Your Leads" against "Total Leads".
+///
+/// Collapses to the single "Your Leads" tile when [totalLeads] is null, which
+/// is what an employee sees — the org-wide total is not theirs to know.
 class DashboardTotalsCard extends StatelessWidget {
   const DashboardTotalsCard({
     super.key,
@@ -13,7 +16,9 @@ class DashboardTotalsCard extends StatelessWidget {
   });
 
   final String yourLeads;
-  final String totalLeads;
+
+  /// Null hides the second half of the panel entirely.
+  final String? totalLeads;
 
   @override
   Widget build(BuildContext context) {
@@ -43,20 +48,22 @@ class DashboardTotalsCard extends StatelessWidget {
               isAccent: true,
             ),
           ),
-          Container(
-            width: 1,
-            height: 44,
-            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-            color: AppColors.white.withValues(alpha: 0.14),
-          ),
-          Expanded(
-            child: DashboardTotalsTile(
-              icon: Icons.layers_outlined,
-              label: 'Total Leads',
-              value: totalLeads,
-              isAccent: false,
+          if (totalLeads != null) ...<Widget>[
+            Container(
+              width: 1,
+              height: 44,
+              margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+              color: AppColors.white.withValues(alpha: 0.14),
             ),
-          ),
+            Expanded(
+              child: DashboardTotalsTile(
+                icon: Icons.layers_outlined,
+                label: 'Total Leads',
+                value: totalLeads!,
+                isAccent: false,
+              ),
+            ),
+          ],
         ],
       ),
     );

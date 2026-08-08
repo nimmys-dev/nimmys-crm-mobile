@@ -6,11 +6,21 @@ import '../../core/theme/app_dimens.dart';
 
 /// Data holder for one destination in [AppBottomNav].
 class AppNavItem {
-  const AppNavItem({required this.label, required this.icon, this.activeIcon});
+  const AppNavItem({
+    required this.label,
+    required this.icon,
+    this.activeIcon,
+    this.route,
+  });
 
   final String label;
   final IconData icon;
   final IconData? activeIcon;
+
+  /// Named route this destination opens, when it has a screen of its own.
+  /// Items without one only move the selected index — the host screen decides
+  /// what that means.
+  final String? route;
 }
 
 /// Bottom navigation bar with an optional raised centre action.

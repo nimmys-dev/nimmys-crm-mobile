@@ -28,6 +28,15 @@ class DateTimeHelper {
     return formatter.format(date);
   }
 
+  /// Date format the CRM API expects on request bodies — `15-05-2025`.
+  ///
+  /// Deliberately not [getFormattedDate]: that one uses slashes for display,
+  /// and Laravel's `date_format:d-m-Y` rule rejects them.
+  static String getApiDateFormat(DateTime date) {
+    var formatter = DateFormat("dd-MM-yyyy");
+    return formatter.format(date);
+  }
+
   static String convertToAmPm(String time, BuildContext context) {
     DateTime parsedTime = DateTime.parse('1970-01-01 $time:00');
     String formattedTime = TimeOfDay.fromDateTime(parsedTime).format(context);

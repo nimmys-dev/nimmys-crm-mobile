@@ -3,6 +3,7 @@ import 'package:nimmys_crm/data/network/api_service.dart';
 import 'package:nimmys_crm/data/storage/secured_shared_preferences.dart';
 import 'package:nimmys_crm/features/authentication/cubit/login/login_cubit.dart';
 import 'package:nimmys_crm/features/authentication/cubit/logout/logout_cubit.dart';
+import 'package:nimmys_crm/features/authentication/cubit/session/session_cubit.dart';
 import 'package:nimmys_crm/features/authentication/repository/auth_repository.dart';
 import 'package:nimmys_crm/features/authentication/repository/login_repository.dart';
 import 'package:nimmys_crm/features/authentication/repository/user_information_repository.dart';
@@ -11,6 +12,9 @@ import 'package:nimmys_crm/features/authentication/service/login_service.dart';
 import 'package:nimmys_crm/features/profile/cubit/profile/profile_cubit.dart';
 import 'package:nimmys_crm/features/profile/repository/profile_repository.dart';
 import 'package:nimmys_crm/features/profile/service/profile_service.dart';
+import 'package:nimmys_crm/features/staff/cubit/staff/staff_cubit.dart';
+import 'package:nimmys_crm/features/staff/repository/staff_repository.dart';
+import 'package:nimmys_crm/features/staff/service/staff_service.dart';
 import 'package:nimmys_crm/features/splash/splash_repository.dart';
 import 'package:nimmys_crm/features/splash/splash_service.dart';
 import 'package:nimmys_crm/features/splash/splash_view_mode.dart';
@@ -42,6 +46,7 @@ void initLocator() {
     locator.registerLazySingleton(() => LoginService(locator<ApiService>()));
     locator.registerLazySingleton(() => AuthService(locator<ApiService>()));
     locator.registerLazySingleton(() => ProfileService(locator<ApiService>()));
+    locator.registerLazySingleton(() => StaffService(locator<ApiService>()));
 
     // Repository
     locator.registerLazySingleton(() => UserInformationRepository(locator<SecuredSharedPreferences>()));
@@ -49,6 +54,7 @@ void initLocator() {
     locator.registerLazySingleton(() => AuthRepository(locator<SecuredSharedPreferences>(), locator<NotificationService>(), locator<AuthService>()));
     locator.registerLazySingleton(() => LoginRepository(locator<LoginService>()));
     locator.registerLazySingleton(() => ProfileRepository(locator<ProfileService>()));
+    locator.registerLazySingleton(() => StaffRepository(locator<StaffService>()));
 
     // View Model
     locator.registerLazySingleton(() => SplashViewModel(locator<SplashRepository>(), locator<AuthRepository>()));
@@ -56,7 +62,9 @@ void initLocator() {
     // Cubit
     locator.registerLazySingleton(() => LoginCubit(locator<LoginRepository>(), locator<AuthRepository>()));
     locator.registerLazySingleton(() => LogoutCubit(locator<AuthRepository>()));
+    locator.registerLazySingleton(() => SessionCubit(locator<UserInformationRepository>()));
     locator.registerLazySingleton(() => ProfileCubit(locator<ProfileRepository>()));
+    locator.registerLazySingleton(() => StaffCubit(locator<StaffRepository>()));
 
 
     CustomLog.info(locator, "All instances registered.");

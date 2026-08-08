@@ -19,6 +19,19 @@ class UserInformationRepository {
   }
 
 
+  Future<String?> getUserEmail() async {
+    return  await _securedSharedPref.get(AppString.sessionKey.userEmail);
+  }
+
+
+  /// The `user.role` from the login response, stored under `userType` by
+  /// [AuthRepository.saveUserInfoFromLogin]. Drives every permission check in
+  /// the app — see `core/auth/app_permission.dart`.
+  Future<String?> getUserRole() async {
+    return  await _securedSharedPref.get(AppString.sessionKey.userType);
+  }
+
+
   Future<String?> getAddress() async {
     return  await _securedSharedPref.get(AppString.sessionKey.userAddress);
   }

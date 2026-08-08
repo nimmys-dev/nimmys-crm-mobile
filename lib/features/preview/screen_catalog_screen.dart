@@ -1,23 +1,23 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nimmys_crm/features/authentication/login_screen.dart';
 import '../../core/theme/app_theme.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/auth/app_permission.dart';
+import '../../core/auth/user_role.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
+import '../../routing/app_route_name.dart';
 import '../../shared/widgets/app_logo.dart';
 import '../../shared/widgets/app_section_card.dart';
 import '../../shared/widgets/theme_toggle_button.dart';
 
+import '../authentication/cubit/session/session_cubit.dart';
 import '../dashboard/dashboard_screen.dart';
-import '../duties/add_duty_screen.dart';
-import '../duties/create_task_screen.dart';
-import '../leads/lead_details_screen.dart';
-import '../leads/new_lead_screen.dart';
-import '../leads/todays_follow_up_screen.dart';
 import '../splash/branded_splash_screen.dart';
-import '../staff/staff_creation_screen.dart';
 
 /// Development-only index of every screen in the UI kit.
 ///
@@ -60,7 +60,7 @@ class _ScreenCatalogScreenState extends State<ScreenCatalogScreen> {
       title: 'Login',
       subtitle: 'Email and password sign-in',
       icon: Icons.lock_outline_rounded,
-      builder: () =>  LoginScreen(),
+      builder: () => LoginScreen(),
     ),
     CatalogEntry(
       title: 'Dashboard',
@@ -72,39 +72,63 @@ class _ScreenCatalogScreenState extends State<ScreenCatalogScreen> {
       title: "Today's Follow Up",
       subtitle: 'Searchable follow-up list',
       icon: Icons.list_alt_rounded,
-      builder: () => const TodaysFollowUpScreen(),
+      route: AppRouteName.followUpToday,
+      permission: AppPermission.viewOwnFollowUps,
     ),
     CatalogEntry(
       title: 'New Lead',
       subtitle: 'Capture a fresh enquiry',
       icon: Icons.person_add_alt_1_outlined,
-      builder: () => const NewLeadScreen(),
+      route: AppRouteName.leadNew,
+      permission: AppPermission.createLead,
     ),
     CatalogEntry(
       title: 'Lead Details',
       subtitle: 'Customer, items and call log',
       icon: Icons.contact_page_outlined,
-      builder: () => const LeadDetailsScreen(),
+      route: AppRouteName.leadDetails,
+      permission: AppPermission.viewOwnLeads,
     ),
     CatalogEntry(
       title: 'Create Task',
       subtitle: 'One-off task assignment',
       icon: Icons.add_task_rounded,
-      builder: () => const CreateTaskScreen(),
+      route: AppRouteName.taskCreate,
+      permission: AppPermission.createTask,
     ),
     CatalogEntry(
       title: 'Add New Duty',
       subtitle: 'Recurring duty with frequency',
       icon: Icons.event_repeat_rounded,
-      builder: () => const AddDutyScreen(),
+      route: AppRouteName.dutyAdd,
+      permission: AppPermission.createTask,
+    ),
+    CatalogEntry(
+      title: 'Staff',
+      subtitle: 'Team list with photos and roles',
+      icon: Icons.groups_2_outlined,
+      route: AppRouteName.staffList,
+      permission: AppPermission.viewStaff,
     ),
     CatalogEntry(
       title: 'Staff Creation',
       subtitle: 'Personal and employment details',
       icon: Icons.badge_outlined,
-      builder: () => const StaffCreationScreen(),
+      route: AppRouteName.staffCreate,
+      permission: AppPermission.createStaff,
     ),
   ];
+
+  /// The rows this role is allowed to see. Entries without a permission are
+  /// open to everyone.
+  static List<CatalogEntry> _entriesFor(UserRole role) {
+    return _entries
+        .where(
+          (CatalogEntry entry) =>
+              entry.permission == null || role.can(entry.permission!),
+        )
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -112,46 +136,72 @@ class _ScreenCatalogScreenState extends State<ScreenCatalogScreen> {
       value: SystemUiOverlayStyle.light.copyWith(
         statusBarColor: Colors.transparent,
       ),
-      child: Scaffold(
-        backgroundColor: context.palette.canvas,
-        body: Column(
-          children: <Widget>[
-            const CatalogHeader(),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.only(
-                  left: AppSpacing.gutter,
-                  right: AppSpacing.gutter,
-                  top: AppSpacing.md,
-                  bottom: AppSpacing.xl,
+      child: BlocBuilder<SessionCubit, SessionState>(
+        builder: (BuildContext context, SessionState session) {
+          final List<CatalogEntry> entries = _entriesFor(session.role);
+
+          return Scaffold(
+            backgroundColor: context.palette.canvas,
+            body: Column(
+              children: <Widget>[
+                const CatalogHeader(),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.only(
+                      left: AppSpacing.gutter,
+                      right: AppSpacing.gutter,
+                      top: AppSpacing.md,
+                      bottom: AppSpacing.xl,
+                    ),
+                    itemCount: entries.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      return CatalogTile(
+                        entry: entries[index],
+                        index: index + 1,
+                      );
+                    },
+                  ),
                 ),
-                itemCount: _entries.length,
-                itemBuilder: (BuildContext context, int index) {
-                  return CatalogTile(entry: _entries[index], index: index + 1);
-                },
-              ),
+                SizedBox(height: 50),
+              ],
             ),
-            SizedBox(height: 50)
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 }
 
 /// Screen entry shown in the catalog.
+///
+/// Feature screens carry a [route] and are opened by name so the router's
+/// permission guard runs; the three dev-only entries (splash, login, dashboard)
+/// have no route of their own and are still built directly.
 class CatalogEntry {
   const CatalogEntry({
     required this.title,
     required this.subtitle,
     required this.icon,
-    required this.builder,
-  });
+    this.builder,
+    this.route,
+    this.permission,
+  }) : assert(
+         builder != null || route != null,
+         'A catalog entry needs either a route to push or a builder to render',
+       );
 
   final String title;
   final String subtitle;
   final IconData icon;
-  final Widget Function() builder;
+  final Widget Function()? builder;
+
+  /// Named route from [AppRouteName]. Preferred over [builder]: pushing by name
+  /// is what puts the entry behind the permission guard.
+  final String? route;
+
+  /// Hides the row from roles that lack it. The route guard blocks the screen
+  /// regardless — this only keeps the list honest about what is reachable.
+  final AppPermission? permission;
 }
 
 /// Black header of the catalog with the brand lockup.
@@ -214,11 +264,20 @@ class CatalogTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.xs),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (BuildContext context) => entry.builder(),
-          ),
-        ),
+        // Routed entries go through GoRouter so the permission guard sees the
+        // navigation; the dev-only ones have no route and are built directly.
+        onTap: () {
+          final String? route = entry.route;
+          if (route != null) {
+            context.push(route);
+            return;
+          }
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (BuildContext context) => entry.builder!(),
+            ),
+          );
+        },
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.sm),
           child: Row(

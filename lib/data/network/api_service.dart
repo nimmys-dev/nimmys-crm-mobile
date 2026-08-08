@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:nimmys_crm/core/auth/session_expiry_handler.dart';
 import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/network/api_urls.dart';
 import 'package:nimmys_crm/data/storage/secured_shared_preferences.dart';
@@ -234,26 +235,48 @@ class ApiService {
 
 
   // Handel HTTP Error
+  //
+  // Every non-2xx in the app funnels through here — `_handleBodyResponse` sends
+  // the ones Dio lets through, `_handleDioError` sends the ones it throws on —
+  // which makes it the one place that can notice the token has stopped working.
+  // SessionExpiryHandler decides whether the failure actually ends the session;
+  // a 404 or a validation error is not an expiry and is handed back untouched.
   Result<dynamic> _handleHttpError(Response? response) {
+    final ErrorType error = _errorForResponse(response);
+    SessionExpiryHandler.notify(
+      error,
+      requestPath: response?.requestOptions.uri.path,
+    );
+    return Error(error);
+  }
+
+
+  // Status Code to Error Type
+  ErrorType _errorForResponse(Response? response) {
     switch (response?.statusCode) {
       case 400:
       // 422 is the CRM API's validation failure — the body names the offending
       // field, which is far more useful than a generic error.
       case 422:
-        return Error(ErrorWithMessage.fromApiResponse(response?.data));
+        return ErrorWithMessage.fromApiResponse(response?.data);
       case 401:
-        return Error(UnauthenticatedError());
+        return UnauthenticatedError();
+      // 403 is the API's own RBAC talking: the token is fine, the role is not
+      // allowed. The client guards routes too, but the server is the authority
+      // and this is what happens when the two disagree.
+      case 403:
+        return ForbiddenError();
       case 404:
-        return Error(NotFoundError());
+        return NotFoundError();
       case 409:
-        return Error(ConflictError());
+        return ConflictError();
       case 498:
-        return Error(InvalidTokenError());
+        return InvalidTokenError();
       case 500:
-        return Error(InternalServerError());
+        return InternalServerError();
       default:
         log("Unexpected status code: ${response?.statusCode}");
-        return Error(GenericError());
+        return GenericError();
     }
   }
 

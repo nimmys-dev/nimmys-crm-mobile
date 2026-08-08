@@ -111,6 +111,19 @@ class UnauthenticatedError extends ErrorType {
 }
 
 
+/// 403 — the session is valid, the role is not sufficient.
+///
+/// Distinct from [UnauthenticatedError] on purpose: 401 means sign in again,
+/// 403 means signing in again will not help. Telling the two apart is what
+/// stops a permission failure from looking like an expired session.
+class ForbiddenError extends ErrorType {
+  @override
+  String getText(BuildContext context) {
+    return AppString.errorType.forbiddenError.capitalize;
+  }
+}
+
+
 class NetworkTimeoutError extends ErrorType {
   @override
   String getText(BuildContext context) {

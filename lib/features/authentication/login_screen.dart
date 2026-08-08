@@ -17,6 +17,7 @@ import '../../utils/validator.dart';
 import '../profile/cubit/profile/profile_cubit.dart';
 import 'api_request/login_api_request.dart';
 import 'cubit/login/login_cubit.dart';
+import 'cubit/session/session_cubit.dart';
 
 /// Email + password sign-in.
 ///
@@ -114,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Reacts to the one terminal state per attempt: toast on failure, hand off
   /// to the host app on success.
-  void _onLoginStateChanged(BuildContext context, LoginState state) {
+  Future<void> _onLoginStateChanged(BuildContext context, LoginState state) async {
     switch (state.loginUIState?.status) {
       case Status.SUCCESS:
         final String name = state.loginUIState?.data?.user?.name ?? '';
@@ -125,6 +126,15 @@ class _LoginScreenState extends State<LoginScreen> {
         // clearing it, signing in as a second user would show the first user's
         // name in the dashboard header until something forced a refresh.
         context.read<ProfileCubit>().resetProfileState();
+        // Awaited, not fired and forgotten: the router's permission guard reads
+        // the role synchronously, and navigating first would hand the next
+        // route a session that still says "unknown" — denying an admin their
+        // own dashboard for a frame. LoginCubit has already persisted
+        // `user.role` by the time SUCCESS lands, so this only re-reads it.
+        await context.read<SessionCubit>().loadSession();
+        if (!mounted) {
+          return;
+        }
         widget.onSignedIn?.call();
       case Status.ERROR:
         ToastMessages.error(

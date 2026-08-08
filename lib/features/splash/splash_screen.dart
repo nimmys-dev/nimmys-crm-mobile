@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nimmys_crm/dependency_injection/locator.dart';
 import 'package:nimmys_crm/enum/status.dart';
+import 'package:nimmys_crm/features/authentication/cubit/session/session_cubit.dart';
 import 'package:nimmys_crm/routing/app_route_name.dart';
 import 'package:go_router/go_router.dart';
 import 'branded_splash_screen.dart';
@@ -37,8 +38,13 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _routeOnSession() async {
     // Concurrent, not sequential: the hold and the lookup overlap, so a slow
     // keychain read costs nothing on top of the 3 seconds already being spent.
+    //
+    // The session role is read here too, before the first route decision — the
+    // router's permission guard reads it synchronously, so it has to be in
+    // memory by the time anything can be navigated to.
     await Future.wait<void>(<Future<void>>[
       splashViewModel.fetchIsUserLogin(),
+      locator<SessionCubit>().loadSession(),
       Future<void>.delayed(_brandHold),
     ]);
 

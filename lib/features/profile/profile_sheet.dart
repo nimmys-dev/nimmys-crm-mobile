@@ -5,12 +5,15 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
+import '../../dependency_injection/locator.dart';
 import '../../enum/status.dart';
 import '../../routing/app_route_name.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/app_buttons.dart';
 import '../../utils/toast_messages.dart';
 import '../authentication/cubit/logout/logout_cubit.dart';
+import '../authentication/cubit/session/session_cubit.dart';
+import '../staff/cubit/staff/staff_cubit.dart';
 import 'cubit/profile/profile_cubit.dart';
 import 'model/profile_model.dart';
 
@@ -119,9 +122,15 @@ class _ProfileSheetState extends State<ProfileSheet> {
       );
     }
 
-    // Clear both cubits before leaving so the next sign-in starts blank.
+    // Clear every cubit that outlives the session before leaving, so the next
+    // sign-in starts blank. Session and staff are reached through the locator
+    // rather than the sheet's providers: they are the same singletons, and this
+    // sheet's UI never reads them, so re-providing them just to clear them
+    // would be plumbing for its own sake.
     context.read<LogoutCubit>().resetLogoutState();
     context.read<ProfileCubit>().resetProfileState();
+    locator<SessionCubit>().clearSession();
+    locator<StaffCubit>().resetStaffState();
 
     Navigator.of(context).pop();
     GoRouter.of(context).go(AppRouteName.signIn);

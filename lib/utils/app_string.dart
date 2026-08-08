@@ -103,6 +103,8 @@ class ErrorTypeMsg {
   final String invalidTokenError = "Authentication Failed, Invalid Token.";
   final String tokenExpireError = "Authentication Failed, Login Session Expired.";
   final String unauthenticatedError = "Authentication Required";
+  final String forbiddenError = "You don't have permission to do this.";
+  final String sessionEnded = "Session ended, Please sign in again.";
   final String badRequestError = "Bad Request: Something went wrong with your request";
   final String invalidInput = "Oops! Invalid Input,\nPlease check your entry and try again.";
   final String timeOutError = "Oops! Time out!!,\nPlease check your entry and try again.";
