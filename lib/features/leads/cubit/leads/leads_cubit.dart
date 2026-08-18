@@ -8,7 +8,9 @@ import 'package:nimmys_crm/enum/status.dart';
 import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
+import 'package:nimmys_crm/features/leads/model/lead_source_model.dart'; // NEW
 import 'package:nimmys_crm/features/leads/repository/lead_repository.dart';
+
 part 'leads_state.dart';
 
 class LeadsCubit extends BaseCubit<LeadsState> {
@@ -17,11 +19,10 @@ class LeadsCubit extends BaseCubit<LeadsState> {
 
   static const int _pageSize = 10;
 
-  // Leads List Api Call
-  //
-  // Each request replaces the visible page rather than appending. Prev/Next
-  // on the list screen asks for a specific page; the rows live in state
-  // because the response only ever carries that one page.
+  // -------------------------------------------------------------------------
+  // Leads List (getLeads, refresh, goToPage, etc.)
+  // -------------------------------------------------------------------------
+
   Future<void> getLeads({bool refresh = false, String? search}) async {
     await _fetchLeadsPage(
       page: 1,
@@ -30,7 +31,6 @@ class LeadsCubit extends BaseCubit<LeadsState> {
     );
   }
 
-  /// Reloads whichever page is currently on screen.
   Future<void> refreshLeads() async {
     await _fetchLeadsPage(
       page: state.leadPagination?.currentPage ?? 1,
@@ -38,8 +38,6 @@ class LeadsCubit extends BaseCubit<LeadsState> {
     );
   }
 
-  /// Fetches [page] and replaces the list. Same loading/error handling as
-  /// page 1 — the cubit is what keeps Prev/Next working, not the screen.
   Future<void> goToLeadsPage(int page) async {
     if (page < 1 || page == state.leadPagination?.currentPage) {
       return;
@@ -67,8 +65,6 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       state.copyWith(
         leadListUIState: UIState.loading(),
         leadSearchQuery: query,
-        // Results for a previous search must never remain visible while the
-        // new server-side search is in flight.
         leadList: searchChanged ? <LeadItemData>[] : state.leadList,
       ),
     );
@@ -86,35 +82,67 @@ class LeadsCubit extends BaseCubit<LeadsState> {
           leadPagination: result.value.pagination,
         ),
       );
-    }
-    if (result is Error<LeadListResponse>) {
+    } else if (result is Error<LeadListResponse>) {
       emit(state.copyWith(leadListUIState: UIState.error(result.type)));
     }
   }
 
-  // Lead Assignees Api Call
+  // -------------------------------------------------------------------------
+  // Lead Assignees
+  // -------------------------------------------------------------------------
+
   void _setLeadAssigneesUIState(UIState<LeadAssigneeSuccess>? uiState) {
     emit(state.copyWith(leadAssigneesUIState: uiState));
   }
 
-  /// [force] re-fetches even when assignees are already loaded. New Lead calls
-  /// this on every mount, so without the guard the picker would blank out and
-  /// refill each time the screen is opened.
   Future<void> getLeadAssignees({bool force = false}) async {
     if (!force && state.leadAssigneesUIState?.data != null) {
       return;
     }
     _setLeadAssigneesUIState(UIState.loading());
-    Result result = await _repository.getLeadAssignees();
+    final Result<LeadAssigneeSuccess> result =
+        await _repository.getLeadAssignees();
     if (result is Success<LeadAssigneeSuccess>) {
       _setLeadAssigneesUIState(UIState.success(result.value));
-    }
-    if (result is Error) {
+    } else if (result is Error<LeadAssigneeSuccess>) {
       _setLeadAssigneesUIState(UIState.error(result.type));
     }
   }
 
-  // Create Lead Api Call
+  // -------------------------------------------------------------------------
+  // Lead Sources (NEW)
+  // -------------------------------------------------------------------------
+
+  void _setLeadSourcesUIState(UIState<LeadSourceModel>? uiState) {
+    emit(state.copyWith(leadSourcesUIState: uiState));
+  }
+
+  /// Fetches lead sources from the repository.
+  /// If [force] is false and data already exists, it returns without a network call.
+  Future<void> getLeadSources({bool force = false}) async {
+    if (!force && state.leadSourcesUIState?.data != null) {
+      return;
+    }
+    _setLeadSourcesUIState(UIState.loading());
+    final Result<LeadSourceModel> result = await _repository.getLeadSources();
+    if (result is Success<LeadSourceModel>) {
+      _setLeadSourcesUIState(UIState.success(result.value));
+    } else if (result is Error<LeadSourceModel>) {
+      _setLeadSourcesUIState(UIState.error(result.type));
+    }
+  }
+
+  /// Resets lead sources state to initial (null). Useful when logging out.
+  void resetLeadSourcesState() {
+    _setLeadSourcesUIState(
+      resetUIState<LeadSourceModel>(state.leadSourcesUIState),
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Create Lead
+  // -------------------------------------------------------------------------
+
   void _setCreateLeadUIState(UIState<dynamic>? uiState) {
     emit(state.copyWith(createLeadUIState: uiState));
   }
@@ -124,36 +152,36 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       return;
     }
     _setCreateLeadUIState(UIState.loading());
-    Result result = await _repository.createLead(payload);
+    final Result<dynamic> result = await _repository.createLead(payload);
     if (result is Success<dynamic>) {
       _setCreateLeadUIState(UIState.success(result.value));
       unawaited(getLeads(refresh: true));
-    }
-    if (result is Error) {
+    } else if (result is Error<dynamic>) {
       _setCreateLeadUIState(UIState.error(result.type));
     }
   }
 
   void resetCreateLeadState() {
-    _setCreateLeadUIState(resetUIState<dynamic>(state.createLeadUIState));
+    _setCreateLeadUIState(
+      resetUIState<dynamic>(state.createLeadUIState),
+    );
   }
 
-  // View Lead Api Call
+  // -------------------------------------------------------------------------
+  // Lead Details
+  // -------------------------------------------------------------------------
+
   void _setLeadDetailsUIState(UIState<LeadDetailsSuccess>? uiState) {
     emit(state.copyWith(leadDetailsUIState: uiState));
   }
 
-  /// Always fetches fresh — no "already loaded" guard. This is a per-record
-  /// view: the id changes between visits, and a guard keyed only on "is
-  /// something loaded" would show a previously viewed lead while a different
-  /// one's request is in flight.
   Future<void> getLeadDetails(int id) async {
     _setLeadDetailsUIState(UIState.loading());
-    Result result = await _repository.getLeadDetails(id);
+    final Result<LeadDetailsSuccess> result =
+        await _repository.getLeadDetails(id);
     if (result is Success<LeadDetailsSuccess>) {
       _setLeadDetailsUIState(UIState.success(result.value));
-    }
-    if (result is Error) {
+    } else if (result is Error<LeadDetailsSuccess>) {
       _setLeadDetailsUIState(UIState.error(result.type));
     }
   }
@@ -164,7 +192,10 @@ class LeadsCubit extends BaseCubit<LeadsState> {
     );
   }
 
-  // Update Lead Api Call
+  // -------------------------------------------------------------------------
+  // Update Lead
+  // -------------------------------------------------------------------------
+
   void _setUpdateLeadUIState(UIState<LeadDetailsSuccess>? uiState) {
     emit(state.copyWith(updateLeadUIState: uiState));
   }
@@ -174,15 +205,15 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       return;
     }
     _setUpdateLeadUIState(UIState.loading());
-    Result result = await _repository.updateLead(id, payload);
+    final Result<LeadDetailsSuccess> result =
+        await _repository.updateLead(id, payload);
     if (result is Success<LeadDetailsSuccess>) {
       _setUpdateLeadUIState(UIState.success(result.value));
       if (result.value.data != null) {
         _setLeadDetailsUIState(UIState.success(result.value));
       }
       unawaited(getLeads(refresh: true));
-    }
-    if (result is Error) {
+    } else if (result is Error<LeadDetailsSuccess>) {
       _setUpdateLeadUIState(UIState.error(result.type));
     }
   }
@@ -193,8 +224,10 @@ class LeadsCubit extends BaseCubit<LeadsState> {
     );
   }
 
-  /// Called on sign-out. The cubit is a singleton, so without this the next
-  /// account to sign in would see the previous user's leads.
+  // -------------------------------------------------------------------------
+  // Reset entire state (used on sign-out)
+  // -------------------------------------------------------------------------
+
   void resetLeadsState() {
     emit(const LeadsState());
   }

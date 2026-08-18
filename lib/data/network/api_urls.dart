@@ -28,4 +28,5 @@ class ApiUrls {
   static String leads = "$_baseUrl/leads";
   static String viewLead(int id) => "$_baseUrl/view-lead/$id";
   static String updateLead(int id) => "$_baseUrl/update-lead/$id";
+  static String leadSources = "$_baseUrl/lead-sources";
 }

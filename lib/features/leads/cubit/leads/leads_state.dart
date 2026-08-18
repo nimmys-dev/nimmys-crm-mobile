@@ -13,6 +13,9 @@ class LeadsState extends Equatable {
   /// Staff who can be assigned a lead, from `GET /api/lead-assignees`.
   final UIState<LeadAssigneeSuccess>? leadAssigneesUIState;
 
+  /// Available lead sources, from `GET /api/lead-sources`.
+  final UIState<LeadSourceModel>? leadSourcesUIState; // NEW
+
   /// `POST /api/create-leads`'s own terminal state, kept separate from
   /// [updateLeadUIState] so a create in flight cannot be mistaken for an update.
   final UIState<dynamic>? createLeadUIState;
@@ -30,6 +33,7 @@ class LeadsState extends Equatable {
     this.leadPagination,
     this.leadSearchQuery = '',
     this.leadAssigneesUIState,
+    this.leadSourcesUIState, // NEW
     this.createLeadUIState,
     this.leadDetailsUIState,
     this.updateLeadUIState,
@@ -41,6 +45,7 @@ class LeadsState extends Equatable {
     LeadPagination? leadPagination,
     String? leadSearchQuery,
     UIState<LeadAssigneeSuccess>? leadAssigneesUIState,
+    UIState<LeadSourceModel>? leadSourcesUIState, // NEW
     UIState<dynamic>? createLeadUIState,
     UIState<LeadDetailsSuccess>? leadDetailsUIState,
     UIState<LeadDetailsSuccess>? updateLeadUIState,
@@ -51,6 +56,7 @@ class LeadsState extends Equatable {
       leadPagination: leadPagination ?? this.leadPagination,
       leadSearchQuery: leadSearchQuery ?? this.leadSearchQuery,
       leadAssigneesUIState: leadAssigneesUIState ?? this.leadAssigneesUIState,
+      leadSourcesUIState: leadSourcesUIState ?? this.leadSourcesUIState, // NEW
       createLeadUIState: createLeadUIState ?? this.createLeadUIState,
       leadDetailsUIState: leadDetailsUIState ?? this.leadDetailsUIState,
       updateLeadUIState: updateLeadUIState ?? this.updateLeadUIState,
@@ -59,28 +65,32 @@ class LeadsState extends Equatable {
 
   @override
   List<Object?> get props => [
-    leadListUIState,
-    leadListUIState?.status,
-    leadListUIState?.data,
-    leadListUIState?.errorType,
-    leadList,
-    leadPagination,
-    leadSearchQuery,
-    leadAssigneesUIState,
-    leadAssigneesUIState?.status,
-    leadAssigneesUIState?.data,
-    leadAssigneesUIState?.errorType,
-    createLeadUIState,
-    createLeadUIState?.status,
-    createLeadUIState?.data,
-    createLeadUIState?.errorType,
-    leadDetailsUIState,
-    leadDetailsUIState?.status,
-    leadDetailsUIState?.data,
-    leadDetailsUIState?.errorType,
-    updateLeadUIState,
-    updateLeadUIState?.status,
-    updateLeadUIState?.data,
-    updateLeadUIState?.errorType,
-  ];
+        leadListUIState,
+        leadListUIState?.status,
+        leadListUIState?.data,
+        leadListUIState?.errorType,
+        leadList,
+        leadPagination,
+        leadSearchQuery,
+        leadAssigneesUIState,
+        leadAssigneesUIState?.status,
+        leadAssigneesUIState?.data,
+        leadAssigneesUIState?.errorType,
+        leadSourcesUIState, // NEW
+        leadSourcesUIState?.status,
+        leadSourcesUIState?.data,
+        leadSourcesUIState?.errorType,
+        createLeadUIState,
+        createLeadUIState?.status,
+        createLeadUIState?.data,
+        createLeadUIState?.errorType,
+        leadDetailsUIState,
+        leadDetailsUIState?.status,
+        leadDetailsUIState?.data,
+        leadDetailsUIState?.errorType,
+        updateLeadUIState,
+        updateLeadUIState?.status,
+        updateLeadUIState?.data,
+        updateLeadUIState?.errorType,
+      ];
 }

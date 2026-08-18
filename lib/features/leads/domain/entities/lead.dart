@@ -266,7 +266,7 @@ class Lead extends Equatable {
 
   /// The channel the enquiry arrived through. Null for leads captured before
   /// the field existed, or when the server does not send it.
-  final LeadSource? source;
+  final String? source;
 
   /// Set only when a quotation was captured with the lead. Null is what the
   /// details screen reads to know there is no quotation section to show.
@@ -301,7 +301,7 @@ class Lead extends Equatable {
     String? mobile,
     LeadStatus? status,
     String? email,
-    LeadSource? source,
+    String? source,
     LeadQuotation? quotation,
     String? requiredItems,
     DateTime? nextFollowUpAt,
@@ -381,7 +381,7 @@ class LeadDraft extends Equatable {
   final String mobile;
   final String? email;
   final LeadStatus status;
-  final LeadSource? source;
+  final String? source;
 
   /// Sent only when the capture screen's quotation toggle was on and at
   /// least one quotation field was filled in.
@@ -397,7 +397,7 @@ class LeadDraft extends Equatable {
     'mobile': mobile.trim(),
     'status': status.wireValue,
     if (email != null && email!.trim().isNotEmpty) 'email': email!.trim(),
-    if (source != null) 'source': source!.wireValue,
+    if (source != null) 'source': source,
     if (quotation != null && quotation!.hasContent)
       'quotation': quotation!.toJson(),
     if (requiredItems != null) 'required_items': requiredItems,

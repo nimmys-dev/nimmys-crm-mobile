@@ -4,6 +4,7 @@ import 'package:nimmys_crm/data/network/api_urls.dart';
 import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
+import 'package:nimmys_crm/features/leads/model/lead_source_model.dart';
 
 /// Network access for lead reads, writes and lookups.
 class LeadService {
@@ -139,6 +140,27 @@ class LeadService {
       }
     } catch (_) {
       return Error<LeadDetailsSuccess>(DeserializationError());
+    }
+  }
+
+   /// GET /api/view-lead/{id}. Returns details for a single lead.
+  Future<Result<LeadSourceModel>> getLeadSources() async {
+    try {
+      final String url = ApiUrls.leadSources;
+      final Result<dynamic> result = await _apiService.get(url);
+      if (result is Success<dynamic>) {
+        return await _apiService.getResponseStatus<LeadSourceModel>(
+          result.value,
+          (dynamic json) =>
+              LeadSourceModel.fromJson(json as Map<String, dynamic>),
+        );
+      } else if (result is Error<dynamic>) {
+        return Error<LeadSourceModel>(result.type);
+      } else {
+        return Error<LeadSourceModel>(GenericError());
+      }
+    } catch (_) {
+      return Error<LeadSourceModel>(DeserializationError());
     }
   }
 }

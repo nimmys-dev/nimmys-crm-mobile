@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
 import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
+import 'package:nimmys_crm/features/leads/model/lead_source_model.dart';
 import 'package:nimmys_crm/utils/toast_messages.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -18,7 +19,7 @@ import '../../shared/widgets/app_section_card.dart';
 import '../../shared/widgets/app_segmented_tabs.dart';
 import '../../shared/widgets/app_select_field.dart';
 import '../../shared/widgets/app_text_field.dart';
-import 'domain/entities/lead.dart';
+import 'domain/entities/lead.dart'; // ← contains LeadSource enum and LeadDraft
 
 /// New Lead capture — mobile, name, requirement, source, owner and an
 /// optional quotation.
@@ -48,7 +49,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
 
   LeadAssigneeData? _selectedAssignee;
 
-  LeadSource? _source;
+  LeadSourceData? _source; // ✅ Now using the enum, not LeadSourceData
   DateTime? _nextFollowUp;
   bool _addQuotation = false;
 
@@ -59,7 +60,8 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
       if (mounted) {
         context.read<LeadsCubit>()
           ..resetCreateLeadState()
-          ..getLeadAssignees();
+          ..getLeadAssignees()
+          ..getLeadSources(); // ← fetches API sources and stores as LeadSourceData
       }
     });
   }
@@ -80,30 +82,18 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
   void _addQuotationItem() =>
       setState(() => _quotationItems.add(QuotationItemControllers()));
 
-  /// Removes a line and disposes its controllers. The last row stays: an
-  /// enabled quotation always has somewhere to type.
   void _removeQuotationItem(int index) {
-    if (_quotationItems.length <= 1) {
-      return;
-    }
+    if (_quotationItems.length <= 1) return;
     setState(() => _quotationItems.removeAt(index).dispose());
   }
 
-  /// The quotation to save with the lead, or null when the toggle is off or
-  /// nothing was typed into it — an empty quotation is not worth storing and
-  /// would render an empty section on the details screen.
   LeadQuotation? get _quotation {
-    if (!_addQuotation) {
-      return null;
-    }
-    final LeadQuotation quotation = LeadQuotation(
+    if (!_addQuotation) return null;
+    final quotation = LeadQuotation(
       customerAddress: _addressController.text,
-      // Rows left blank are dropped by `filledItems` on the way out.
-      items: _quotationItems
-          .map((QuotationItemControllers item) => item.toItem())
-          .toList(),
+      items: _quotationItems.map((c) => c.toItem()).toList(),
     );
-    final bool hasTerms = _termsController.text.trim().isNotEmpty;
+    final hasTerms = _termsController.text.trim().isNotEmpty;
     return (quotation.hasContent || hasTerms)
         ? LeadQuotation(
             customerAddress: quotation.customerAddress,
@@ -112,11 +102,11 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
         : null;
   }
 
-  /// Everything the form knows, retained for the optional screen callback.
   LeadDraft _buildDraft() => LeadDraft(
     name: _nameController.text,
     mobile: _mobileController.text,
-    source: _source,
+    source:
+        _source?.value.toString() ?? 'Call', // ✅ now matches LeadSource? type
     quotation: _quotation,
     requiredItems: _requirementController.text.trim().isEmpty
         ? null
@@ -129,11 +119,12 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
   Map<String, dynamic> _buildPayload() {
-    final LeadQuotation? quotation = _quotation;
+    final quotation = _quotation;
     return <String, dynamic>{
       'name': _nameController.text.trim(),
       'phone': _mobileController.text.trim(),
-      'source': _source!.wireValue,
+      'source':
+          _source?.value.toString() ?? 'Call', // ✅ now matches LeadSource? type
       'assigned_to': _selectedAssignee?.id,
       if (_nextFollowUp != null)
         'next_follow_up_date': _dateOnly(_nextFollowUp!),
@@ -148,10 +139,8 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
           if (_termsController.text.trim().isNotEmpty)
             'terms': _termsController.text.trim(),
           'items': _quotationItems
-              .where((QuotationItemControllers item) => item.toItem().hasContent)
-              .map(
-                (QuotationItemControllers item) => item.toApiJson(),
-              )
+              .where((item) => item.toItem().hasContent)
+              .map((item) => item.toApiJson())
               .toList(growable: false),
         },
     };
@@ -169,46 +158,46 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
 
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
-    final String? validationMessage = _validationMessage();
+    final validationMessage = _validationMessage();
     if (validationMessage != null) {
       ToastMessages.alert(message: validationMessage);
       return;
     }
-
     await context.read<LeadsCubit>().createLead(_buildPayload());
   }
 
   void _onLeadsStateChanged(BuildContext context, LeadsState state) {
-    if (!mounted) {
-      return;
+    if (!mounted) return;
+
+    // Handle assignees errors
+    if (state.leadAssigneesUIState?.status == Status.ERROR) {
+      ToastMessages.error(
+        message:
+            state.leadAssigneesUIState?.errorType?.getText(context) ??
+            'Could not load assignees',
+      );
     }
 
-    switch (state.leadAssigneesUIState?.status) {
-      case Status.ERROR:
-        ToastMessages.error(
-          message:
-              state.leadAssigneesUIState?.errorType?.getText(context) ??
-              'Could not load assignees',
-        );
-      case Status.SUCCESS:
-      case Status.LOADING:
-      case Status.INITIAL:
-      case null:
-        break;
+    // Handle sources errors
+    if (state.leadSourcesUIState?.status == Status.ERROR) {
+      ToastMessages.error(
+        message:
+            state.leadSourcesUIState?.errorType?.getText(context) ??
+            'Could not load lead sources',
+      );
     }
 
+    // Handle create lead
     switch (state.createLeadUIState?.status) {
       case Status.SUCCESS:
-        final dynamic value = state.createLeadUIState?.data;
-        final String message = value is Map && value['message'] is String
+        final value = state.createLeadUIState?.data;
+        final message = (value is Map && value['message'] is String)
             ? value['message'] as String
             : 'Lead created successfully.';
         ToastMessages.success(message: message);
         widget.onSubmit?.call(_buildDraft());
         context.read<LeadsCubit>().resetCreateLeadState();
-        if (context.canPop()) {
-          context.pop(true);
-        }
+        if (context.canPop()) context.pop(true);
       case Status.ERROR:
         ToastMessages.error(
           message:
@@ -216,9 +205,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
               'Could not create lead, Please try again later',
         );
         context.read<LeadsCubit>().resetCreateLeadState();
-      case Status.LOADING:
-      case Status.INITIAL:
-      case null:
+      default:
         break;
     }
   }
@@ -230,211 +217,227 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
         statusBarColor: Colors.transparent,
       ),
       child: BlocConsumer<LeadsCubit, LeadsState>(
-        listenWhen: (LeadsState previous, LeadsState current) =>
+        listenWhen: (previous, current) =>
             previous.createLeadUIState?.status !=
                 current.createLeadUIState?.status ||
             previous.leadAssigneesUIState?.status !=
-                current.leadAssigneesUIState?.status,
+                current.leadAssigneesUIState?.status ||
+            previous.leadSourcesUIState?.status !=
+                current.leadSourcesUIState?.status,
         listener: _onLeadsStateChanged,
-        builder: (BuildContext context, LeadsState state) {
-          final List<LeadAssigneeData> assignees =
-              state.leadAssigneesUIState?.data?.validAssignees ??
-              <LeadAssigneeData>[];
-          final bool isLoadingAssignees =
+        builder: (context, state) {
+          // ---- Assignees ----
+          final assignees =
+              state.leadAssigneesUIState?.data?.validAssignees ?? [];
+          final isLoadingAssignees =
               state.leadAssigneesUIState?.status == Status.LOADING ||
               state.leadAssigneesUIState?.status == null ||
               state.leadAssigneesUIState?.status == Status.INITIAL;
-          final bool isSubmitting =
+
+          // ---- Sources ----
+          // Convert API LeadSourceData to enum LeadSource
+          final sources =
+              state.leadSourcesUIState?.data?.data ?? <LeadSourceData>[];
+          final isLoadingSources =
+              state.leadSourcesUIState?.status == Status.LOADING ||
+              state.leadSourcesUIState?.status == null ||
+              state.leadSourcesUIState?.status == Status.INITIAL;
+          final sourceLabels = sources.map((s) => s.label ?? '').toList();
+          print('Lead sources: ${sourceLabels}'); // Debug print
+          print(
+            'Lead sources UI state: ${state.leadSourcesUIState}',
+          ); // Debug print
+          final isSubmitting =
               state.createLeadUIState?.status == Status.LOADING;
 
           return Scaffold(
-        backgroundColor: context.palette.canvas,
-        body: Column(
-          children: <Widget>[
-            const AppGradientHeader(
-              title: 'New Lead',
-              eyebrow: 'CAPTURE ENQUIRY',
-              leading: AppBackButton(),
-              actions: <Widget>[
-                AppHeaderIconButton(icon: Icons.upload_file_rounded),
-                SizedBox(width: AppSpacing.xs),
-                AppAvatar(initials: 'AB'),
+            backgroundColor: context.palette.canvas,
+            body: Column(
+              children: [
+                const AppGradientHeader(
+                  title: 'New Lead',
+                  eyebrow: 'CAPTURE ENQUIRY',
+                  leading: AppBackButton(),
+                  actions: [
+                    AppHeaderIconButton(icon: Icons.upload_file_rounded),
+                    SizedBox(width: AppSpacing.xs),
+                    AppAvatar(initials: 'AB'),
+                  ],
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.only(
+                      left: AppSpacing.gutter,
+                      right: AppSpacing.gutter,
+                      top: AppSpacing.md,
+                      bottom:
+                          MediaQuery.of(context).viewInsets.bottom +
+                          AppSpacing.xl,
+                    ),
+                    children: [
+                      AppSectionCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            AppFormField(
+                              label: 'Customer Mobile',
+                              isRequired: true,
+                              child: AppTextField(
+                                hint: 'Enter mobile number',
+                                controller: _mobileController,
+                                icon: Icons.call_outlined,
+                                keyboardType: TextInputType.phone,
+                                maxLength: 10,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                                suffix: const NewLeadLookupButton(),
+                              ),
+                            ),
+                            AppFormField(
+                              label: 'Customer Name',
+                              isRequired: true,
+                              bottomSpacing: 0,
+                              child: AppTextField(
+                                hint: 'Enter customer name',
+                                controller: _nameController,
+                                icon: Icons.person_outline_rounded,
+                                textCapitalization: TextCapitalization.words,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      AppSectionCard(
+                        child: AppFormField(
+                          label: 'Lead Details / Requirements',
+                          bottomSpacing: 0,
+                          child: AppTextField(
+                            hint: 'Which products is the customer asking for?',
+                            controller: _requirementController,
+                            icon: Icons.inventory_2_outlined,
+                            maxLines: 4,
+                            maxLength: 500,
+                            showCounter: true,
+                            textCapitalization: TextCapitalization.sentences,
+                          ),
+                        ),
+                      ),
+                      AppSectionCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            AppFormField(
+                              label: 'Source',
+                              isRequired: true,
+                              child: AppSelectField(
+                                hint: isLoadingSources
+                                    ? 'Loading sources…'
+                                    : 'Select lead source',
+                                sheetTitle: 'Where did this lead come from?',
+                                icon: Icons.campaign_outlined,
+                                options: sourceLabels,
+                                value: _source?.label,
+                                onChanged: (selectedLabel) {
+                                  final matched = sources.firstWhere(
+                                    (s) => s.label == selectedLabel,
+                                    orElse: () => sources.first,
+                                  );
+                                  setState(() => _source = matched);
+                                },
+                              ),
+                            ),
+                            AppFormField(
+                              label: 'Assigned To',
+                              isRequired: true,
+                              child: AppSelectField(
+                                hint: isLoadingAssignees
+                                    ? 'Loading assignees…'
+                                    : 'Select assignee',
+                                sheetTitle: 'Assign lead to',
+                                icon: Icons.badge_outlined,
+                                options: assignees
+                                    .map((a) => a.name!)
+                                    .toList(growable: false),
+                                value: _selectedAssignee?.name,
+                                onChanged: (value) {
+                                  final matched = assignees.firstWhere(
+                                    (a) => a.name == value,
+                                    orElse: () => assignees.first,
+                                  );
+                                  setState(() => _selectedAssignee = matched);
+                                },
+                              ),
+                            ),
+                            AppFormField(
+                              label: 'Next Follow Up',
+                              bottomSpacing: 0,
+                              child: AppDateField(
+                                hint: 'Select follow up date',
+                                value: _nextFollowUp,
+                                onChanged: (value) =>
+                                    setState(() => _nextFollowUp = value),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      AppSectionCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            AppToggleRow(
+                              title: 'Add Quotation',
+                              subtitle: 'Capture a price quote with this lead',
+                              icon: Icons.request_quote_outlined,
+                              value: _addQuotation,
+                              onChanged: (value) =>
+                                  setState(() => _addQuotation = value),
+                            ),
+                            if (_addQuotation) ...[
+                              const SizedBox(height: AppSpacing.md),
+                              NewLeadQuotationFields(
+                                addressController: _addressController,
+                                termsController: _termsController,
+                                items: _quotationItems,
+                                onAddItem: _addQuotationItem,
+                                onRemoveItem: _removeQuotationItem,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      AppPrimaryButton(
+                        label: 'CREATE LEAD',
+                        icon: Icons.person_add_alt_1_rounded,
+                        isLoading: isSubmitting,
+                        onPressed: _submit,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      const AppHintBanner(
+                        icon: Icons.bolt_rounded,
+                        title: 'Capture it while it is warm',
+                        message:
+                            'Leads logged within the first hour convert far more '
+                            'often. Add the requirement in the customer\'s words.',
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.only(
-                  left: AppSpacing.gutter,
-                  right: AppSpacing.gutter,
-                  top: AppSpacing.md,
-                  bottom:
-                      MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl,
-                ),
-                children: <Widget>[
-                  AppSectionCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        AppFormField(
-                          label: 'Customer Mobile',
-                          isRequired: true,
-                          child: AppTextField(
-                            hint: 'Enter mobile number',
-                            controller: _mobileController,
-                            icon: Icons.call_outlined,
-                            keyboardType: TextInputType.phone,
-                            maxLength: 10,
-                            inputFormatters: <TextInputFormatter>[
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            suffix: const NewLeadLookupButton(),
-                          ),
-                        ),
-                        AppFormField(
-                          label: 'Customer Name',
-                          isRequired: true,
-                          bottomSpacing: 0,
-                          child: AppTextField(
-                            hint: 'Enter customer name',
-                            controller: _nameController,
-                            icon: Icons.person_outline_rounded,
-                            textCapitalization: TextCapitalization.words,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  AppSectionCard(
-                    child: AppFormField(
-                      label: 'Lead Details / Requirements',
-                      bottomSpacing: 0,
-                      child: AppTextField(
-                        hint: 'Which products is the customer asking for?',
-                        controller: _requirementController,
-                        icon: Icons.inventory_2_outlined,
-                        maxLines: 4,
-                        maxLength: 500,
-                        showCounter: true,
-                        textCapitalization: TextCapitalization.sentences,
-                      ),
-                    ),
-                  ),
-                  AppSectionCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        AppFormField(
-                          label: 'Source',
-                          isRequired: true,
-                          child: AppSelectField(
-                            hint: 'Select lead source',
-                            sheetTitle: 'Where did this lead come from?',
-                            icon: Icons.campaign_outlined,
-                            options: LeadSource.labels,
-                            value: _source?.label,
-                            onChanged: (String value) => setState(
-                              () => _source = LeadSource.fromLabel(value),
-                            ),
-                          ),
-                        ),
-                        AppFormField(
-                          label: 'Assigned To',
-                          isRequired: true,
-                          child: AppSelectField(
-                            hint: isLoadingAssignees
-                                ? 'Loading assignees…'
-                                : 'Select assignee',
-                            sheetTitle: 'Assign lead to',
-                            icon: Icons.badge_outlined,
-                            options: assignees
-                                .map((LeadAssigneeData a) => a.name!)
-                                .toList(growable: false),
-                            value: _selectedAssignee?.name,
-                            onChanged: (String value) {
-                              LeadAssigneeData? matched;
-                              for (final LeadAssigneeData assignee
-                                  in assignees) {
-                                if (assignee.name == value) {
-                                  matched = assignee;
-                                  break;
-                                }
-                              }
-                              setState(() => _selectedAssignee = matched);
-                            },
-                          ),
-                        ),
-                        AppFormField(
-                          label: 'Next Follow Up',
-                          bottomSpacing: 0,
-                          child: AppDateField(
-                            hint: 'Select follow up date',
-                            value: _nextFollowUp,
-                            onChanged: (DateTime value) =>
-                                setState(() => _nextFollowUp = value),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  AppSectionCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        AppToggleRow(
-                          title: 'Add Quotation',
-                          subtitle: 'Capture a price quote with this lead',
-                          icon: Icons.request_quote_outlined,
-                          value: _addQuotation,
-                          onChanged: (bool value) =>
-                              setState(() => _addQuotation = value),
-                        ),
-                        // Off by default, and the fields only exist while it
-                        // is on — a lead without a quote stays a short form.
-                        if (_addQuotation) ...<Widget>[
-                          const SizedBox(height: AppSpacing.md),
-                          NewLeadQuotationFields(
-                            addressController: _addressController,
-                            termsController: _termsController,
-                            items: _quotationItems,
-                            onAddItem: _addQuotationItem,
-                            onRemoveItem: _removeQuotationItem,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  AppPrimaryButton(
-                    label: 'CREATE LEAD',
-                    icon: Icons.person_add_alt_1_rounded,
-                    isLoading: isSubmitting,
-                    onPressed: _submit,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  const AppHintBanner(
-                    icon: Icons.bolt_rounded,
-                    title: 'Capture it while it is warm',
-                    message:
-                        'Leads logged within the first hour convert far more '
-                        'often. Add the requirement in the customer\'s words.',
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
+          );
         },
       ),
     );
   }
 }
 
-/// The text fields behind one quotation line.
-///
-/// The screen owns a list of these — one per line — so each row keeps its own
-/// text, and adding or removing a line is a list operation rather than a
-/// shuffle of shared controllers.
+// ----------------------------------------------------------------------------
+// Quotation controllers and sub‑widgets (unchanged)
+// ----------------------------------------------------------------------------
+
 class QuotationItemControllers {
   QuotationItemControllers();
 
@@ -443,16 +446,12 @@ class QuotationItemControllers {
   final TextEditingController rate = TextEditingController();
   final TextEditingController taxPercent = TextEditingController(text: '0');
 
-  /// What this row is worth on submit. Blank fields stay null, which is what
-  /// makes an untouched row drop out of the saved quotation.
   QuotationItem toItem() => QuotationItem(
     item: item.text,
     quantity: int.tryParse(quantity.text.trim()),
     rate: double.tryParse(rate.text.trim().replaceAll(',', '')),
   );
 
-  /// The API's quotation line shape. The domain model does not carry tax yet,
-  /// so it remains an input concern until quote totals support tax as well.
   Map<String, dynamic> toApiJson() => <String, dynamic>{
     if (item.text.trim().isNotEmpty) 'description': item.text.trim(),
     if (int.tryParse(quantity.text.trim()) != null)
@@ -471,10 +470,6 @@ class QuotationItemControllers {
   }
 }
 
-/// The quotation half of the capture form, shown only while the toggle is on.
-///
-/// One address, then any number of item lines inside the same section — the
-/// lines are rows within this card, not cards of their own.
 class NewLeadQuotationFields extends StatelessWidget {
   const NewLeadQuotationFields({
     super.key,
@@ -495,7 +490,7 @@ class NewLeadQuotationFields extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
+      children: [
         AppFormField(
           label: 'Customer Address',
           child: AppTextField(
@@ -520,13 +515,9 @@ class NewLeadQuotationFields extends StatelessWidget {
         ),
         for (int index = 0; index < items.length; index++)
           NewLeadQuotationItemFields(
-            // Keyed by identity so removing a middle row does not hand its
-            // fields to the row that shifts up into its place.
             key: ObjectKey(items[index]),
             controllers: items[index],
             index: index,
-            // The last remaining row cannot be removed: an enabled quotation
-            // always keeps one line to type into.
             onRemove: items.length > 1 ? () => onRemoveItem(index) : null,
           ),
         const SizedBox(height: AppSpacing.xs),
@@ -540,7 +531,6 @@ class NewLeadQuotationFields extends StatelessWidget {
   }
 }
 
-/// One item line: product, quantity and rate, with its own remove action.
 class NewLeadQuotationItemFields extends StatelessWidget {
   const NewLeadQuotationItemFields({
     super.key,
@@ -551,15 +541,13 @@ class NewLeadQuotationItemFields extends StatelessWidget {
 
   final QuotationItemControllers controllers;
   final int index;
-
-  /// Null on the only remaining line, which hides the remove action.
   final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
+      children: [
         AppFormField(
           label: 'Item / Product',
           trailing: onRemove == null
@@ -574,7 +562,7 @@ class NewLeadQuotationItemFields extends StatelessWidget {
         ),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
+          children: [
             Expanded(
               child: AppFormField(
                 label: 'Quantity',
@@ -584,9 +572,7 @@ class NewLeadQuotationItemFields extends StatelessWidget {
                   controller: controllers.quantity,
                   icon: Icons.numbers_rounded,
                   keyboardType: TextInputType.number,
-                  inputFormatters: <TextInputFormatter>[
-                    FilteringTextInputFormatter.digitsOnly,
-                  ],
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
               ),
             ),
@@ -602,7 +588,7 @@ class NewLeadQuotationItemFields extends StatelessWidget {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  inputFormatters: <TextInputFormatter>[
+                  inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                   ],
                 ),
@@ -619,12 +605,11 @@ class NewLeadQuotationItemFields extends StatelessWidget {
             controller: controllers.taxPercent,
             icon: Icons.percent_rounded,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: <TextInputFormatter>[
+            inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
             ],
           ),
         ),
-        // Separates this line from the next without turning it into a card.
         if (onRemove != null || index > 0)
           Padding(
             padding: const EdgeInsets.only(top: AppSpacing.sm),
@@ -635,7 +620,6 @@ class NewLeadQuotationItemFields extends StatelessWidget {
   }
 }
 
-/// Small red "remove" affordance sitting on an item line's label row.
 class QuotationItemRemoveButton extends StatelessWidget {
   const QuotationItemRemoveButton({super.key, this.onPressed});
 
@@ -650,7 +634,7 @@ class QuotationItemRemoveButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
+          children: [
             const Icon(
               Icons.delete_outline_rounded,
               size: 15,
@@ -665,7 +649,6 @@ class QuotationItemRemoveButton extends StatelessWidget {
   }
 }
 
-/// Inline action that looks up an existing customer by mobile number.
 class NewLeadLookupButton extends StatelessWidget {
   const NewLeadLookupButton({super.key, this.onPressed});
 
@@ -683,7 +666,7 @@ class NewLeadLookupButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
+            children: [
               Text('Check', style: context.type.link.copyWith(fontSize: 11.5)),
               const Icon(
                 Icons.chevron_right_rounded,
