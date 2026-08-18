@@ -192,7 +192,8 @@ class AppRoutes {
       GoRoute(
         path: AppRouteName.leadDetails,
         builder: (BuildContext context, GoRouterState state) {
-          return const LeadDetailsScreen();
+          final int? id = int.tryParse(state.uri.queryParameters['id'] ?? '');
+          return LeadDetailsScreen(leadId: id);
         },
       ),
       GoRoute(

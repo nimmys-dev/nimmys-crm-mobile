@@ -86,6 +86,9 @@ class AppPermissions {
     AppPermission.createLead,
     AppPermission.editOwnLead,
     AppPermission.viewOwnFollowUps,
+    AppPermission.viewAllLeads,
+    AppPermission.editAnyLead,
+    AppPermission.deleteLead
   };
 
   static const Map<UserRole, Set<AppPermission>> _matrix =

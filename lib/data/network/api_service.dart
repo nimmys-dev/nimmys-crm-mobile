@@ -6,7 +6,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:nimmys_crm/core/auth/session_expiry_handler.dart';
 import 'package:nimmys_crm/data/model/result.dart';
-import 'package:nimmys_crm/data/network/api_urls.dart';
 import 'package:nimmys_crm/data/storage/secured_shared_preferences.dart';
 import 'package:nimmys_crm/service/hasInternet/has_internet_connection.dart';
 import 'package:nimmys_crm/utils/app_string.dart';

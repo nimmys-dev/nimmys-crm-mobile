@@ -1,32 +1,29 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
+import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
+import 'package:nimmys_crm/utils/toast_messages.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/phone_dialer.dart';
+import '../../data/ui_state/ui_state.dart';
+import '../../enum/status.dart';
 import '../../routing/app_route_name.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/app_buttons.dart';
 import '../../shared/widgets/app_gradient_header.dart';
 import '../../shared/widgets/app_search_field.dart';
 import '../../shared/widgets/app_section_card.dart';
-import '../../shared/widgets/app_segmented_tabs.dart';
-import 'domain/entities/lead.dart';
 import 'widgets/lead_contact_actions.dart';
 
-/// My Leads — the enquiries assigned to the signed-in user.
-///
-/// Filtered by [LeadStatus] rather than a hand-written list of tabs, so the
-/// pipeline stages here and the ones the capture screen writes can never drift
-/// apart. Tapping a lead opens the existing Lead Details screen.
-///
-/// DATA — the rows below are sample data. This project has no leads endpoint
-/// yet (`ApiUrls` covers auth, profile and staff only) and the dashboard
-/// counters that open this screen are hard-coded for the same reason. When a
-/// leads API lands, replace [_allLeads] with a cubit following the staff list;
-/// the widgets below take a `List<Lead>` and need no changes.
+/// Leads List screen — displays leads retrieved from `GET /api/leads` with
+/// server-side pagination.
 class MyLeadsScreen extends StatefulWidget {
   const MyLeadsScreen({super.key});
 
@@ -35,131 +32,59 @@ class MyLeadsScreen extends StatefulWidget {
 }
 
 class _MyLeadsScreenState extends State<MyLeadsScreen> {
-  static final List<Lead> _allLeads = <Lead>[
-    Lead(
-      id: '1',
-      name: 'Sejun',
-      mobile: '9961210000',
-      status: LeadStatus.negotiating,
-      createdAt: _daysAgo(2),
-      source: LeadSource.instagram,
-      requiredItems: 'Sigma 85mm Lens',
-      nextFollowUpAt: _daysAgo(0),
-      quotation: const LeadQuotation(
-        customerAddress: 'Marine Drive, Kochi, Ernakulam 682031',
-        items: <QuotationItem>[
-          QuotationItem(item: 'Sigma 85mm 1:4 Lens', quantity: 2, rate: 74500),
-          QuotationItem(item: 'Lens Cleaning Kit', quantity: 3, rate: 1250),
-        ],
-      ),
-    ),
-    Lead(
-      id: '2',
-      name: 'Abin',
-      mobile: '8086140010',
-      status: LeadStatus.fresh,
-      createdAt: _daysAgo(0),
-      source: LeadSource.whatsapp,
-      requiredItems: 'Sony Camera',
-    ),
-    Lead(
-      id: '3',
-      name: 'Sajeesh',
-      mobile: '9842610235',
-      status: LeadStatus.contacted,
-      createdAt: _daysAgo(4),
-      source: LeadSource.call,
-      requiredItems: 'Lens Sony',
-      nextFollowUpAt: _daysAgo(-2),
-    ),
-    Lead(
-      id: '4',
-      name: 'Madhu',
-      mobile: '8081616161',
-      status: LeadStatus.won,
-      createdAt: _daysAgo(9),
-      source: LeadSource.facebook,
-      requiredItems: 'Mac Mini M4',
-      quotation: const LeadQuotation(
-        customerAddress: 'Kanjikuzhi, Kottayam 686004',
-        items: <QuotationItem>[
-          QuotationItem(
-            item: 'Mac Mini M4 (16GB / 512GB)',
-            quantity: 1,
-            rate: 89900,
-          ),
-        ],
-      ),
-    ),
-    Lead(
-      id: '5',
-      name: 'Ranjith',
-      mobile: '9847112233',
-      status: LeadStatus.qualified,
-      createdAt: _daysAgo(1),
-      source: LeadSource.instagram,
-      requiredItems: 'Manfrotto Tripod',
-      nextFollowUpAt: _daysAgo(-1),
-    ),
-    Lead(
-      id: '6',
-      name: 'Anitha',
-      mobile: '9995540012',
-      status: LeadStatus.lost,
-      createdAt: _daysAgo(14),
-      source: LeadSource.other,
-      requiredItems: 'Printer',
-    ),
-  ];
-
-  static DateTime _daysAgo(int days) {
-    final DateTime now = DateTime.now();
-    return DateTime(now.year, now.month, now.day - days, 11, 0);
-  }
-
-  /// "All" sits in front of the pipeline stages, so index 0 means unfiltered
-  /// and index n maps to `LeadStatus.values[n - 1]`.
-  static const String _allLabel = 'All';
-
   final TextEditingController _searchController = TextEditingController();
-  int _tabIndex = 0;
-  String _query = '';
+  Timer? _searchDebounce;
 
-  LeadStatus? get _statusFilter =>
-      _tabIndex == 0 ? null : LeadStatus.values[_tabIndex - 1];
-
-  List<String> get _tabLabels => <String>[
-    _allLabel,
-    ...LeadStatus.values.map((LeadStatus status) => status.label),
-  ];
-
-  List<Lead> get _visibleLeads {
-    final LeadStatus? status = _statusFilter;
-    final List<Lead> inStage = status == null
-        ? _allLeads
-        : _allLeads.where((Lead lead) => lead.status == status).toList();
-
-    final String needle = _query.trim().toLowerCase();
-    if (needle.isEmpty) {
-      return inStage;
-    }
-    return inStage.where((Lead lead) {
-      return lead.name.toLowerCase().contains(needle) ||
-          lead.mobile.contains(needle) ||
-          (lead.requiredItems ?? '').toLowerCase().contains(needle);
-    }).toList();
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<LeadsCubit>().getLeads();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
 
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (mounted) {
+        context.read<LeadsCubit>().getLeads(search: value);
+      }
+    });
+  }
+
+  Future<void> _onRefresh() async {
+    await context.read<LeadsCubit>().refreshLeads();
+  }
+
+  Future<void> _openCreateLead() async {
+    final dynamic result = await context.push(AppRouteName.leadNew);
+    if (result == true && mounted) {
+      await context.read<LeadsCubit>().getLeads(refresh: true);
+    }
+  }
+
+  void _onLeadsStateChanged(BuildContext context, LeadsState state) {
+    final UIState<LeadListResponse>? uiState = state.leadListUIState;
+    if (uiState?.status != Status.ERROR || state.leadList.isNotEmpty) {
+      return;
+    }
+    ToastMessages.error(
+      message:
+          uiState?.errorType?.getText(context) ?? 'Failed to load leads',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final List<Lead> leads = _visibleLeads;
-
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
         statusBarColor: Colors.transparent,
@@ -181,103 +106,268 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
                 AppSpacing.gutter,
                 AppSpacing.sm,
               ),
-              child: Column(
-                children: <Widget>[
-                  AppSegmentedTabs(
-                    options: _tabLabels,
-                    selectedIndex: _tabIndex,
-                    onChanged: (int index) => setState(() => _tabIndex = index),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  AppSearchField(
-                    hint: 'Search by name, mobile or item…',
-                    controller: _searchController,
-                    onChanged: (String value) => setState(() => _query = value),
-                  ),
-                ],
+              child: AppSearchField(
+                hint: 'Search by name, mobile, reference or item…',
+                controller: _searchController,
+                onChanged: _onSearchChanged,
               ),
             ),
             Expanded(
-              child: leads.isEmpty
-                  ? MyLeadsEmptyState(
-                      status: _statusFilter,
-                      hasQuery: _query.isNotEmpty,
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.only(
-                        left: AppSpacing.gutter,
-                        right: AppSpacing.gutter,
-                        bottom: AppSpacing.xl,
-                      ),
-                      itemCount: leads.length + 1,
-                      itemBuilder: (BuildContext context, int index) {
-                        if (index == 0) {
-                          return MyLeadsCount(
-                            count: leads.length,
-                            total: _allLeads.length,
-                          );
-                        }
-                        final Lead lead = leads[index - 1];
-                        return MyLeadTile(
-                          lead: lead,
-                          onTap: () => context.push(AppRouteName.leadDetails),
-                          onCall: () => PhoneDialer.call(context, lead.mobile),
-                        );
-                      },
-                    ),
+              child: BlocConsumer<LeadsCubit, LeadsState>(
+                listenWhen: (LeadsState previous, LeadsState current) =>
+                    previous.leadListUIState?.status !=
+                    current.leadListUIState?.status,
+                listener: _onLeadsStateChanged,
+                builder: (BuildContext context, LeadsState state) {
+                  return _MyLeadsBody(
+                    state: state,
+                    onRefresh: _onRefresh,
+                    onRetry: _onRefresh,
+                    onPreviousPage: () {
+                      final LeadPagination? pagination = state.leadPagination;
+                      if (pagination != null && pagination.hasPreviousPage) {
+                        context
+                            .read<LeadsCubit>()
+                            .goToLeadsPage(pagination.previousPage);
+                      }
+                    },
+                    onNextPage: () {
+                      final LeadPagination? pagination = state.leadPagination;
+                      if (pagination != null && pagination.hasNextPage) {
+                        context
+                            .read<LeadsCubit>()
+                            .goToLeadsPage(pagination.nextPage);
+                      }
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),
         floatingActionButton: MyLeadsFab(
-          onPressed: () => context.push(AppRouteName.leadNew),
+          onPressed: _openCreateLead,
         ),
       ),
     );
   }
 }
 
-/// "6 leads" / "Showing 2 of 6 leads" strip above the rows.
-class MyLeadsCount extends StatelessWidget {
-  const MyLeadsCount({super.key, required this.count, required this.total});
+/// Picks between the list and its loading / error / empty stand-ins.
+class _MyLeadsBody extends StatelessWidget {
+  const _MyLeadsBody({
+    required this.state,
+    required this.onRefresh,
+    required this.onRetry,
+    required this.onPreviousPage,
+    required this.onNextPage,
+  });
 
-  final int count;
-  final int total;
+  final LeadsState state;
+  final Future<void> Function() onRefresh;
+  final Future<void> Function() onRetry;
+  final VoidCallback onPreviousPage;
+  final VoidCallback onNextPage;
 
   @override
   Widget build(BuildContext context) {
-    final String label = count == total
-        ? '$count lead${count == 1 ? '' : 's'}'
-        : 'Showing $count of $total leads';
+    final List<LeadItemData> leads = state.leadList;
+    final Status? status = state.leadListUIState?.status;
+    final bool isLoading = status == Status.LOADING;
+
+    if (leads.isEmpty &&
+        (isLoading || status == null || status == Status.INITIAL)) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.red),
+        ),
+      );
+    }
+
+    if (leads.isEmpty && status == Status.ERROR) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.gutter),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: AppColors.red.withValues(alpha: 0.8),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Failed to load leads',
+                style: context.type.cardTitle,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                state.leadListUIState?.errorType?.getText(context) ??
+                    'Something went wrong. Please try again.',
+                style: context.type.bodyMuted,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppOutlineButton(
+                label: 'Retry',
+                icon: Icons.refresh_rounded,
+                onPressed: () => onRetry(),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (leads.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: onRefresh,
+        color: AppColors.red,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: <Widget>[
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.5,
+              child: MyLeadsEmptyState(
+                hasQuery: state.leadSearchQuery.isNotEmpty,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final LeadPagination? pagination = state.leadPagination;
+    final int currentPage = pagination?.currentPage ?? 1;
+    final int perPage = pagination?.perPage ?? 10;
+    final int from = pagination?.from ?? ((currentPage - 1) * perPage + 1);
+    final int to = pagination?.to ?? (from + leads.length - 1);
+    final int total = pagination?.total ?? leads.length;
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      color: AppColors.red,
+      child: ListView.builder(
+        padding: const EdgeInsets.only(
+          left: AppSpacing.gutter,
+          right: AppSpacing.gutter,
+          bottom: AppSpacing.xl + 40,
+        ),
+        itemCount: leads.length + 2, // 1 for count header, 1 for pagination footer
+        itemBuilder: (BuildContext context, int index) {
+          if (index == 0) {
+            return MyLeadsCount(
+              from: from,
+              to: to,
+              total: total,
+              isLoading: isLoading,
+            );
+          }
+
+          if (index == leads.length + 1) {
+            if (pagination == null) return const SizedBox.shrink();
+            return MyLeadsPaginationBar(
+              pagination: pagination,
+              isLoading: isLoading,
+              onPreviousPage: onPreviousPage,
+              onNextPage: onNextPage,
+            );
+          }
+
+          final LeadItemData lead = leads[index - 1];
+          return MyLeadTile(
+            lead: lead,
+            onTap: () {
+              if (lead.id != null) {
+                context.push(AppRouteName.leadDetailsFor(lead.id!));
+              } else {
+                context.push(AppRouteName.leadDetails);
+              }
+            },
+            onCall: lead.phone != null && lead.phone!.isNotEmpty
+                ? () => PhoneDialer.call(context, lead.phone!)
+                : null,
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// "Showing 1–10 of 25 leads" strip above the rows.
+class MyLeadsCount extends StatelessWidget {
+  const MyLeadsCount({
+    super.key,
+    required this.from,
+    required this.to,
+    required this.total,
+    this.isLoading = false,
+  });
+
+  final int from;
+  final int to;
+  final int total;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    final String label = total == 0
+        ? 'No leads'
+        : (total <= to - from + 1
+            ? '$total lead${total == 1 ? '' : 's'}'
+            : 'Showing $from–$to of $total leads');
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.xs, left: 2),
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs, left: 2, top: 4),
       child: Row(
         children: <Widget>[
           Icon(Icons.groups_outlined, size: 15, color: context.palette.muted),
           const SizedBox(width: 5),
           Text(label, style: context.type.caption),
+          if (isLoading) ...<Widget>[
+            const SizedBox(width: 8),
+            const SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(
+                strokeWidth: 1.5,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.red),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-/// One lead row.
+/// One lead row displaying Reference, Name, Phone, Source, Assigned To,
+/// Created By and Description.
 class MyLeadTile extends StatelessWidget {
-  const MyLeadTile({super.key, required this.lead, this.onTap, this.onCall});
+  const MyLeadTile({
+    super.key,
+    required this.lead,
+    this.onTap,
+    this.onCall,
+  });
 
-  final Lead lead;
+  final LeadItemData lead;
   final VoidCallback? onTap;
   final VoidCallback? onCall;
 
   @override
   Widget build(BuildContext context) {
-    final bool isDue = lead.isFollowUpDue();
+    final String displayName = lead.name?.trim().isNotEmpty == true
+        ? lead.name!.trim()
+        : 'Unnamed Lead';
+    final String phone = lead.phone ?? '';
+    final String description = lead.cleanDescription;
 
     return AppSectionCard(
       padding: EdgeInsets.zero,
       margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-      accentBorder: isDue,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -286,25 +376,72 @@ class MyLeadTile extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              AppInitialBubble(letter: lead.name, size: 42, isAccent: isDue),
+              AppInitialBubble(letter: displayName, size: 42, isAccent: false),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Text(
-                      lead.name,
-                      style: context.type.cardTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Text(
+                            displayName,
+                            style: context.type.cardTitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (lead.reference != null &&
+                            lead.reference!.trim().isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: context.palette.redWash,
+                              borderRadius: BorderRadius.circular(AppRadius.xs),
+                            ),
+                            child: Text(
+                              lead.reference!.trim(),
+                              style: context.type.caption.copyWith(
+                                color: AppColors.red,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                    if (lead.requiredItems != null) ...<Widget>[
+                    if (phone.isNotEmpty) ...<Widget>[
                       const SizedBox(height: 2),
+                      Row(
+                        children: <Widget>[
+                          Icon(
+                            Icons.call_outlined,
+                            size: 13,
+                            color: context.palette.muted,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              phone,
+                              style: context.type.caption,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (description.isNotEmpty) ...<Widget>[
+                      const SizedBox(height: 3),
                       Text(
-                        lead.requiredItems!,
-                        style: context.type.caption,
-                        maxLines: 1,
+                        description,
+                        style: context.type.bodyMuted.copyWith(fontSize: 12.5),
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
@@ -313,39 +450,41 @@ class MyLeadTile extends StatelessWidget {
                       spacing: 6,
                       runSpacing: 6,
                       children: <Widget>[
-                        AppTag(
-                          label: lead.status.label.toUpperCase(),
-                          icon: Icons.flag_outlined,
-                          isAccent: !lead.status.isClosed,
-                        ),
-                        if (lead.source != null)
+                        if (lead.source != null &&
+                            lead.source!.trim().isNotEmpty)
                           AppTag(
-                            label: lead.source!.label,
+                            label: lead.source!.trim().toUpperCase(),
                             icon: Icons.campaign_outlined,
                             isAccent: false,
                           ),
-                        if (isDue)
-                          const AppTag(
-                            label: 'FOLLOW UP DUE',
-                            icon: Icons.alarm_on_rounded,
+                        if (lead.assignedTo != null &&
+                            lead.assignedTo!.trim().isNotEmpty)
+                          AppTag(
+                            label: 'Assigned: ${lead.assignedTo!.trim()}',
+                            icon: Icons.badge_outlined,
+                            isAccent: false,
+                          ),
+                        if (lead.createdBy != null &&
+                            lead.createdBy!.trim().isNotEmpty)
+                          AppTag(
+                            label: 'By: ${lead.createdBy!.trim()}',
+                            icon: Icons.person_outline_rounded,
+                            isAccent: false,
                           ),
                       ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: AppSpacing.xs),
-              // The same cluster the follow-up list uses — WhatsApp, share
-              // quotation, call — so a lead offers the identical actions
-              // wherever it is shown. The quotation button appears only on
-              // leads that actually have one.
-              LeadContactActions(
-                name: lead.name,
-                mobile: lead.mobile,
-                enquiry: lead.requiredItems,
-                quotation: lead.quotation,
-                onCall: onCall,
-              ),
+              if (phone.isNotEmpty) ...<Widget>[
+                const SizedBox(width: AppSpacing.xs),
+                LeadContactActions(
+                  name: displayName,
+                  mobile: phone,
+                  enquiry: description.isNotEmpty ? description : null,
+                  onCall: onCall,
+                ),
+              ],
             ],
           ),
         ),
@@ -354,21 +493,165 @@ class MyLeadTile extends StatelessWidget {
   }
 }
 
-/// Nothing in this stage.
+/// Server-side pagination controls (Previous, Page X of Y, Next, Total records).
+class MyLeadsPaginationBar extends StatelessWidget {
+  const MyLeadsPaginationBar({
+    super.key,
+    required this.pagination,
+    required this.onPreviousPage,
+    required this.onNextPage,
+    this.isLoading = false,
+  });
+
+  final LeadPagination pagination;
+  final VoidCallback onPreviousPage;
+  final VoidCallback onNextPage;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    final int current = pagination.currentPage ?? 1;
+    final int last = pagination.lastPage ?? 1;
+    final int total = pagination.total ?? 0;
+    final bool canGoPrev = pagination.hasPreviousPage && !isLoading;
+    final bool canGoNext = pagination.hasNextPage && !isLoading;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.md),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        decoration: BoxDecoration(
+          color: context.palette.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: context.palette.line),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            // Previous Button
+            InkWell(
+              onTap: canGoPrev ? onPreviousPage : null,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: canGoPrev
+                      ? context.palette.redWash
+                      : context.palette.surfaceAlt,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border: Border.all(
+                    color: canGoPrev
+                        ? context.palette.redBorder
+                        : context.palette.line,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(
+                      Icons.chevron_left_rounded,
+                      size: 18,
+                      color: canGoPrev ? AppColors.red : context.palette.faint,
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      'Prev',
+                      style: context.type.caption.copyWith(
+                        color:
+                            canGoPrev ? AppColors.red : context.palette.faint,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Page Indicator
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  'Page $current of $last',
+                  style: context.type.body.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$total total records',
+                  style: context.type.caption.copyWith(fontSize: 11),
+                ),
+              ],
+            ),
+
+            // Next Button
+            InkWell(
+              onTap: canGoNext ? onNextPage : null,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: canGoNext
+                      ? context.palette.redWash
+                      : context.palette.surfaceAlt,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border: Border.all(
+                    color: canGoNext
+                        ? context.palette.redBorder
+                        : context.palette.line,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      'Next',
+                      style: context.type.caption.copyWith(
+                        color:
+                            canGoNext ? AppColors.red : context.palette.faint,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 18,
+                      color: canGoNext ? AppColors.red : context.palette.faint,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Nothing in this state.
 class MyLeadsEmptyState extends StatelessWidget {
   const MyLeadsEmptyState({
     super.key,
-    required this.status,
     required this.hasQuery,
   });
 
-  final LeadStatus? status;
   final bool hasQuery;
 
   @override
   Widget build(BuildContext context) {
-    final String stage = status?.label.toLowerCase() ?? 'assigned';
-    final String title = hasQuery ? 'No matching leads' : 'No $stage leads';
+    final String title = hasQuery ? 'No matching leads' : 'No leads found';
     final String message = hasQuery
         ? 'Nothing here matches that search.'
         : 'Leads you capture or that are assigned to you will appear here.';
@@ -411,7 +694,7 @@ class MyLeadsEmptyState extends StatelessWidget {
   }
 }
 
-/// Red compose button, matching the follow-up list's.
+/// Red compose button.
 class MyLeadsFab extends StatelessWidget {
   const MyLeadsFab({super.key, this.onPressed});
 

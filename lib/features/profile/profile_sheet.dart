@@ -13,6 +13,7 @@ import '../../shared/widgets/app_buttons.dart';
 import '../../utils/toast_messages.dart';
 import '../authentication/cubit/logout/logout_cubit.dart';
 import '../authentication/cubit/session/session_cubit.dart';
+import '../leads/cubit/leads/leads_cubit.dart';
 import '../staff/cubit/staff/staff_cubit.dart';
 import 'cubit/profile/profile_cubit.dart';
 import 'model/profile_model.dart';
@@ -136,6 +137,7 @@ class _ProfileSheetState extends State<ProfileSheet> {
     context.read<ProfileCubit>().resetProfileState();
     locator<SessionCubit>().clearSession();
     locator<StaffCubit>().resetStaffState();
+    locator<LeadsCubit>().resetLeadsState();
 
     Navigator.of(context).pop();
     router.go(AppRouteName.signIn);

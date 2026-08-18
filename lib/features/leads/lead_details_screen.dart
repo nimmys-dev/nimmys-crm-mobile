@@ -1,60 +1,71 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nimmys_crm/core/utils/phone_dialer.dart';
+import 'package:nimmys_crm/core/utils/whatsapp_launcher.dart';
+import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
+import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
+import 'package:nimmys_crm/utils/toast_messages.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
+import '../../core/theme/app_theme.dart';
+import '../../data/ui_state/ui_state.dart';
+import '../../enum/status.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/app_bottom_nav.dart';
 import '../../shared/widgets/app_buttons.dart';
 import '../../shared/widgets/app_gradient_header.dart';
 import '../../shared/widgets/app_section_card.dart';
-import 'domain/entities/lead.dart';
 import 'widgets/lead_detail_widgets.dart';
 
-/// Lead Details — customer profile, requested items and the call history.
+/// Lead Details — customer profile, assignment, source and requirements
+/// retrieved from `GET /api/view-lead/{leadId}`.
 class LeadDetailsScreen extends StatefulWidget {
-  const LeadDetailsScreen({super.key});
+  const LeadDetailsScreen({super.key, this.leadId});
+
+  final int? leadId;
 
   @override
   State<LeadDetailsScreen> createState() => _LeadDetailsScreenState();
 }
 
 class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
-  static const LeadSource _source = LeadSource.instagram;
-
-  /// A lead saved without the quotation toggle has nothing here, and the
-  /// section below disappears entirely rather than rendering empty rows.
-  static const LeadQuotation _quotation = LeadQuotation(
-    customerAddress: 'Marine Drive, Kochi, Ernakulam 682031',
-    items: <QuotationItem>[
-      QuotationItem(item: 'Sigma 85mm 1:4 Lens', quantity: 2, rate: 74500),
-      QuotationItem(item: 'Canon Camera 85mm', quantity: 1, rate: 132000),
-      QuotationItem(item: 'Lens Cleaning Kit', quantity: 3, rate: 1250),
-    ],
-  );
-
-  static const List<String> _items = <String>[
-    'Sigma 85mm 1:4 Lens',
-    'Canon Camera 85mm',
-  ];
-
-  static const List<CallLogEntry> _calls = <CallLogEntry>[
-    CallLogEntry(
-      outcome: 'Answered',
-      remarks: 'Waiting for the product. Will confirm once stock arrives.',
-      calledBy: 'Ajith Canon',
-      calledAt: '01/05/2024 · 10:30 AM',
-    ),
-    CallLogEntry(
-      outcome: 'Not Reachable',
-      remarks: 'Phone switched off. Retry in the evening.',
-      calledBy: 'Abin Babu',
-      calledAt: '28/04/2024 · 04:15 PM',
-      isAnswered: false,
-    ),
-  ];
-
   int _navIndex = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      final int? id = widget.leadId;
+      if (id != null) {
+        context.read<LeadsCubit>().getLeadDetails(id);
+      }
+    });
+  }
+
+  Future<void> _reload() async {
+    final int? id = widget.leadId;
+    if (id == null) {
+      return;
+    }
+    await context.read<LeadsCubit>().getLeadDetails(id);
+  }
+
+  void _onLeadDetailsStateChanged(BuildContext context, LeadsState state) {
+    final UIState<LeadDetailsSuccess>? uiState = state.leadDetailsUIState;
+    if (uiState?.status != Status.ERROR) {
+      return;
+    }
+    ToastMessages.error(
+      message:
+          uiState?.errorType?.getText(context) ??
+          'Failed to load lead details',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,169 +73,251 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
       value: SystemUiOverlayStyle.light.copyWith(
         statusBarColor: Colors.transparent,
       ),
-      child: Scaffold(
-        backgroundColor: context.palette.canvas,
-        body: Column(
-          children: <Widget>[
-            const AppGradientHeader(
-              title: 'Lead Details',
-              eyebrow: 'LEAD #10428',
-              leading: AppBackButton(),
-              actions: <Widget>[AppAvatar(initials: 'AB')],
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.only(
-                  left: AppSpacing.gutter,
-                  right: AppSpacing.gutter,
-                  top: AppSpacing.md,
-                  bottom: AppSpacing.xl,
+      child: BlocConsumer<LeadsCubit, LeadsState>(
+        listenWhen: (LeadsState previous, LeadsState current) =>
+            previous.leadDetailsUIState?.status !=
+            current.leadDetailsUIState?.status,
+        listener: _onLeadDetailsStateChanged,
+        builder: (BuildContext context, LeadsState state) {
+          final LeadDetailsData? lead = state.leadDetailsUIState?.data?.data;
+          final String eyebrow = lead?.reference != null &&
+                  lead!.reference!.trim().isNotEmpty
+              ? lead.reference!.trim()
+              : (widget.leadId != null
+                  ? 'LEAD #${widget.leadId}'
+                  : 'LEAD DETAILS');
+
+          return Scaffold(
+            backgroundColor: context.palette.canvas,
+            body: Column(
+              children: <Widget>[
+                AppGradientHeader(
+                  title: 'Lead Details',
+                  eyebrow: eyebrow,
+                  leading: const AppBackButton(),
+                  actions: <Widget>[
+                    AppAvatar(initials: lead?.initials ?? 'LD'),
+                  ],
                 ),
-                children: <Widget>[
-                  const LeadSummaryCard(
-                    name: 'Sojan',
-                    mobile: '9961210000',
-                    status: 'Follow up',
+                Expanded(
+                  child: _LeadDetailsBody(
+                    leadId: widget.leadId,
+                    state: state,
+                    onRetry: _reload,
                   ),
-                  AppSectionCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        LeadSectionTitle(
-                          title: 'Customer Details',
-                          icon: Icons.person_outline_rounded,
-                          action: AppPillButton(
-                            label: 'Edit',
-                            icon: Icons.edit_outlined,
-                            onPressed: () {},
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        const LeadDetailsGrid(source: _source),
-                      ],
-                    ),
-                  ),
-                  AppSectionCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        LeadSectionTitle(
-                          title: 'Item Details',
-                          icon: Icons.sell_outlined,
-                          action: AppPillButton(
-                            label: 'Edit',
-                            icon: Icons.edit_outlined,
-                            onPressed: () {},
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        for (int index = 0; index < _items.length; index++)
-                          LeadItemRow(
-                            name: _items[index],
-                            isLast: index == _items.length - 1,
-                          ),
-                      ],
-                    ),
-                  ),
-                  // Only rendered for a lead that was saved with a quotation.
-                  if (_quotation.hasContent)
-                    AppSectionCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: <Widget>[
-                          LeadSectionTitle(
-                            title: 'Quotation Details',
-                            icon: Icons.request_quote_outlined,
-                            action: AppPillButton(
-                              label: 'Edit',
-                              icon: Icons.edit_outlined,
-                              onPressed: () {},
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          const LeadQuotationDetails(quotation: _quotation),
-                        ],
-                      ),
-                    ),
-                  AppSectionCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        LeadSectionTitle(
-                          title: 'Call Details',
-                          icon: Icons.call_outlined,
-                          action: AppPillButton(
-                            label: 'Add Call',
-                            icon: Icons.add_rounded,
-                            tone: AppIconChipStyle.filled,
-                            onPressed: () {},
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        for (int index = 0; index < _calls.length; index++)
-                          Padding(
-                            padding: EdgeInsets.only(
-                              bottom: index == _calls.length - 1
-                                  ? 0
-                                  : AppSpacing.xs,
-                            ),
-                            child: CallLogCard(entry: _calls[index]),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-        bottomNavigationBar: AppBottomNav(
-          items: const <AppNavItem>[
-            AppNavItem(
-              label: 'Dashboard',
-              icon: Icons.home_outlined,
-              activeIcon: Icons.home_rounded,
+            bottomNavigationBar: AppBottomNav(
+              items: const <AppNavItem>[
+                AppNavItem(
+                  label: 'Dashboard',
+                  icon: Icons.home_outlined,
+                  activeIcon: Icons.home_rounded,
+                ),
+                AppNavItem(
+                  label: 'Leads',
+                  icon: Icons.groups_outlined,
+                  activeIcon: Icons.groups_rounded,
+                ),
+                AppNavItem(
+                  label: 'Calendar',
+                  icon: Icons.calendar_month_outlined,
+                  activeIcon: Icons.calendar_month_rounded,
+                ),
+                AppNavItem(
+                  label: 'Profile',
+                  icon: Icons.person_outline_rounded,
+                  activeIcon: Icons.person_rounded,
+                ),
+              ],
+              currentIndex: _navIndex,
+              onTap: (int index) => setState(() => _navIndex = index),
+              centerAction:
+                  const AppNavItem(label: 'Add', icon: Icons.add_rounded),
             ),
-            AppNavItem(
-              label: 'Leads',
-              icon: Icons.groups_outlined,
-              activeIcon: Icons.groups_rounded,
-            ),
-            AppNavItem(
-              label: 'Calendar',
-              icon: Icons.calendar_month_outlined,
-              activeIcon: Icons.calendar_month_rounded,
-            ),
-            AppNavItem(
-              label: 'Profile',
-              icon: Icons.person_outline_rounded,
-              activeIcon: Icons.person_rounded,
-            ),
-          ],
-          currentIndex: _navIndex,
-          onTap: (int index) => setState(() => _navIndex = index),
-          centerAction: const AppNavItem(label: 'Add', icon: Icons.add_rounded),
-        ),
+          );
+        },
       ),
     );
   }
 }
 
-/// Identity strip at the top of the lead: avatar, name, status and actions.
+class _LeadDetailsBody extends StatelessWidget {
+  const _LeadDetailsBody({
+    required this.leadId,
+    required this.state,
+    required this.onRetry,
+  });
+
+  final int? leadId;
+  final LeadsState state;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final UIState<LeadDetailsSuccess>? detailsState = state.leadDetailsUIState;
+    final LeadDetailsData? lead = detailsState?.data?.data;
+    final Status? status = detailsState?.status;
+
+    if (leadId == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.gutter),
+          child: Text(
+            'No Lead ID specified.',
+            style: context.type.bodyMuted,
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    if (lead == null &&
+        (status == Status.LOADING ||
+            status == null ||
+            status == Status.INITIAL)) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.red),
+        ),
+      );
+    }
+
+    if (lead == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.gutter),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: AppColors.red.withValues(alpha: 0.8),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Failed to load lead details',
+                style: context.type.cardTitle,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                detailsState?.errorType?.getText(context) ??
+                    'Something went wrong. Please try again.',
+                style: context.type.bodyMuted,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppOutlineButton(
+                label: 'Retry',
+                icon: Icons.refresh_rounded,
+                onPressed: () => onRetry(),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    final String displayName = lead.name?.trim().isNotEmpty == true
+        ? lead.name!.trim()
+        : 'Unnamed Lead';
+    final String phone = lead.phone?.trim() ?? '';
+    final String description = lead.cleanDescription;
+
+    return RefreshIndicator(
+      onRefresh: onRetry,
+      color: AppColors.red,
+      child: ListView(
+        padding: const EdgeInsets.only(
+          left: AppSpacing.gutter,
+          right: AppSpacing.gutter,
+          top: AppSpacing.md,
+          bottom: AppSpacing.xl,
+        ),
+        children: <Widget>[
+          LeadSummaryCard(
+            name: displayName,
+            mobile: phone.isNotEmpty ? phone : 'No phone number',
+            reference: lead.reference,
+            onCall: phone.isNotEmpty
+                ? () => PhoneDialer.call(context, phone)
+                : null,
+            onWhatsApp: phone.isNotEmpty
+                ? () => WhatsAppLauncher.openChat(
+                      context,
+                      phone,
+                      message:
+                          'Hi $displayName, following up on your enquiry (${lead.reference ?? "Lead #${lead.id}"}).',
+                    )
+                : null,
+          ),
+          AppSectionCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                const LeadSectionTitle(
+                  title: 'Customer Details',
+                  icon: Icons.person_outline_rounded,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                LeadDetailsGrid(
+                  name: displayName,
+                  phone: phone.isNotEmpty ? phone : '—',
+                  reference: lead.reference,
+                  source: lead.source,
+                  assignedTo: lead.assignedTo,
+                  createdBy: lead.createdBy,
+                ),
+              ],
+            ),
+          ),
+          if (description.isNotEmpty)
+            AppSectionCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  const LeadSectionTitle(
+                    title: 'Description / Notes',
+                    icon: Icons.description_outlined,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  LeadDetailBlock(
+                    label: 'Requirements / Notes',
+                    value: description,
+                    icon: Icons.notes_rounded,
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Identity strip at the top of the lead: avatar, name, reference and quick actions.
 class LeadSummaryCard extends StatelessWidget {
   const LeadSummaryCard({
     super.key,
     required this.name,
     required this.mobile,
-    required this.status,
+    this.reference,
+    this.onCall,
+    this.onWhatsApp,
   });
 
   final String name;
   final String mobile;
-  final String status;
+  final String? reference;
+  final VoidCallback? onCall;
+  final VoidCallback? onWhatsApp;
 
   @override
   Widget build(BuildContext context) {
+    final String initial = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : '?';
+
     return AppSectionCard(
       accentBorder: true,
       child: Column(
@@ -232,7 +325,7 @@ class LeadSummaryCard extends StatelessWidget {
           Row(
             children: <Widget>[
               AppAvatar(
-                initials: name.substring(0, 1),
+                initials: initial,
                 size: 48,
                 tone: AppAvatarTone.solid,
               ),
@@ -270,11 +363,15 @@ class LeadSummaryCard extends StatelessWidget {
                   ],
                 ),
               ),
-              AppTag(label: status, icon: Icons.flag_rounded),
+              if (reference != null && reference!.trim().isNotEmpty)
+                AppTag(label: reference!.trim(), icon: Icons.tag_rounded),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          const LeadQuickActions(),
+          LeadQuickActions(
+            onCall: onCall,
+            onWhatsApp: onWhatsApp,
+          ),
         ],
       ),
     );
@@ -283,72 +380,66 @@ class LeadSummaryCard extends StatelessWidget {
 
 /// Two-column grid of the lead's core attributes.
 class LeadDetailsGrid extends StatelessWidget {
-  const LeadDetailsGrid({super.key, this.source});
+  const LeadDetailsGrid({
+    super.key,
+    required this.name,
+    required this.phone,
+    this.reference,
+    this.source,
+    this.assignedTo,
+    this.createdBy,
+  });
 
-  /// The channel the enquiry came in through. Shown as a dash when the lead
-  /// predates the field or the server sent nothing.
-  final LeadSource? source;
+  final String name;
+  final String phone;
+  final String? reference;
+  final String? source;
+  final String? assignedTo;
+  final String? createdBy;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        const Row(
+        Row(
           children: <Widget>[
             Expanded(
               child: LeadDetailTile(
                 label: 'Name',
-                value: 'Sojan',
+                value: name,
                 icon: Icons.person_outline_rounded,
               ),
             ),
-            SizedBox(width: AppSpacing.xs),
+            const SizedBox(width: AppSpacing.xs),
             Expanded(
               child: LeadDetailTile(
                 label: 'Mobile No',
-                value: '9961210000',
+                value: phone,
                 icon: Icons.call_outlined,
               ),
             ),
           ],
         ),
         const SizedBox(height: AppSpacing.xs),
-        const Row(
-          children: <Widget>[
-            Expanded(
-              child: LeadDetailTile(
-                label: 'Created By',
-                value: 'Ajith Canon',
-                icon: Icons.badge_outlined,
-              ),
-            ),
-            SizedBox(width: AppSpacing.xs),
-            Expanded(
-              child: LeadDetailTile(
-                label: 'Date & Time',
-                value: '01/05/2024',
-                icon: Icons.schedule_rounded,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        const Row(
+        Row(
           children: <Widget>[
             Expanded(
               child: LeadDetailTile(
                 label: 'Assigned To',
-                value: 'Ajith Canon',
+                value: assignedTo != null && assignedTo!.trim().isNotEmpty
+                    ? assignedTo!.trim()
+                    : '—',
                 icon: Icons.assignment_ind_outlined,
               ),
             ),
-            SizedBox(width: AppSpacing.xs),
+            const SizedBox(width: AppSpacing.xs),
             Expanded(
               child: LeadDetailTile(
-                label: 'Next Follow Up',
-                value: '05/10/2024',
-                icon: Icons.event_rounded,
-                isAccent: true,
+                label: 'Created By',
+                value: createdBy != null && createdBy!.trim().isNotEmpty
+                    ? createdBy!.trim()
+                    : '—',
+                icon: Icons.badge_outlined,
               ),
             ),
           ],
@@ -359,15 +450,59 @@ class LeadDetailsGrid extends StatelessWidget {
             Expanded(
               child: LeadDetailTile(
                 label: 'Source',
-                value: source?.label ?? '—',
+                value: source != null && source!.trim().isNotEmpty
+                    ? source!.trim().toUpperCase()
+                    : '—',
                 icon: Icons.campaign_outlined,
               ),
             ),
-            // Keeps the tile the same width as the ones above it rather than
-            // letting a lone row stretch across both columns.
             const SizedBox(width: AppSpacing.xs),
-            const Expanded(child: SizedBox()),
+            Expanded(
+              child: LeadDetailTile(
+                label: 'Reference',
+                value: reference != null && reference!.trim().isNotEmpty
+                    ? reference!.trim()
+                    : '—',
+                icon: Icons.tag_rounded,
+              ),
+            ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Wide row of quick actions (call / WhatsApp) on the lead detail page.
+class LeadQuickActions extends StatelessWidget {
+  const LeadQuickActions({
+    super.key,
+    this.onCall,
+    this.onWhatsApp,
+  });
+
+  final VoidCallback? onCall;
+  final VoidCallback? onWhatsApp;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: LeadQuickAction(
+            icon: Icons.call_rounded,
+            label: 'Call',
+            isPrimary: true,
+            onTap: onCall,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: LeadQuickAction(
+            icon: Icons.chat_bubble_outline_rounded,
+            label: 'WhatsApp',
+            onTap: onWhatsApp,
+          ),
         ),
       ],
     );

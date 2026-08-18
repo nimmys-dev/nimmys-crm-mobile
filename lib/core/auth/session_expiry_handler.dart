@@ -8,6 +8,7 @@ import 'package:nimmys_crm/dependency_injection/locator.dart';
 import 'package:nimmys_crm/features/authentication/cubit/login/login_cubit.dart';
 import 'package:nimmys_crm/features/authentication/cubit/session/session_cubit.dart';
 import 'package:nimmys_crm/features/authentication/repository/auth_repository.dart';
+import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
 import 'package:nimmys_crm/features/profile/cubit/profile/profile_cubit.dart';
 import 'package:nimmys_crm/features/staff/cubit/staff/staff_cubit.dart';
 import 'package:nimmys_crm/routing/app_route_name.dart';
@@ -100,6 +101,7 @@ class SessionExpiryHandler {
       locator<SessionCubit>().clearSession();
       locator<ProfileCubit>().resetProfileState();
       locator<StaffCubit>().resetStaffState();
+      locator<LeadsCubit>().resetLeadsState();
       locator<LoginCubit>().resetLoginState();
 
       _announceAndRedirect();

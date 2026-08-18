@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
+import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
+import 'package:nimmys_crm/utils/toast_messages.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
+import '../../core/theme/app_theme.dart';
+import '../../enum/status.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/app_buttons.dart';
 import '../../shared/widgets/app_form_field.dart';
@@ -29,28 +35,34 @@ class NewLeadScreen extends StatefulWidget {
 }
 
 class _NewLeadScreenState extends State<NewLeadScreen> {
-  static const List<String> _assignees = <String>[
-    'Abin Babu',
-    'Sejun Thomas',
-    'Sajeesh Kumar',
-    'Ajith Canon',
-  ];
-
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _requirementController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _termsController = TextEditingController();
 
   /// One controller set per quotation line. Starts with a single row, which
   /// is also the minimum while the quotation toggle is on.
   final List<QuotationItemControllers> _quotationItems =
       <QuotationItemControllers>[QuotationItemControllers()];
 
-  String? _assignee;
+  LeadAssigneeData? _selectedAssignee;
+
   LeadSource? _source;
   DateTime? _nextFollowUp;
   bool _addQuotation = false;
-  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<LeadsCubit>()
+          ..resetCreateLeadState()
+          ..getLeadAssignees();
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -58,6 +70,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
     _nameController.dispose();
     _requirementController.dispose();
     _addressController.dispose();
+    _termsController.dispose();
     for (final QuotationItemControllers item in _quotationItems) {
       item.dispose();
     }
@@ -90,7 +103,8 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
           .map((QuotationItemControllers item) => item.toItem())
           .toList(),
     );
-    return quotation.hasContent
+    final bool hasTerms = _termsController.text.trim().isNotEmpty;
+    return (quotation.hasContent || hasTerms)
         ? LeadQuotation(
             customerAddress: quotation.customerAddress,
             items: quotation.filledItems,
@@ -98,10 +112,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
         : null;
   }
 
-  /// Everything the form knows, in the shape a create actually posts.
-  ///
-  /// The assignee is deliberately absent: `assignedToId` wants an employee
-  /// id and this screen's picker only has display names to offer.
+  /// Everything the form knows, retained for the optional screen callback.
   LeadDraft _buildDraft() => LeadDraft(
     name: _nameController.text,
     mobile: _mobileController.text,
@@ -111,16 +122,104 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
         ? null
         : _requirementController.text.trim(),
     nextFollowUpAt: _nextFollowUp,
+    assignedToId: _selectedAssignee?.id?.toString(),
   );
+
+  String _dateOnly(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+  Map<String, dynamic> _buildPayload() {
+    final LeadQuotation? quotation = _quotation;
+    return <String, dynamic>{
+      'name': _nameController.text.trim(),
+      'phone': _mobileController.text.trim(),
+      'source': _source!.wireValue,
+      'assigned_to': _selectedAssignee?.id,
+      if (_nextFollowUp != null)
+        'next_follow_up_date': _dateOnly(_nextFollowUp!),
+      if (_requirementController.text.trim().isNotEmpty)
+        'description': _requirementController.text.trim(),
+      if (quotation != null)
+        'quotation': <String, dynamic>{
+          'customer_name': _nameController.text.trim(),
+          if (quotation.customerAddress?.trim().isNotEmpty ?? false)
+            'customer_address': quotation.customerAddress!.trim(),
+          'issue_date': _dateOnly(DateTime.now()),
+          if (_termsController.text.trim().isNotEmpty)
+            'terms': _termsController.text.trim(),
+          'items': _quotationItems
+              .where((QuotationItemControllers item) => item.toItem().hasContent)
+              .map(
+                (QuotationItemControllers item) => item.toApiJson(),
+              )
+              .toList(growable: false),
+        },
+    };
+  }
+
+  String? _validationMessage() {
+    if (_mobileController.text.trim().length != 10) {
+      return 'Enter a valid 10-digit mobile number.';
+    }
+    if (_nameController.text.trim().isEmpty) return 'Enter the customer name.';
+    if (_source == null) return 'Select a lead source.';
+    if (_selectedAssignee == null) return 'Select an assignee.';
+    return null;
+  }
 
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
-    final LeadDraft draft = _buildDraft();
-    setState(() => _isSubmitting = true);
-    await Future<void>.delayed(const Duration(milliseconds: 800));
-    if (mounted) {
-      setState(() => _isSubmitting = false);
-      widget.onSubmit?.call(draft);
+    final String? validationMessage = _validationMessage();
+    if (validationMessage != null) {
+      ToastMessages.alert(message: validationMessage);
+      return;
+    }
+
+    await context.read<LeadsCubit>().createLead(_buildPayload());
+  }
+
+  void _onLeadsStateChanged(BuildContext context, LeadsState state) {
+    if (!mounted) {
+      return;
+    }
+
+    switch (state.leadAssigneesUIState?.status) {
+      case Status.ERROR:
+        ToastMessages.error(
+          message:
+              state.leadAssigneesUIState?.errorType?.getText(context) ??
+              'Could not load assignees',
+        );
+      case Status.SUCCESS:
+      case Status.LOADING:
+      case Status.INITIAL:
+      case null:
+        break;
+    }
+
+    switch (state.createLeadUIState?.status) {
+      case Status.SUCCESS:
+        final dynamic value = state.createLeadUIState?.data;
+        final String message = value is Map && value['message'] is String
+            ? value['message'] as String
+            : 'Lead created successfully.';
+        ToastMessages.success(message: message);
+        widget.onSubmit?.call(_buildDraft());
+        context.read<LeadsCubit>().resetCreateLeadState();
+        if (context.canPop()) {
+          context.pop(true);
+        }
+      case Status.ERROR:
+        ToastMessages.error(
+          message:
+              state.createLeadUIState?.errorType?.getText(context) ??
+              'Could not create lead, Please try again later',
+        );
+        context.read<LeadsCubit>().resetCreateLeadState();
+      case Status.LOADING:
+      case Status.INITIAL:
+      case null:
+        break;
     }
   }
 
@@ -130,7 +229,25 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
       value: SystemUiOverlayStyle.light.copyWith(
         statusBarColor: Colors.transparent,
       ),
-      child: Scaffold(
+      child: BlocConsumer<LeadsCubit, LeadsState>(
+        listenWhen: (LeadsState previous, LeadsState current) =>
+            previous.createLeadUIState?.status !=
+                current.createLeadUIState?.status ||
+            previous.leadAssigneesUIState?.status !=
+                current.leadAssigneesUIState?.status,
+        listener: _onLeadsStateChanged,
+        builder: (BuildContext context, LeadsState state) {
+          final List<LeadAssigneeData> assignees =
+              state.leadAssigneesUIState?.data?.validAssignees ??
+              <LeadAssigneeData>[];
+          final bool isLoadingAssignees =
+              state.leadAssigneesUIState?.status == Status.LOADING ||
+              state.leadAssigneesUIState?.status == null ||
+              state.leadAssigneesUIState?.status == Status.INITIAL;
+          final bool isSubmitting =
+              state.createLeadUIState?.status == Status.LOADING;
+
+          return Scaffold(
         backgroundColor: context.palette.canvas,
         body: Column(
           children: <Widget>[
@@ -167,6 +284,9 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
                             icon: Icons.call_outlined,
                             keyboardType: TextInputType.phone,
                             maxLength: 10,
+                            inputFormatters: <TextInputFormatter>[
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
                             suffix: const NewLeadLookupButton(),
                           ),
                         ),
@@ -221,13 +341,26 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
                           label: 'Assigned To',
                           isRequired: true,
                           child: AppSelectField(
-                            hint: 'Select assignee',
+                            hint: isLoadingAssignees
+                                ? 'Loading assignees…'
+                                : 'Select assignee',
                             sheetTitle: 'Assign lead to',
                             icon: Icons.badge_outlined,
-                            options: _assignees,
-                            value: _assignee,
-                            onChanged: (String value) =>
-                                setState(() => _assignee = value),
+                            options: assignees
+                                .map((LeadAssigneeData a) => a.name!)
+                                .toList(growable: false),
+                            value: _selectedAssignee?.name,
+                            onChanged: (String value) {
+                              LeadAssigneeData? matched;
+                              for (final LeadAssigneeData assignee
+                                  in assignees) {
+                                if (assignee.name == value) {
+                                  matched = assignee;
+                                  break;
+                                }
+                              }
+                              setState(() => _selectedAssignee = matched);
+                            },
                           ),
                         ),
                         AppFormField(
@@ -261,6 +394,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
                           const SizedBox(height: AppSpacing.md),
                           NewLeadQuotationFields(
                             addressController: _addressController,
+                            termsController: _termsController,
                             items: _quotationItems,
                             onAddItem: _addQuotationItem,
                             onRemoveItem: _removeQuotationItem,
@@ -273,7 +407,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
                   AppPrimaryButton(
                     label: 'CREATE LEAD',
                     icon: Icons.person_add_alt_1_rounded,
-                    isLoading: _isSubmitting,
+                    isLoading: isSubmitting,
                     onPressed: _submit,
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -289,6 +423,8 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
             ),
           ],
         ),
+      );
+        },
       ),
     );
   }
@@ -305,19 +441,33 @@ class QuotationItemControllers {
   final TextEditingController item = TextEditingController();
   final TextEditingController quantity = TextEditingController();
   final TextEditingController rate = TextEditingController();
+  final TextEditingController taxPercent = TextEditingController(text: '0');
 
   /// What this row is worth on submit. Blank fields stay null, which is what
   /// makes an untouched row drop out of the saved quotation.
   QuotationItem toItem() => QuotationItem(
     item: item.text,
     quantity: int.tryParse(quantity.text.trim()),
-    rate: double.tryParse(rate.text.trim()),
+    rate: double.tryParse(rate.text.trim().replaceAll(',', '')),
   );
+
+  /// The API's quotation line shape. The domain model does not carry tax yet,
+  /// so it remains an input concern until quote totals support tax as well.
+  Map<String, dynamic> toApiJson() => <String, dynamic>{
+    if (item.text.trim().isNotEmpty) 'description': item.text.trim(),
+    if (int.tryParse(quantity.text.trim()) != null)
+      'quantity': int.parse(quantity.text.trim()),
+    if (double.tryParse(rate.text.trim().replaceAll(',', '')) != null)
+      'rate': double.parse(rate.text.trim().replaceAll(',', '')),
+    'tax_percent':
+        double.tryParse(taxPercent.text.trim().replaceAll(',', '')) ?? 0,
+  };
 
   void dispose() {
     item.dispose();
     quantity.dispose();
     rate.dispose();
+    taxPercent.dispose();
   }
 }
 
@@ -329,12 +479,14 @@ class NewLeadQuotationFields extends StatelessWidget {
   const NewLeadQuotationFields({
     super.key,
     required this.addressController,
+    required this.termsController,
     required this.items,
     required this.onAddItem,
     required this.onRemoveItem,
   });
 
   final TextEditingController addressController;
+  final TextEditingController termsController;
   final List<QuotationItemControllers> items;
   final VoidCallback onAddItem;
   final ValueChanged<int> onRemoveItem;
@@ -352,6 +504,17 @@ class NewLeadQuotationFields extends StatelessWidget {
             icon: Icons.location_on_outlined,
             maxLines: 3,
             maxLength: 250,
+            textCapitalization: TextCapitalization.sentences,
+          ),
+        ),
+        AppFormField(
+          label: 'Terms',
+          child: AppTextField(
+            hint: 'Enter quotation terms',
+            controller: termsController,
+            icon: Icons.description_outlined,
+            maxLines: 3,
+            maxLength: 500,
             textCapitalization: TextCapitalization.sentences,
           ),
         ),
@@ -440,14 +603,26 @@ class NewLeadQuotationItemFields extends StatelessWidget {
                     decimal: true,
                   ),
                   inputFormatters: <TextInputFormatter>[
-                    // Digits with at most one decimal point, so `double.parse`
-                    // on save cannot fail on what the field allowed.
-                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                   ],
                 ),
               ),
             ),
           ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        AppFormField(
+          label: 'Tax %',
+          bottomSpacing: 0,
+          child: AppTextField(
+            hint: '0',
+            controller: controllers.taxPercent,
+            icon: Icons.percent_rounded,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: <TextInputFormatter>[
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+            ],
+          ),
         ),
         // Separates this line from the next without turning it into a card.
         if (onRemove != null || index > 0)

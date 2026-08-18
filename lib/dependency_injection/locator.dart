@@ -12,16 +12,19 @@ import 'package:nimmys_crm/features/authentication/service/login_service.dart';
 import 'package:nimmys_crm/features/profile/cubit/profile/profile_cubit.dart';
 import 'package:nimmys_crm/features/profile/repository/profile_repository.dart';
 import 'package:nimmys_crm/features/profile/service/profile_service.dart';
-import 'package:nimmys_crm/features/staff/cubit/staff/staff_cubit.dart';
-import 'package:nimmys_crm/features/staff/repository/staff_repository.dart';
-import 'package:nimmys_crm/features/staff/service/staff_service.dart';
 import 'package:nimmys_crm/features/splash/splash_repository.dart';
 import 'package:nimmys_crm/features/splash/splash_service.dart';
 import 'package:nimmys_crm/features/splash/splash_view_mode.dart';
-import 'package:nimmys_crm/service/push_notification/notification_service.dart';
-import 'package:nimmys_crm/utils/custom_log.dart';
+import 'package:nimmys_crm/features/staff/cubit/staff/staff_cubit.dart';
+import 'package:nimmys_crm/features/staff/repository/staff_repository.dart';
+import 'package:nimmys_crm/features/staff/service/staff_service.dart';
+import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
+import 'package:nimmys_crm/features/leads/repository/lead_repository.dart';
+import 'package:nimmys_crm/features/leads/service/lead_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
+import 'package:nimmys_crm/service/push_notification/notification_service.dart';
+import 'package:nimmys_crm/utils/custom_log.dart';
 
 var locator = GetIt.instance;
 
@@ -47,6 +50,7 @@ void initLocator() {
     locator.registerLazySingleton(() => AuthService(locator<ApiService>()));
     locator.registerLazySingleton(() => ProfileService(locator<ApiService>()));
     locator.registerLazySingleton(() => StaffService(locator<ApiService>()));
+    locator.registerLazySingleton(() => LeadService(locator<ApiService>()));
 
     // Repository
     locator.registerLazySingleton(() => UserInformationRepository(locator<SecuredSharedPreferences>()));
@@ -55,6 +59,7 @@ void initLocator() {
     locator.registerLazySingleton(() => LoginRepository(locator<LoginService>()));
     locator.registerLazySingleton(() => ProfileRepository(locator<ProfileService>()));
     locator.registerLazySingleton(() => StaffRepository(locator<StaffService>()));
+    locator.registerLazySingleton(() => LeadRepository(locator<LeadService>()));
 
     // View Model
     locator.registerLazySingleton(() => SplashViewModel(locator<SplashRepository>(), locator<AuthRepository>()));
@@ -65,6 +70,7 @@ void initLocator() {
     locator.registerLazySingleton(() => SessionCubit(locator<UserInformationRepository>()));
     locator.registerLazySingleton(() => ProfileCubit(locator<ProfileRepository>()));
     locator.registerLazySingleton(() => StaffCubit(locator<StaffRepository>()));
+    locator.registerLazySingleton(() => LeadsCubit(locator<LeadRepository>()));
 
 
     CustomLog.info(locator, "All instances registered.");

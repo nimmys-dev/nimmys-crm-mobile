@@ -45,6 +45,7 @@ enum LeadStatus {
 /// any later reporting all agree on the spelling, with [wireValue] the single
 /// place the server's version lives.
 enum LeadSource {
+  website('website', 'Website'),
   instagram('instagram', 'Instagram'),
   whatsapp('whatsapp', 'WhatsApp'),
   call('call', 'Call'),

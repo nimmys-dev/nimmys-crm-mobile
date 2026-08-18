@@ -45,4 +45,5 @@ class AppRouteName {
   /// than introducing GoRouter path parameters for the first time in this app.
   static String staffDetailsFor(int id) => "$staffDetails?id=$id";
   static String staffEditFor(int id) => "$staffEdit?id=$id";
+  static String leadDetailsFor(int id) => "$leadDetails?id=$id";
 }
