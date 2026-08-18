@@ -4,7 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nimmys_crm/core/utils/phone_dialer.dart';
 import 'package:nimmys_crm/core/utils/whatsapp_launcher.dart';
 import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
+import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
+import 'package:nimmys_crm/features/leads/model/lead_source_model.dart';
 import 'package:nimmys_crm/utils/toast_messages.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -15,134 +17,12 @@ import '../../enum/status.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/app_bottom_nav.dart';
 import '../../shared/widgets/app_buttons.dart';
+import '../../shared/widgets/app_form_field.dart';
 import '../../shared/widgets/app_gradient_header.dart';
 import '../../shared/widgets/app_section_card.dart';
+import '../../shared/widgets/app_select_field.dart';
+import '../../shared/widgets/app_text_field.dart';
 import 'widgets/lead_detail_widgets.dart';
-
-/// Lead Details — customer profile, assignment, source and requirements
-/// retrieved from `GET /api/view-lead/{leadId}`.
-class LeadDetailsScreen extends StatefulWidget {
-  const LeadDetailsScreen({super.key, this.leadId});
-
-  final int? leadId;
-
-  @override
-  State<LeadDetailsScreen> createState() => _LeadDetailsScreenState();
-}
-
-class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
-  int _navIndex = 1;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      final int? id = widget.leadId;
-      if (id != null) {
-        context.read<LeadsCubit>().getLeadDetails(id);
-      }
-    });
-  }
-
-  Future<void> _reload() async {
-    final int? id = widget.leadId;
-    if (id == null) {
-      return;
-    }
-    await context.read<LeadsCubit>().getLeadDetails(id);
-  }
-
-  void _onLeadDetailsStateChanged(BuildContext context, LeadsState state) {
-    final UIState<LeadDetailsSuccess>? uiState = state.leadDetailsUIState;
-    if (uiState?.status != Status.ERROR) {
-      return;
-    }
-    ToastMessages.error(
-      message:
-          uiState?.errorType?.getText(context) ?? 'Failed to load lead details',
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light.copyWith(
-        statusBarColor: Colors.transparent,
-      ),
-      child: BlocConsumer<LeadsCubit, LeadsState>(
-        listenWhen: (LeadsState previous, LeadsState current) =>
-            previous.leadDetailsUIState?.status !=
-            current.leadDetailsUIState?.status,
-        listener: _onLeadDetailsStateChanged,
-        builder: (BuildContext context, LeadsState state) {
-          final LeadDetailsData? lead = state.leadDetailsUIState?.data?.data;
-          final String eyebrow =
-              lead?.reference != null && lead!.reference!.trim().isNotEmpty
-              ? lead.reference!.trim()
-              : (widget.leadId != null
-                    ? 'LEAD #${widget.leadId}'
-                    : 'LEAD DETAILS');
-
-          return Scaffold(
-            backgroundColor: context.palette.canvas,
-            body: Column(
-              children: <Widget>[
-                AppGradientHeader(
-                  title: 'Lead Details',
-                  eyebrow: eyebrow,
-                  leading: const AppBackButton(),
-                  actions: <Widget>[
-                    AppAvatar(initials: lead?.initials ?? 'LD'),
-                  ],
-                ),
-                Expanded(
-                  child: _LeadDetailsBody(
-                    leadId: widget.leadId,
-                    state: state,
-                    onRetry: _reload,
-                  ),
-                ),
-              ],
-            ),
-            bottomNavigationBar: AppBottomNav(
-              items: const <AppNavItem>[
-                AppNavItem(
-                  label: 'Dashboard',
-                  icon: Icons.home_outlined,
-                  activeIcon: Icons.home_rounded,
-                ),
-                AppNavItem(
-                  label: 'Leads',
-                  icon: Icons.groups_outlined,
-                  activeIcon: Icons.groups_rounded,
-                ),
-                AppNavItem(
-                  label: 'Calendar',
-                  icon: Icons.calendar_month_outlined,
-                  activeIcon: Icons.calendar_month_rounded,
-                ),
-                AppNavItem(
-                  label: 'Profile',
-                  icon: Icons.person_outline_rounded,
-                  activeIcon: Icons.person_rounded,
-                ),
-              ],
-              currentIndex: _navIndex,
-              onTap: (int index) => setState(() => _navIndex = index),
-              centerAction: const AppNavItem(
-                label: 'Add',
-                icon: Icons.add_rounded,
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
 
 class _LeadDetailsBody extends StatelessWidget {
   const _LeadDetailsBody({
@@ -299,6 +179,7 @@ class _LeadDetailsBody extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             QuotationCard(quotation: quotation),
           ],
+          SizedBox(height: 120),
         ],
       ),
     );
@@ -351,22 +232,25 @@ class QuotationCard extends StatelessWidget {
         color: AppColors.lightGrey.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'Total',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          Text(
-            '₹ ${quotation.total ?? '0.00'}',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              color: AppColors.red,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Total',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-          ),
-        ],
+            Text(
+              '₹ ${quotation.total ?? '0.00'}',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: AppColors.red,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -477,34 +361,73 @@ class QuotationItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // ----------------------------------------------------------
+          // Item description
+          // ----------------------------------------------------------
           Expanded(
-            flex: 3,
             child: Text(
-              item.description ?? 'Item',
-              style: const TextStyle(fontSize: 14),
+              item.description?.trim().isNotEmpty == true
+                  ? item.description!
+                  : 'Item',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                height: 1.3,
+                color: palette.ink,
+              ),
             ),
           ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 60,
+
+          const SizedBox(width: 12),
+
+          // ----------------------------------------------------------
+          // Quantity
+          // ----------------------------------------------------------
+          Container(
+            constraints: const BoxConstraints(minWidth: 42),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            decoration: BoxDecoration(
+              color: palette.inkWash,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: palette.inkBorder, width: 0.8),
+            ),
             child: Text(
-              '× ${item.quantity ?? '1'}',
-              style: const TextStyle(fontSize: 14, color: AppColors.muted),
-              textAlign: TextAlign.end,
+              '× ${item.quantity ?? 1}',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: palette.slate,
+              ),
             ),
           ),
-          const SizedBox(width: 8),
+
+          const SizedBox(width: 12),
+
+          // ----------------------------------------------------------
+          // Price
+          // ----------------------------------------------------------
           SizedBox(
-            width: 80,
+            width: 95,
             child: Text(
               '₹ ${item.amount ?? '0.00'}',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.end,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: palette.ink,
+              ),
             ),
           ),
         ],
@@ -712,6 +635,793 @@ class LeadQuickActions extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Lead Details — customer profile, assignment, source and requirements
+/// retrieved from `GET /api/view-lead/{leadId}`.
+class LeadDetailsScreen extends StatefulWidget {
+  const LeadDetailsScreen({super.key, this.leadId});
+
+  final int? leadId;
+
+  @override
+  State<LeadDetailsScreen> createState() => _LeadDetailsScreenState();
+}
+
+class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
+  int _navIndex = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final int? id = widget.leadId;
+      if (id != null) {
+        context.read<LeadsCubit>()
+          ..getLeadDetails(id)
+          ..getLeadSources()
+          ..getLeadAssignees(); // ← fetch assignees for the edit sheet
+      }
+    });
+  }
+
+  Future<void> _reload() async {
+    final int? id = widget.leadId;
+    if (id == null) return;
+    await context.read<LeadsCubit>().getLeadDetails(id);
+  }
+
+  void _onLeadDetailsStateChanged(BuildContext context, LeadsState state) {
+    final uiState = state.leadDetailsUIState;
+    if (uiState?.status == Status.ERROR) {
+      ToastMessages.error(
+        message:
+            uiState?.errorType?.getText(context) ??
+            'Failed to load lead details',
+      );
+    }
+  }
+
+  void _onUpdateStateChanged(BuildContext context, LeadsState state) {
+    final uiState = state.updateLeadUIState;
+    if (uiState?.status == Status.SUCCESS) {
+      ToastMessages.success(message: 'Lead updated successfully');
+      _reload();
+      context.read<LeadsCubit>().resetUpdateLeadState();
+    } else if (uiState?.status == Status.ERROR) {
+      ToastMessages.error(
+        message:
+            uiState?.errorType?.getText(context) ?? 'Failed to update lead',
+      );
+      context.read<LeadsCubit>().resetUpdateLeadState();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: Colors.transparent,
+      ),
+      child: BlocConsumer<LeadsCubit, LeadsState>(
+        listenWhen: (prev, curr) =>
+            prev.leadDetailsUIState?.status !=
+                curr.leadDetailsUIState?.status ||
+            prev.updateLeadUIState?.status != curr.updateLeadUIState?.status,
+        listener: (context, state) {
+          _onLeadDetailsStateChanged(context, state);
+          _onUpdateStateChanged(context, state);
+        },
+        builder: (context, state) {
+          final lead = state.leadDetailsUIState?.data?.data;
+          final eyebrow = lead?.reference?.trim().isNotEmpty == true
+              ? lead!.reference!.trim()
+              : (widget.leadId != null
+                    ? 'LEAD #${widget.leadId}'
+                    : 'LEAD DETAILS');
+
+          return Scaffold(
+            backgroundColor: context.palette.canvas,
+            body: Column(
+              children: [
+                AppGradientHeader(
+                  title: 'Lead Details',
+                  eyebrow: eyebrow,
+                  leading: const AppBackButton(),
+                  actions: [AppAvatar(initials: lead?.initials ?? 'LD')],
+                ),
+                Expanded(
+                  child: _LeadDetailsBody(
+                    leadId: widget.leadId,
+                    state: state,
+                    onRetry: _reload,
+                  ),
+                ),
+
+                SizedBox(height: MediaQuery.of(context).padding.bottom),
+              ],
+            ),
+            floatingActionButton: lead != null
+                ? FloatingActionButton(
+                    onPressed: () => _showEditBottomSheet(context, lead, state),
+                    backgroundColor: AppColors.red,
+                    child: const Icon(Icons.edit_rounded),
+                  )
+                : null,
+          );
+        },
+      ),
+    );
+  }
+
+  void _showEditBottomSheet(
+    BuildContext context,
+    LeadDetailsData lead,
+    LeadsState state,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => EditLeadBottomSheet(lead: lead, state: state),
+    );
+  }
+}
+
+/// Bottom sheet for editing lead details and quotation.
+
+/// Bottom sheet for editing lead details and quotation.
+class EditLeadBottomSheet extends StatefulWidget {
+  const EditLeadBottomSheet({
+    super.key,
+    required this.lead,
+    required this.state,
+  });
+
+  final LeadDetailsData lead;
+  final LeadsState state;
+
+  @override
+  State<EditLeadBottomSheet> createState() => _EditLeadBottomSheetState();
+}
+
+class _EditLeadBottomSheetState extends State<EditLeadBottomSheet> {
+  late TextEditingController _nameController;
+  late TextEditingController _phoneController;
+  late TextEditingController _descriptionController;
+
+  LeadSourceData? _selectedSource;
+  LeadAssigneeData? _selectedAssignee;
+
+  // Quotation fields
+  late List<TextEditingController> _itemControllers;
+  late List<TextEditingController> _qtyControllers;
+  late List<TextEditingController> _rateControllers;
+  late TextEditingController _addressController;
+  late TextEditingController _termsController;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _nameController = TextEditingController(text: widget.lead.name ?? '');
+
+    _phoneController = TextEditingController(text: widget.lead.phone ?? '');
+
+    _descriptionController = TextEditingController(
+      text: widget.lead.description ?? '',
+    );
+
+    // Source
+    final sources = widget.state.leadSourcesUIState?.data?.data ?? [];
+
+    _selectedSource = sources.isEmpty
+        ? null
+        : sources.firstWhere(
+            (s) => s.value == widget.lead.source,
+            orElse: () => sources.first,
+          );
+
+    // Assignee
+    final assignees =
+        widget.state.leadAssigneesUIState?.data?.validAssignees ?? [];
+
+    if (widget.lead.assignedTo != null && assignees.isNotEmpty) {
+      _selectedAssignee = assignees.firstWhere(
+        (a) =>
+            a.name == widget.lead.assignedTo ||
+            a.id?.toString() == widget.lead.assignedTo,
+        orElse: () => assignees.first,
+      );
+    }
+
+    // Quotation
+    final quotation = widget.lead.quotation;
+
+    if (quotation != null) {
+      _addressController = TextEditingController(
+        text: quotation.customerAddress ?? '',
+      );
+
+      _termsController = TextEditingController(text: quotation.terms ?? '');
+
+      _itemControllers =
+          quotation.items
+              ?.map(
+                (item) => TextEditingController(text: item.description ?? ''),
+              )
+              .toList() ??
+          [];
+
+      _qtyControllers =
+          quotation.items
+              ?.map((item) => TextEditingController(text: item.quantity ?? ''))
+              .toList() ??
+          [];
+
+      _rateControllers =
+          quotation.items
+              ?.map((item) => TextEditingController(text: item.rate ?? ''))
+              .toList() ??
+          [];
+    } else {
+      _addressController = TextEditingController();
+      _termsController = TextEditingController();
+      _itemControllers = [];
+      _qtyControllers = [];
+      _rateControllers = [];
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _descriptionController.dispose();
+    _addressController.dispose();
+    _termsController.dispose();
+
+    for (final controller in _itemControllers) {
+      controller.dispose();
+    }
+
+    for (final controller in _qtyControllers) {
+      controller.dispose();
+    }
+
+    for (final controller in _rateControllers) {
+      controller.dispose();
+    }
+
+    super.dispose();
+  }
+
+  void _addItem() {
+    setState(() {
+      _itemControllers.add(TextEditingController());
+      _qtyControllers.add(TextEditingController());
+      _rateControllers.add(TextEditingController());
+    });
+  }
+
+  void _removeItem(int index) {
+    setState(() {
+      _itemControllers[index].dispose();
+      _itemControllers.removeAt(index);
+
+      _qtyControllers[index].dispose();
+      _qtyControllers.removeAt(index);
+
+      _rateControllers[index].dispose();
+      _rateControllers.removeAt(index);
+    });
+  }
+
+  Future<void> _save() async {
+    final id = widget.lead.id;
+
+    if (id == null) return;
+
+    final payload = <String, dynamic>{
+      'name': _nameController.text.trim(),
+      'phone': _phoneController.text.trim(),
+      'source': _selectedSource?.value ?? '',
+      'description': _descriptionController.text.trim(),
+      'assigned_to': _selectedAssignee?.id,
+    };
+
+    // Quotation
+    final hasQuotation =
+        _addressController.text.trim().isNotEmpty ||
+        _termsController.text.trim().isNotEmpty ||
+        _itemControllers.any((controller) => controller.text.trim().isNotEmpty);
+
+    if (hasQuotation) {
+      final items = <Map<String, dynamic>>[];
+
+      for (int i = 0; i < _itemControllers.length; i++) {
+        final description = _itemControllers[i].text.trim();
+
+        if (description.isEmpty) continue;
+
+        final quantity = int.tryParse(_qtyControllers[i].text.trim()) ?? 1;
+
+        final rate =
+            double.tryParse(
+              _rateControllers[i].text.trim().replaceAll(',', ''),
+            ) ??
+            0.0;
+
+        items.add({
+          'description': description,
+          'quantity': quantity,
+          'rate': rate,
+          'tax_percent': 0,
+        });
+      }
+
+      if (items.isNotEmpty) {
+        payload['quotation'] = {
+          'customer_name': _nameController.text.trim(),
+          if (_addressController.text.trim().isNotEmpty)
+            'customer_address': _addressController.text.trim(),
+          'issue_date': DateTime.now().toIso8601String().split('T').first,
+          if (_termsController.text.trim().isNotEmpty)
+            'terms': _termsController.text.trim(),
+          'items': items,
+        };
+      }
+    }
+
+    await context.read<LeadsCubit>().updateLead(id, payload);
+
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    final sources = widget.state.leadSourcesUIState?.data?.data ?? [];
+
+    final sourceLabels = sources.map((s) => s.label ?? '').toList();
+
+    final assignees =
+        widget.state.leadAssigneesUIState?.data?.validAssignees ?? [];
+
+    final assigneeLabels = assignees.map((a) => a.name ?? '').toList();
+
+    return DraggableScrollableSheet(
+      expand: false,
+      builder: (context, scrollController) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.gutter),
+            decoration: BoxDecoration(
+              color: palette.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
+              border: Border(top: BorderSide(color: palette.line)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ------------------------------------------------------
+                // Drag handle
+                // ------------------------------------------------------
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: palette.faint,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.sm),
+
+                // ------------------------------------------------------
+                // Title
+                // ------------------------------------------------------
+                Text(
+                  'Edit Lead',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: palette.ink,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.md),
+
+                Expanded(
+                  child: ListView(
+                    controller: scrollController,
+                    children: [
+                      // --------------------------------------------------
+                      // Name
+                      // --------------------------------------------------
+                      AppFormField(
+                        label: 'Name',
+                        child: AppTextField(
+                          hint: 'Customer name',
+                          controller: _nameController,
+                          icon: Icons.person_outline_rounded,
+                        ),
+                      ),
+
+                      // --------------------------------------------------
+                      // Phone
+                      // --------------------------------------------------
+                      AppFormField(
+                        label: 'Phone',
+                        child: AppTextField(
+                          hint: 'Mobile number',
+                          controller: _phoneController,
+                          icon: Icons.call_outlined,
+                          keyboardType: TextInputType.phone,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                        ),
+                      ),
+
+                      // --------------------------------------------------
+                      // Source
+                      // --------------------------------------------------
+                      AppFormField(
+                        label: 'Source',
+                        child: AppSelectField(
+                          hint: 'Select source',
+                          sheetTitle: 'Lead source',
+                          icon: Icons.campaign_outlined,
+                          options: sourceLabels,
+                          value: _selectedSource?.label,
+                          onChanged: (label) {
+                            if (sources.isEmpty) return;
+
+                            final matched = sources.firstWhere(
+                              (s) => s.label == label,
+                              orElse: () => sources.first,
+                            );
+
+                            setState(() {
+                              _selectedSource = matched;
+                            });
+                          },
+                        ),
+                      ),
+
+                      // --------------------------------------------------
+                      // Assigned To
+                      // --------------------------------------------------
+                      AppFormField(
+                        label: 'Assigned To',
+                        child: AppSelectField(
+                          hint: assignees.isEmpty
+                              ? 'Loading assignees…'
+                              : 'Select assignee',
+                          sheetTitle: 'Assign lead to',
+                          icon: Icons.badge_outlined,
+                          options: assigneeLabels,
+                          value: _selectedAssignee?.name,
+                          onChanged: (label) {
+                            if (assignees.isEmpty) return;
+
+                            final matched = assignees.firstWhere(
+                              (a) => a.name == label,
+                              orElse: () => assignees.first,
+                            );
+
+                            setState(() {
+                              _selectedAssignee = matched;
+                            });
+                          },
+                        ),
+                      ),
+
+                      // --------------------------------------------------
+                      // Description
+                      // --------------------------------------------------
+                      AppFormField(
+                        label: 'Description',
+                        child: AppTextField(
+                          hint: 'Requirements / notes',
+                          controller: _descriptionController,
+                          icon: Icons.description_outlined,
+                          maxLines: 3,
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      Divider(height: 32, color: palette.line),
+
+                      // --------------------------------------------------
+                      // Quotation header
+                      // --------------------------------------------------
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: palette.redWashSoft,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: palette.redBorder),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: palette.redWash,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.receipt_long_rounded,
+                                size: 19,
+                                color: AppColors.red,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Quotation',
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    color: palette.ink,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // --------------------------------------------------
+                      // Address
+                      // --------------------------------------------------
+                      AppFormField(
+                        label: 'Address',
+                        child: AppTextField(
+                          hint: 'Customer address',
+                          controller: _addressController,
+                          icon: Icons.location_on_outlined,
+                        ),
+                      ),
+
+                      // --------------------------------------------------
+                      // Terms
+                      // --------------------------------------------------
+                      AppFormField(
+                        label: 'Terms',
+                        child: AppTextField(
+                          hint: 'Payment terms',
+                          controller: _termsController,
+                          icon: Icons.description_outlined,
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // --------------------------------------------------
+                      // Items
+                      // --------------------------------------------------
+                      if (_itemControllers.isNotEmpty) ...[
+                        Text(
+                          'Items',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: palette.ink,
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        for (int i = 0; i < _itemControllers.length; i++)
+                          _buildItemRow(i),
+                      ],
+
+                      // --------------------------------------------------
+                      // Add Item
+                      // --------------------------------------------------
+                      AppOutlineButton(
+                        label: 'Add Item',
+                        icon: Icons.add_rounded,
+                        onPressed: _addItem,
+                      ),
+
+                      const SizedBox(height: AppSpacing.md),
+
+                      // --------------------------------------------------
+                      // Save
+                      // --------------------------------------------------
+                      AppPrimaryButton(
+                        label: 'Save Changes',
+                        onPressed: _save,
+                        isLoading:
+                            widget.state.updateLeadUIState?.status ==
+                            Status.LOADING,
+                      ),
+
+                      const SizedBox(height: AppSpacing.md),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildItemRow(int index) {
+    final palette = context.palette;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
+      decoration: BoxDecoration(
+        color: palette.surfaceAlt,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: palette.line),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // ------------------------------------------------------------
+          // Description
+          // ------------------------------------------------------------
+          Expanded(
+            child: TextField(
+              controller: _itemControllers[index],
+              style: TextStyle(
+                fontSize: 13,
+                color: palette.ink,
+                fontWeight: FontWeight.w500,
+              ),
+              cursorColor: AppColors.red,
+              decoration: InputDecoration(
+                hintText: 'Item description',
+                hintStyle: TextStyle(fontSize: 13, color: palette.faint),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          // ------------------------------------------------------------
+          // Quantity
+          // ------------------------------------------------------------
+          SizedBox(
+            width: 52,
+            child: TextField(
+              controller: _qtyControllers[index],
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: palette.ink,
+                fontWeight: FontWeight.w600,
+              ),
+              cursorColor: AppColors.red,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                hintText: 'Qty',
+                hintStyle: TextStyle(fontSize: 12, color: palette.faint),
+                filled: true,
+                fillColor: palette.inkWash,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: BorderSide(color: palette.inkBorder),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: BorderSide(color: palette.inkBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: const BorderSide(
+                    color: AppColors.red,
+                    width: 1.2,
+                  ),
+                ),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 4,
+                  vertical: 8,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          // ------------------------------------------------------------
+          // Rate
+          // ------------------------------------------------------------
+          SizedBox(
+            width: 82,
+            child: TextField(
+              controller: _rateControllers[index],
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontSize: 13,
+                color: palette.ink,
+                fontWeight: FontWeight.w600,
+              ),
+              cursorColor: AppColors.red,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Rate',
+                hintStyle: TextStyle(fontSize: 12, color: palette.faint),
+                prefixText: '₹ ',
+                prefixStyle: TextStyle(
+                  fontSize: 12,
+                  color: palette.slate,
+                  fontWeight: FontWeight.w500,
+                ),
+                filled: true,
+                fillColor: palette.inkWash,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: BorderSide(color: palette.inkBorder),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: BorderSide(color: palette.inkBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: const BorderSide(
+                    color: AppColors.red,
+                    width: 1.2,
+                  ),
+                ),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 8,
+                ),
+              ),
+            ),
+          ),
+
+          // ------------------------------------------------------------
+          // Delete
+          // ------------------------------------------------------------
+          IconButton(
+            tooltip: 'Remove item',
+            visualDensity: VisualDensity.compact,
+            icon: Icon(
+              Icons.delete_outline_rounded,
+              size: 20,
+              color: AppColors.red,
+            ),
+            onPressed: () => _removeItem(index),
+          ),
+        ],
+      ),
     );
   }
 }
