@@ -322,7 +322,8 @@ class AppTimeField extends StatelessWidget {
   }
 }
 
-/// Read-only field that opens the native date picker.
+/// Read-only field that opens the native date picker. 
+/// 
 class AppDateField extends StatelessWidget {
   const AppDateField({
     super.key,
@@ -378,11 +379,15 @@ class AppDateField extends StatelessWidget {
       firstDate: first,
       lastDate: last,
       builder: (BuildContext context, Widget? child) {
+        final ThemeData theme = Theme.of(context);
         return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+          // Preserve the current theme (dark/light) and only override
+          // the colour scheme to use your brand red as the primary.
+          data: theme.copyWith(
+            colorScheme: theme.colorScheme.copyWith(
               primary: AppColors.red,
               onPrimary: AppColors.white,
+              // Use the themed text colour for readability
               onSurface: context.palette.ink,
             ),
           ),
