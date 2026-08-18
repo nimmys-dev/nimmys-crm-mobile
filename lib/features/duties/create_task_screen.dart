@@ -332,6 +332,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                         'Tasks with an approver are routed for sign-off once '
                         'the assignee marks them complete.',
                   ),
+                  SizedBox(height: MediaQuery.of(context).padding.bottom),
                 ],
               ),
             ),

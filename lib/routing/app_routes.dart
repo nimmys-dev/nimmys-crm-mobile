@@ -172,7 +172,7 @@ class AppRoutes {
       GoRoute(
         path: AppRouteName.dutyAdd,
         builder: (BuildContext context, GoRouterState state) {
-          return const AddDutyScreen();
+          return const CreateTaskScreen();
         },
       ),
 
