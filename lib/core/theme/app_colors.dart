@@ -23,6 +23,14 @@ class AppColors {
   static const Color blackSoft = Color(0xFF15161A);
   static const Color white = Color(0xFFFFFFFF);
 
+  // -------------------------------------------------------------- Neutral tones
+  /// Light grey used for background fills in cards (e.g., totals box).
+  static const Color lightGrey = Color(0xFFF0F0F0);
+
+  /// Static muted grey – for fallback or non‑themed use.
+  /// For themed text colours, prefer [AppPalette.muted].
+  static const Color muted = Color(0xFF8C93A1);
+
   // ---------------------------------------------------------------- Gradients
   /// Primary call-to-action fill. Identical in both themes.
   static const LinearGradient actionGradient = LinearGradient(

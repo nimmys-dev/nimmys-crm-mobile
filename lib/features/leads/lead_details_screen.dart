@@ -62,8 +62,7 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
     }
     ToastMessages.error(
       message:
-          uiState?.errorType?.getText(context) ??
-          'Failed to load lead details',
+          uiState?.errorType?.getText(context) ?? 'Failed to load lead details',
     );
   }
 
@@ -80,12 +79,12 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
         listener: _onLeadDetailsStateChanged,
         builder: (BuildContext context, LeadsState state) {
           final LeadDetailsData? lead = state.leadDetailsUIState?.data?.data;
-          final String eyebrow = lead?.reference != null &&
-                  lead!.reference!.trim().isNotEmpty
+          final String eyebrow =
+              lead?.reference != null && lead!.reference!.trim().isNotEmpty
               ? lead.reference!.trim()
               : (widget.leadId != null
-                  ? 'LEAD #${widget.leadId}'
-                  : 'LEAD DETAILS');
+                    ? 'LEAD #${widget.leadId}'
+                    : 'LEAD DETAILS');
 
           return Scaffold(
             backgroundColor: context.palette.canvas,
@@ -133,8 +132,10 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
               ],
               currentIndex: _navIndex,
               onTap: (int index) => setState(() => _navIndex = index),
-              centerAction:
-                  const AppNavItem(label: 'Add', icon: Icons.add_rounded),
+              centerAction: const AppNavItem(
+                label: 'Add',
+                icon: Icons.add_rounded,
+              ),
             ),
           );
         },
@@ -220,11 +221,13 @@ class _LeadDetailsBody extends StatelessWidget {
         ),
       );
     }
+
     final String displayName = lead.name?.trim().isNotEmpty == true
         ? lead.name!.trim()
         : 'Unnamed Lead';
     final String phone = lead.phone?.trim() ?? '';
     final String description = lead.cleanDescription;
+    final Quotation? quotation = lead.quotation; // <-- NEW
 
     return RefreshIndicator(
       onRefresh: onRetry,
@@ -246,11 +249,11 @@ class _LeadDetailsBody extends StatelessWidget {
                 : null,
             onWhatsApp: phone.isNotEmpty
                 ? () => WhatsAppLauncher.openChat(
-                      context,
-                      phone,
-                      message:
-                          'Hi $displayName, following up on your enquiry (${lead.reference ?? "Lead #${lead.id}"}).',
-                    )
+                    context,
+                    phone,
+                    message:
+                        'Hi $displayName, following up on your enquiry (${lead.reference ?? "Lead #${lead.id}"}).',
+                  )
                 : null,
           ),
           AppSectionCard(
@@ -291,6 +294,219 @@ class _LeadDetailsBody extends StatelessWidget {
                 ],
               ),
             ),
+          // ⬇️ NEW: Quotation Section (shown only if quotation exists)
+          if (quotation != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            QuotationCard(quotation: quotation),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Card that displays quotation details and its items.
+class QuotationCard extends StatelessWidget {
+  const QuotationCard({super.key, required this.quotation});
+
+  final Quotation quotation;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const LeadSectionTitle(
+            title: 'Quotation',
+            icon: Icons.receipt_long_rounded,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          // Quotation summary
+          QuotationSummary(quotation: quotation),
+          const SizedBox(height: AppSpacing.md),
+          // Items list
+          if (quotation.items != null && quotation.items!.isNotEmpty) ...[
+            const Divider(),
+            const SizedBox(height: AppSpacing.sm),
+            const Text(
+              'Items',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            ...quotation.items!.map((item) => QuotationItemTile(item: item)),
+          ],
+          const SizedBox(height: AppSpacing.sm),
+          // Totals
+          _buildTotals(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTotals(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.lightGrey.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'Total',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          Text(
+            '₹ ${quotation.total ?? '0.00'}',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: AppColors.red,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Displays quotation header fields (reference, customer, dates, terms, amounts).
+class QuotationSummary extends StatelessWidget {
+  const QuotationSummary({super.key, required this.quotation});
+
+  final Quotation quotation;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        Row(
+          children: [
+            Expanded(
+              child: LeadDetailTile(
+                label: 'Quotation #',
+                value: quotation.reference ?? '—',
+                icon: Icons.receipt_outlined,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: LeadDetailTile(
+                label: 'Date',
+                value: quotation.issueDate != null
+                    ? _formatDate(quotation.issueDate!)
+                    : '—',
+                icon: Icons.calendar_today_outlined,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Row(
+          children: [
+            Expanded(
+              child: LeadDetailTile(
+                label: 'Customer',
+                value: quotation.customerName ?? '—',
+                icon: Icons.person_outline_rounded,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: LeadDetailTile(
+                label: 'Terms',
+                value: quotation.terms ?? '—',
+                icon: Icons.description_outlined,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        if (quotation.subtotal != null ||
+            quotation.discountPercent != null ||
+            quotation.taxPercent != null)
+          Row(
+            children: [
+              if (quotation.subtotal != null)
+                Expanded(
+                  child: LeadDetailTile(
+                    label: 'Subtotal',
+                    value: '₹ ${quotation.subtotal!}',
+                    icon: Icons.currency_rupee_rounded,
+                  ),
+                ),
+              if (quotation.discountPercent != null)
+                Expanded(
+                  child: LeadDetailTile(
+                    label: 'Discount',
+                    value: '${quotation.discountPercent!}%',
+                    icon: Icons.percent_rounded,
+                  ),
+                ),
+              if (quotation.taxPercent != null)
+                Expanded(
+                  child: LeadDetailTile(
+                    label: 'Tax',
+                    value: '${quotation.taxPercent!}%',
+                    icon: Icons.percent_rounded,
+                  ),
+                ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  String _formatDate(String isoString) {
+    try {
+      final date = DateTime.parse(isoString);
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (_) {
+      return isoString;
+    }
+  }
+}
+
+/// A single item row in the quotation.
+class QuotationItemTile extends StatelessWidget {
+  const QuotationItemTile({super.key, required this.item});
+
+  final QuotationItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 3,
+            child: Text(
+              item.description ?? 'Item',
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 60,
+            child: Text(
+              '× ${item.quantity ?? '1'}',
+              style: const TextStyle(fontSize: 14, color: AppColors.muted),
+              textAlign: TextAlign.end,
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 80,
+            child: Text(
+              '₹ ${item.amount ?? '0.00'}',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.end,
+            ),
+          ),
         ],
       ),
     );
@@ -316,7 +532,9 @@ class LeadSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String initial = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : '?';
+    final String initial = name.trim().isNotEmpty
+        ? name.trim()[0].toUpperCase()
+        : '?';
 
     return AppSectionCard(
       accentBorder: true,
@@ -324,11 +542,7 @@ class LeadSummaryCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              AppAvatar(
-                initials: initial,
-                size: 48,
-                tone: AppAvatarTone.solid,
-              ),
+              AppAvatar(initials: initial, size: 48, tone: AppAvatarTone.solid),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
@@ -368,10 +582,7 @@ class LeadSummaryCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          LeadQuickActions(
-            onCall: onCall,
-            onWhatsApp: onWhatsApp,
-          ),
+          LeadQuickActions(onCall: onCall, onWhatsApp: onWhatsApp),
         ],
       ),
     );
@@ -475,11 +686,7 @@ class LeadDetailsGrid extends StatelessWidget {
 
 /// Wide row of quick actions (call / WhatsApp) on the lead detail page.
 class LeadQuickActions extends StatelessWidget {
-  const LeadQuickActions({
-    super.key,
-    this.onCall,
-    this.onWhatsApp,
-  });
+  const LeadQuickActions({super.key, this.onCall, this.onWhatsApp});
 
   final VoidCallback? onCall;
   final VoidCallback? onWhatsApp;

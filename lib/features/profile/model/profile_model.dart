@@ -38,6 +38,7 @@ class ProfileSuccessModel {
 class ProfileUser {
   final int? id;
   final int? shopId;
+  final String? shopName;
   final String? employeeCode;
   final String? name;
   final String? email;
@@ -49,6 +50,7 @@ class ProfileUser {
   ProfileUser({
     this.id,
     this.shopId,
+    this.shopName,
     this.employeeCode,
     this.name,
     this.email,
@@ -62,6 +64,7 @@ class ProfileUser {
     return ProfileUser(
       id: _asInt(json['id']),
       shopId: _asInt(json['shop_id']),
+      shopName: json['shop_name'],
       employeeCode: json['employee_code'],
       name: json['name'],
       email: json['email'],
@@ -76,6 +79,7 @@ class ProfileUser {
     return {
       'id': id,
       'shop_id': shopId,
+      'shop_name': shopName,
       'employee_code': employeeCode,
       'name': name,
       'email': email,

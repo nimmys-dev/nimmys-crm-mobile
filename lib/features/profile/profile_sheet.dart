@@ -309,7 +309,7 @@ class ProfileSheetBody extends StatelessWidget {
         ProfileDetailRow(
           icon: Icons.storefront_outlined,
           label: 'Shop',
-          value: profile.shopId?.toString(),
+          value: profile.shopName?.toString(),
         ),
       ],
     );
