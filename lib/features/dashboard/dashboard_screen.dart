@@ -114,7 +114,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       value: '18',
       icon: Icons.person_add_alt_1_outlined,
       tone: StatTone.ink,
-      route: AppRouteName.followUpToday,
+      route: AppRouteName.leads,
     ),
     StatItem(
       label: 'Overdue Follow Up',

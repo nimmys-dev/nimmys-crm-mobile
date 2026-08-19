@@ -422,6 +422,9 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
                             'Leads logged within the first hour convert far more '
                             'often. Add the requirement in the customer\'s words.',
                       ),
+                      SizedBox(
+                        height: 70 + MediaQuery.of(context).viewInsets.bottom,
+                      ),
                     ],
                   ),
                 ),

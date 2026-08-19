@@ -153,7 +153,8 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
 }
 
 /// Picks between the list and its loading / error / empty stand-ins.
-class _MyLeadsBody extends StatelessWidget {
+/// Picks between the list and its loading / error / empty stand-ins.
+class _MyLeadsBody extends StatefulWidget {
   const _MyLeadsBody({
     required this.state,
     required this.onRefresh,
@@ -169,9 +170,44 @@ class _MyLeadsBody extends StatelessWidget {
   final VoidCallback onNextPage;
 
   @override
+  State<_MyLeadsBody> createState() => _MyLeadsBodyState();
+}
+
+class _MyLeadsBodyState extends State<_MyLeadsBody> {
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final cubit = context.read<LeadsCubit>();
+    final currentState = cubit.state;
+    // Only trigger if not already loading, there is a next page, and near bottom
+    if (currentState.leadListUIState?.status == Status.LOADING) return;
+    final pagination = currentState.leadPagination;
+    if (pagination == null || !pagination.hasNextPage) return;
+    final threshold = 200.0;
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - threshold) {
+      cubit.goToLeadsPage(pagination.nextPage);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final List<LeadItemData> leads = state.leadList;
-    final Status? status = state.leadListUIState?.status;
+    final List<LeadItemData> leads = widget.state.leadList;
+    final Status? status = widget.state.leadListUIState?.status;
     final bool isLoading = status == Status.LOADING;
 
     if (leads.isEmpty &&
@@ -203,7 +239,7 @@ class _MyLeadsBody extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                state.leadListUIState?.errorType?.getText(context) ??
+                widget.state.leadListUIState?.errorType?.getText(context) ??
                     'Something went wrong. Please try again.',
                 style: context.type.bodyMuted,
                 textAlign: TextAlign.center,
@@ -212,7 +248,7 @@ class _MyLeadsBody extends StatelessWidget {
               AppOutlineButton(
                 label: 'Retry',
                 icon: Icons.refresh_rounded,
-                onPressed: () => onRetry(),
+                onPressed: () => widget.onRetry(),
               ),
             ],
           ),
@@ -222,7 +258,7 @@ class _MyLeadsBody extends StatelessWidget {
 
     if (leads.isEmpty) {
       return RefreshIndicator(
-        onRefresh: onRefresh,
+        onRefresh: widget.onRefresh,
         color: AppColors.red,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -230,7 +266,7 @@ class _MyLeadsBody extends StatelessWidget {
             SizedBox(
               height: MediaQuery.of(context).size.height * 0.5,
               child: MyLeadsEmptyState(
-                hasQuery: state.leadSearchQuery.isNotEmpty,
+                hasQuery: widget.state.leadSearchQuery.isNotEmpty,
               ),
             ),
           ],
@@ -238,7 +274,7 @@ class _MyLeadsBody extends StatelessWidget {
       );
     }
 
-    final LeadPagination? pagination = state.leadPagination;
+    final LeadPagination? pagination = widget.state.leadPagination;
     final int currentPage = pagination?.currentPage ?? 1;
     final int perPage = pagination?.perPage ?? 10;
     final int from = pagination?.from ?? ((currentPage - 1) * perPage + 1);
@@ -246,9 +282,10 @@ class _MyLeadsBody extends StatelessWidget {
     final int total = pagination?.total ?? leads.length;
 
     return RefreshIndicator(
-      onRefresh: onRefresh,
+      onRefresh: widget.onRefresh,
       color: AppColors.red,
       child: ListView.builder(
+        controller: _scrollController, // attach scroll controller
         padding: const EdgeInsets.only(
           left: AppSpacing.gutter,
           right: AppSpacing.gutter,
@@ -271,8 +308,8 @@ class _MyLeadsBody extends StatelessWidget {
             return MyLeadsPaginationBar(
               pagination: pagination,
               isLoading: isLoading,
-              onPreviousPage: onPreviousPage,
-              onNextPage: onNextPage,
+              onPreviousPage: widget.onPreviousPage,
+              onNextPage: widget.onNextPage,
             );
           }
 
