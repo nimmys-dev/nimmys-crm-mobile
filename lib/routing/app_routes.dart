@@ -16,6 +16,7 @@ import 'package:nimmys_crm/features/leads/my_leads_screen.dart';
 import 'package:nimmys_crm/features/leads/new_lead_screen.dart';
 import 'package:nimmys_crm/features/leads/todays_follow_up_screen.dart';
 import 'package:nimmys_crm/features/preview/screen_catalog_screen.dart';
+import 'package:nimmys_crm/features/profile/company_profile_screen.dart';
 import 'package:nimmys_crm/features/reports/reports_screen.dart';
 import 'package:nimmys_crm/features/splash/splash_screen.dart';
 import 'package:nimmys_crm/features/staff/staff_creation_screen.dart';
@@ -225,6 +226,12 @@ class AppRoutes {
         path: AppRouteName.notFound,
         builder: (BuildContext context, GoRouterState state) {
           return const ScreenCatalogScreen();
+        },
+      ),
+      GoRoute(
+        path: AppRouteName.companyDetails,
+        builder: (BuildContext context, GoRouterState state) {
+          return const CompanyProfileScreen();
         },
       ),
     ],

@@ -9,6 +9,7 @@ import 'package:nimmys_crm/features/authentication/repository/login_repository.d
 import 'package:nimmys_crm/features/authentication/repository/user_information_repository.dart';
 import 'package:nimmys_crm/features/authentication/service/auth_service.dart';
 import 'package:nimmys_crm/features/authentication/service/login_service.dart';
+import 'package:nimmys_crm/features/profile/cubit/company/company_profile_cubit.dart';
 import 'package:nimmys_crm/features/profile/cubit/profile/profile_cubit.dart';
 import 'package:nimmys_crm/features/profile/repository/profile_repository.dart';
 import 'package:nimmys_crm/features/profile/service/profile_service.dart';
@@ -71,6 +72,7 @@ void initLocator() {
     locator.registerLazySingleton(() => ProfileCubit(locator<ProfileRepository>()));
     locator.registerLazySingleton(() => StaffCubit(locator<StaffRepository>()));
     locator.registerLazySingleton(() => LeadsCubit(locator<LeadRepository>()));
+    locator.registerLazySingleton(() => CompanyProfileCubit(locator<ProfileRepository>()));
 
 
     CustomLog.info(locator, "All instances registered.");

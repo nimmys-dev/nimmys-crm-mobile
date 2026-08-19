@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nimmys_crm/features/dashboard/widgets/dashboard_drawer.dart';
 import '../../core/theme/app_theme.dart';
 import 'package:flutter/services.dart';
 
@@ -28,6 +29,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _navIndex = 0;
 
   @override
@@ -196,6 +198,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final int navIndex = _navIndex.clamp(0, navItems.length - 1);
 
           return Scaffold(
+            key: _scaffoldKey, // assign the key
+            drawer: const DashboardDrawer(), // your drawer widget
             backgroundColor: context.palette.canvas,
             body: ListView(
               padding: EdgeInsets.zero,
@@ -212,6 +216,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         return DashboardHeader(
                           // Placeholders only until the profile call lands; the
                           // header is drawn before the response either way.
+                          onMenuTap: () => Scaffold.of(context).openDrawer(),
                           userInitials: user?.initials ?? '··',
                           greeting: _greeting,
                           userName: user?.name ?? 'Loading…',

@@ -27,6 +27,7 @@ class AppRouteName {
   static const String reports = "/reports";
   static const String leadDetails = "/lead/details";
   static const String followUpToday = "/followUp/today";
+  static const String companyDetails = "/companyDetails";
 
   /// Where the router sends anyone who asks for a route their role does not
   /// carry the permission for.
