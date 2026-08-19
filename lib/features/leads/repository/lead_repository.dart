@@ -3,6 +3,7 @@ import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_source_model.dart';
+import 'package:nimmys_crm/features/leads/model/quotation_pdf_model.dart';
 import 'package:nimmys_crm/features/leads/service/lead_service.dart';
 
 class LeadRepository {
@@ -74,6 +75,16 @@ class LeadRepository {
       return await _service.getLeadSources();
     } catch (e) {
       return Error<LeadSourceModel>(
+        ErrorWithMessage(message: e.toString()),
+      );
+    }
+  }
+
+  Future<Result<QuotationPdfResponse>> getQuotationPdf(int leadId) async {
+    try {
+      return await _service.getQuotationPdf(leadId);
+    } catch (e) {
+      return Error<QuotationPdfResponse>(
         ErrorWithMessage(message: e.toString()),
       );
     }

@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:nimmys_crm/core/auth/user_role.dart';
+import 'package:nimmys_crm/data/storage/secured_shared_preferences.dart';
+import 'package:nimmys_crm/utils/app_string.dart';
 import '../../../core/theme/app_theme.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -8,7 +13,7 @@ import '../../../shared/widgets/app_gradient_header.dart';
 import '../../../shared/widgets/theme_toggle_button.dart';
 
 /// Dashboard hero: menu, wordmark title, notifications and profile avatar.
-class DashboardHeader extends StatelessWidget {
+class DashboardHeader extends StatefulWidget {
   const DashboardHeader({
     super.key,
     required this.userInitials,
@@ -27,6 +32,15 @@ class DashboardHeader extends StatelessWidget {
   final VoidCallback? onMenuTap;
   final VoidCallback? onNotificationsTap;
   final VoidCallback? onAvatarTap;
+
+  @override
+  State<DashboardHeader> createState() => _DashboardHeaderState();
+}
+
+class _DashboardHeaderState extends State<DashboardHeader> {
+  final SecuredSharedPreferences _securedSharedPref = SecuredSharedPreferences(
+    const FlutterSecureStorage(),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +62,23 @@ class DashboardHeader extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                AppHeaderIconButton(icon: Icons.menu_rounded, onTap: onMenuTap),
+                FutureBuilder<String?>(
+                  future: _securedSharedPref.get(AppString.sessionKey.userType),
+                  builder: (context, snapshot) {
+                    final role = (snapshot.data ?? '').toLowerCase();
+
+                    final canShowMenu = role == 'admin' || role == 'manager';
+
+                    if (!canShowMenu) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return AppHeaderIconButton(
+                      icon: Icons.menu_rounded,
+                      onTap: widget.onMenuTap,
+                    );
+                  },
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text('DASHBOARD', style: context.type.screenTitle),
@@ -56,15 +86,21 @@ class DashboardHeader extends StatelessWidget {
                 const SizedBox(width: AppSpacing.xs),
                 AppHeaderIconButton(
                   icon: Icons.notifications_none_rounded,
-                  badgeCount: notificationCount,
-                  onTap: onNotificationsTap,
+                  badgeCount: widget.notificationCount,
+                  onTap: widget.onNotificationsTap,
                 ),
                 const SizedBox(width: AppSpacing.xs),
-                AppAvatar(initials: userInitials, onTap: onAvatarTap),
+                AppAvatar(
+                  initials: widget.userInitials,
+                  onTap: widget.onAvatarTap,
+                ),
               ],
             ),
             const SizedBox(height: AppSpacing.lg),
-            DashboardGreeting(greeting: greeting, userName: userName),
+            DashboardGreeting(
+              greeting: widget.greeting,
+              userName: widget.userName,
+            ),
           ],
         ),
       ),

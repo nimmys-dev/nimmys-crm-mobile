@@ -5,6 +5,7 @@ import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_source_model.dart';
+import 'package:nimmys_crm/features/leads/model/quotation_pdf_model.dart';
 
 /// Network access for lead reads, writes and lookups.
 class LeadService {
@@ -25,8 +26,10 @@ class LeadService {
         "per_page": perPage,
         if (search != null && search.trim().isNotEmpty) "search": search.trim(),
       };
-      final Result<dynamic> result =
-          await _apiService.get(url, queryParams: queryParams);
+      final Result<dynamic> result = await _apiService.get(
+        url,
+        queryParams: queryParams,
+      );
       if (result is Success<dynamic>) {
         return await _apiService.getResponseStatus<LeadListResponse>(
           result.value,
@@ -143,7 +146,7 @@ class LeadService {
     }
   }
 
-   /// GET /api/view-lead/{id}. Returns details for a single lead.
+  /// GET /api/view-lead/{id}. Returns details for a single lead.
   Future<Result<LeadSourceModel>> getLeadSources() async {
     try {
       final String url = ApiUrls.leadSources;
@@ -161,6 +164,27 @@ class LeadService {
       }
     } catch (_) {
       return Error<LeadSourceModel>(DeserializationError());
+    }
+  }
+
+  /// GET quotationpdf details api
+  Future<Result<QuotationPdfResponse>> getQuotationPdf(int leadId) async {
+    try {
+      final String url = ApiUrls.quotationPdf(leadId);
+      final Result<dynamic> result = await _apiService.get(url);
+      if (result is Success<dynamic>) {
+        return await _apiService.getResponseStatus<QuotationPdfResponse>(
+          result.value,
+          (dynamic json) =>
+              QuotationPdfResponse.fromJson(json as Map<String, dynamic>),
+        );
+      } else if (result is Error<dynamic>) {
+        return Error<QuotationPdfResponse>(result.type);
+      } else {
+        return Error<QuotationPdfResponse>(GenericError());
+      }
+    } catch (_) {
+      return Error<QuotationPdfResponse>(DeserializationError());
     }
   }
 }

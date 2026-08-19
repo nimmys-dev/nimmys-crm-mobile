@@ -9,6 +9,7 @@ import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_source_model.dart'; // NEW
+import 'package:nimmys_crm/features/leads/model/quotation_pdf_model.dart';
 import 'package:nimmys_crm/features/leads/repository/lead_repository.dart';
 
 part 'leads_state.dart';
@@ -24,11 +25,7 @@ class LeadsCubit extends BaseCubit<LeadsState> {
   // -------------------------------------------------------------------------
 
   Future<void> getLeads({bool refresh = false, String? search}) async {
-    await _fetchLeadsPage(
-      page: 1,
-      search: search,
-      skipIfCached: !refresh,
-    );
+    await _fetchLeadsPage(page: 1, search: search, skipIfCached: !refresh);
   }
 
   Future<void> refreshLeads() async {
@@ -100,8 +97,8 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       return;
     }
     _setLeadAssigneesUIState(UIState.loading());
-    final Result<LeadAssigneeSuccess> result =
-        await _repository.getLeadAssignees();
+    final Result<LeadAssigneeSuccess> result = await _repository
+        .getLeadAssignees();
     if (result is Success<LeadAssigneeSuccess>) {
       _setLeadAssigneesUIState(UIState.success(result.value));
     } else if (result is Error<LeadAssigneeSuccess>) {
@@ -162,9 +159,7 @@ class LeadsCubit extends BaseCubit<LeadsState> {
   }
 
   void resetCreateLeadState() {
-    _setCreateLeadUIState(
-      resetUIState<dynamic>(state.createLeadUIState),
-    );
+    _setCreateLeadUIState(resetUIState<dynamic>(state.createLeadUIState));
   }
 
   // -------------------------------------------------------------------------
@@ -177,8 +172,9 @@ class LeadsCubit extends BaseCubit<LeadsState> {
 
   Future<void> getLeadDetails(int id) async {
     _setLeadDetailsUIState(UIState.loading());
-    final Result<LeadDetailsSuccess> result =
-        await _repository.getLeadDetails(id);
+    final Result<LeadDetailsSuccess> result = await _repository.getLeadDetails(
+      id,
+    );
     if (result is Success<LeadDetailsSuccess>) {
       _setLeadDetailsUIState(UIState.success(result.value));
     } else if (result is Error<LeadDetailsSuccess>) {
@@ -205,8 +201,10 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       return;
     }
     _setUpdateLeadUIState(UIState.loading());
-    final Result<LeadDetailsSuccess> result =
-        await _repository.updateLead(id, payload);
+    final Result<LeadDetailsSuccess> result = await _repository.updateLead(
+      id,
+      payload,
+    );
     if (result is Success<LeadDetailsSuccess>) {
       _setUpdateLeadUIState(UIState.success(result.value));
       if (result.value.data != null) {
@@ -221,6 +219,36 @@ class LeadsCubit extends BaseCubit<LeadsState> {
   void resetUpdateLeadState() {
     _setUpdateLeadUIState(
       resetUIState<LeadDetailsSuccess>(state.updateLeadUIState),
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Quotation PDF (NEW)
+  // -------------------------------------------------------------------------
+
+  void _setQuotationPdfUIState(UIState<QuotationPdfResponse>? uiState) {
+    emit(state.copyWith(quotationPdfUIState: uiState));
+  }
+
+  /// Fetches the quotation PDF for a specific lead.
+  /// Always makes a network call (no caching) because each call is for a different lead.
+  Future<void> getQuotationPdf(int leadId) async {
+    // Optionally, you could prevent duplicate requests if the same leadId is already loading.
+    // For simplicity, we just call every time.
+    _setQuotationPdfUIState(UIState.loading());
+    final Result<QuotationPdfResponse> result = await _repository
+        .getQuotationPdf(leadId);
+    if (result is Success<QuotationPdfResponse>) {
+      _setQuotationPdfUIState(UIState.success(result.value));
+    } else if (result is Error<QuotationPdfResponse>) {
+      _setQuotationPdfUIState(UIState.error(result.type));
+    }
+  }
+
+  /// Resets the quotation PDF state (e.g., on navigation away or logout).
+  void resetQuotationPdfState() {
+    _setQuotationPdfUIState(
+      resetUIState<QuotationPdfResponse>(state.quotationPdfUIState),
     );
   }
 

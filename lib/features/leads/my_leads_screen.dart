@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
+import 'package:nimmys_crm/features/leads/domain/entities/lead.dart';
 import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
 import 'package:nimmys_crm/utils/toast_messages.dart';
 
@@ -78,8 +80,7 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
       return;
     }
     ToastMessages.error(
-      message:
-          uiState?.errorType?.getText(context) ?? 'Failed to load leads',
+      message: uiState?.errorType?.getText(context) ?? 'Failed to load leads',
     );
   }
 
@@ -126,17 +127,17 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
                     onPreviousPage: () {
                       final LeadPagination? pagination = state.leadPagination;
                       if (pagination != null && pagination.hasPreviousPage) {
-                        context
-                            .read<LeadsCubit>()
-                            .goToLeadsPage(pagination.previousPage);
+                        context.read<LeadsCubit>().goToLeadsPage(
+                          pagination.previousPage,
+                        );
                       }
                     },
                     onNextPage: () {
                       final LeadPagination? pagination = state.leadPagination;
                       if (pagination != null && pagination.hasNextPage) {
-                        context
-                            .read<LeadsCubit>()
-                            .goToLeadsPage(pagination.nextPage);
+                        context.read<LeadsCubit>().goToLeadsPage(
+                          pagination.nextPage,
+                        );
                       }
                     },
                   );
@@ -145,9 +146,7 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
             ),
           ],
         ),
-        floatingActionButton: MyLeadsFab(
-          onPressed: _openCreateLead,
-        ),
+        floatingActionButton: MyLeadsFab(onPressed: _openCreateLead),
       ),
     );
   }
@@ -255,7 +254,8 @@ class _MyLeadsBody extends StatelessWidget {
           right: AppSpacing.gutter,
           bottom: AppSpacing.xl + 40,
         ),
-        itemCount: leads.length + 2, // 1 for count header, 1 for pagination footer
+        itemCount:
+            leads.length + 2, // 1 for count header, 1 for pagination footer
         itemBuilder: (BuildContext context, int index) {
           if (index == 0) {
             return MyLeadsCount(
@@ -316,8 +316,8 @@ class MyLeadsCount extends StatelessWidget {
     final String label = total == 0
         ? 'No leads'
         : (total <= to - from + 1
-            ? '$total lead${total == 1 ? '' : 's'}'
-            : 'Showing $from–$to of $total leads');
+              ? '$total lead${total == 1 ? '' : 's'}'
+              : 'Showing $from–$to of $total leads');
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.xs, left: 2, top: 4),
@@ -346,12 +346,7 @@ class MyLeadsCount extends StatelessWidget {
 /// One lead row displaying Reference, Name, Phone, Source, Assigned To,
 /// Created By and Description.
 class MyLeadTile extends StatelessWidget {
-  const MyLeadTile({
-    super.key,
-    required this.lead,
-    this.onTap,
-    this.onCall,
-  });
+  const MyLeadTile({super.key, required this.lead, this.onTap, this.onCall});
 
   final LeadItemData lead;
   final VoidCallback? onTap;
@@ -479,10 +474,13 @@ class MyLeadTile extends StatelessWidget {
               if (phone.isNotEmpty) ...<Widget>[
                 const SizedBox(width: AppSpacing.xs),
                 LeadContactActions(
+                  key: ValueKey<int>(lead.id ?? Random().nextInt(1000000)),
+                  quotation: LeadQuotation(),
                   name: displayName,
                   mobile: phone,
                   enquiry: description.isNotEmpty ? description : null,
                   onCall: onCall,
+                  leadId: lead.id ?? 0,
                 ),
               ],
             ],
@@ -563,8 +561,9 @@ class MyLeadsPaginationBar extends StatelessWidget {
                     Text(
                       'Prev',
                       style: context.type.caption.copyWith(
-                        color:
-                            canGoPrev ? AppColors.red : context.palette.faint,
+                        color: canGoPrev
+                            ? AppColors.red
+                            : context.palette.faint,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -618,8 +617,9 @@ class MyLeadsPaginationBar extends StatelessWidget {
                     Text(
                       'Next',
                       style: context.type.caption.copyWith(
-                        color:
-                            canGoNext ? AppColors.red : context.palette.faint,
+                        color: canGoNext
+                            ? AppColors.red
+                            : context.palette.faint,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -642,10 +642,7 @@ class MyLeadsPaginationBar extends StatelessWidget {
 
 /// Nothing in this state.
 class MyLeadsEmptyState extends StatelessWidget {
-  const MyLeadsEmptyState({
-    super.key,
-    required this.hasQuery,
-  });
+  const MyLeadsEmptyState({super.key, required this.hasQuery});
 
   final bool hasQuery;
 

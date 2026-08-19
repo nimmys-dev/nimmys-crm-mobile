@@ -31,4 +31,6 @@ class ApiUrls {
   static String leadSources = "$_baseUrl/lead-sources";
   static String companyProfile = "$_baseUrl/company-profile";
   static String updateCompanyProfile = "$_baseUrl/company-profile/update";
+  static String quotationPdf(int leadId) => "$_baseUrl/leads/$leadId/quotation/pdf-details";
+
 }

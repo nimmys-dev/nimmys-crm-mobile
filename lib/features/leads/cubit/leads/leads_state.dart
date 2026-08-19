@@ -27,6 +27,9 @@ class LeadsState extends Equatable {
   /// the details fetch so a save in flight cannot be mistaken for a reload.
   final UIState<LeadDetailsSuccess>? updateLeadUIState;
 
+  /// Quotation PDF response, from `GET /api/quotation-pdf/{leadId}`.
+  final UIState<QuotationPdfResponse>? quotationPdfUIState;
+
   const LeadsState({
     this.leadListUIState,
     this.leadList = const <LeadItemData>[],
@@ -37,6 +40,7 @@ class LeadsState extends Equatable {
     this.createLeadUIState,
     this.leadDetailsUIState,
     this.updateLeadUIState,
+    this.quotationPdfUIState,
   });
 
   LeadsState copyWith({
@@ -49,6 +53,7 @@ class LeadsState extends Equatable {
     UIState<dynamic>? createLeadUIState,
     UIState<LeadDetailsSuccess>? leadDetailsUIState,
     UIState<LeadDetailsSuccess>? updateLeadUIState,
+    UIState<QuotationPdfResponse>? quotationPdfUIState,
   }) {
     return LeadsState(
       leadListUIState: leadListUIState ?? this.leadListUIState,
@@ -60,37 +65,42 @@ class LeadsState extends Equatable {
       createLeadUIState: createLeadUIState ?? this.createLeadUIState,
       leadDetailsUIState: leadDetailsUIState ?? this.leadDetailsUIState,
       updateLeadUIState: updateLeadUIState ?? this.updateLeadUIState,
+      quotationPdfUIState: quotationPdfUIState ?? this.quotationPdfUIState,
     );
   }
 
   @override
   List<Object?> get props => [
-        leadListUIState,
-        leadListUIState?.status,
-        leadListUIState?.data,
-        leadListUIState?.errorType,
-        leadList,
-        leadPagination,
-        leadSearchQuery,
-        leadAssigneesUIState,
-        leadAssigneesUIState?.status,
-        leadAssigneesUIState?.data,
-        leadAssigneesUIState?.errorType,
-        leadSourcesUIState, // NEW
-        leadSourcesUIState?.status,
-        leadSourcesUIState?.data,
-        leadSourcesUIState?.errorType,
-        createLeadUIState,
-        createLeadUIState?.status,
-        createLeadUIState?.data,
-        createLeadUIState?.errorType,
-        leadDetailsUIState,
-        leadDetailsUIState?.status,
-        leadDetailsUIState?.data,
-        leadDetailsUIState?.errorType,
-        updateLeadUIState,
-        updateLeadUIState?.status,
-        updateLeadUIState?.data,
-        updateLeadUIState?.errorType,
-      ];
+    leadListUIState,
+    leadListUIState?.status,
+    leadListUIState?.data,
+    leadListUIState?.errorType,
+    leadList,
+    leadPagination,
+    leadSearchQuery,
+    leadAssigneesUIState,
+    leadAssigneesUIState?.status,
+    leadAssigneesUIState?.data,
+    leadAssigneesUIState?.errorType,
+    leadSourcesUIState, // NEW
+    leadSourcesUIState?.status,
+    leadSourcesUIState?.data,
+    leadSourcesUIState?.errorType,
+    createLeadUIState,
+    createLeadUIState?.status,
+    createLeadUIState?.data,
+    createLeadUIState?.errorType,
+    leadDetailsUIState,
+    leadDetailsUIState?.status,
+    leadDetailsUIState?.data,
+    leadDetailsUIState?.errorType,
+    updateLeadUIState,
+    updateLeadUIState?.status,
+    updateLeadUIState?.data,
+    updateLeadUIState?.errorType,
+    quotationPdfUIState, // NEW
+    quotationPdfUIState?.status,
+    quotationPdfUIState?.data,
+    quotationPdfUIState?.errorType,
+  ];
 }
