@@ -53,7 +53,6 @@ class DashboardHeader extends StatelessWidget {
                 Expanded(
                   child: Text('DASHBOARD', style: context.type.screenTitle),
                 ),
-                const ThemeToggleButton(),
                 const SizedBox(width: AppSpacing.xs),
                 AppHeaderIconButton(
                   icon: Icons.notifications_none_rounded,
