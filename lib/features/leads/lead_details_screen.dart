@@ -7,15 +7,14 @@ import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
 import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_source_model.dart';
+import 'package:nimmys_crm/features/leads/widgets/tele_call_details.dart';
 import 'package:nimmys_crm/utils/toast_messages.dart';
-
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/ui_state/ui_state.dart';
 import '../../enum/status.dart';
 import '../../shared/widgets/app_avatar.dart';
-import '../../shared/widgets/app_bottom_nav.dart';
 import '../../shared/widgets/app_buttons.dart';
 import '../../shared/widgets/app_form_field.dart';
 import '../../shared/widgets/app_gradient_header.dart';
@@ -179,6 +178,30 @@ class _LeadDetailsBody extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             QuotationCard(quotation: quotation),
           ],
+          SizedBox(height: 20),
+          Text("Tele Call Details", style: context.type.cardTitle),
+          SizedBox(height: 10),
+          TeleCallDetailsSection(
+            leadId: lead.id ?? 5,
+            teleCallDetails: [],
+            onAddTeleCallDetail: (detail) {
+              context.read<LeadsCubit>().addCallLog(
+                leadId: lead.id ?? 5,
+                callStatus: detail['call_status']?.toString(),
+                calledDate: detail['called_date']?.toString(),
+                calledTime: detail['called_time']?.toString(),
+                duration: detail['duration']?.toString(),
+                interest: detail['interest'] as bool?,
+                reason: detail['reason']?.toString(),
+                isItemSold: detail['is_item_sold'] as bool?,
+                invoiceNumber: detail['invoice_number']?.toString(),
+                remarks: detail['remarks']?.toString(),
+                nextFollowupDate: detail['next_followup_date']?.toString(),
+                // invoiceFile:
+                //     _getInvoiceFile(detail['invoice_file']),
+              );
+            },
+          ),
           SizedBox(height: 120),
         ],
       ),

@@ -25,6 +25,7 @@ const String FAILED = "failed";
 const String ERROR = "Error";
 const String MESSAGE = "message";
 const String MSG = "msg";
+const String LOADING = "loading";
 const String indianCurrencySymbol = "₹";
 
 const iosNumberKeyboard = TextInputType.numberWithOptions(signed: true, decimal: true);

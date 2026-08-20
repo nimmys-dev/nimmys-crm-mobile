@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/network/api_service.dart';
 import 'package:nimmys_crm/data/network/api_urls.dart';
+import 'package:nimmys_crm/features/leads/model/call_log_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
@@ -185,6 +188,79 @@ class LeadService {
       }
     } catch (_) {
       return Error<QuotationPdfResponse>(DeserializationError());
+    }
+  }
+
+  /// POST /api/leads/{leadId}/calls
+  Future<Result<TeleCallDetailResponseModel>> createCallLog(
+    int leadId, {
+    String? callStatus,
+    String? calledDate,
+    String? calledTime,
+    String? duration,
+    bool? interest,
+    String? reason,
+    bool? isItemSold,
+    String? invoiceNumber,
+    String? remarks,
+    String? nextFollowupDate,
+    File? invoiceFile,
+  }) async {
+    try {
+      final String url = ApiUrls.leadCalls(leadId);
+
+      final Map<String, String> fields = <String, String>{
+        if (callStatus != null && callStatus.trim().isNotEmpty)
+          'call_status': callStatus.trim(),
+
+        if (calledDate != null && calledDate.trim().isNotEmpty)
+          'called_date': calledDate.trim(),
+
+        if (calledTime != null && calledTime.trim().isNotEmpty)
+          'called_time': calledTime.trim(),
+
+        if (duration != null && duration.trim().isNotEmpty)
+          'duration': duration.trim(),
+
+        if (interest != null) 'interest': interest ? '1' : '0',
+
+        if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+
+        if (isItemSold != null) 'is_item_sold': isItemSold ? '1' : '0',
+
+        if (invoiceNumber != null && invoiceNumber.trim().isNotEmpty)
+          'invoice_number': invoiceNumber.trim(),
+
+        if (remarks != null && remarks.trim().isNotEmpty)
+          'remarks': remarks.trim(),
+
+        if (nextFollowupDate != null && nextFollowupDate.trim().isNotEmpty)
+          'next_followup_date': nextFollowupDate.trim(),
+      };
+
+      final Result<dynamic> result = await _apiService.multipart(
+        url,
+        invoiceFile,
+        fields: fields,
+        pathName: 'invoice_file',
+      );
+
+      if (result is Success<dynamic>) {
+        return await _apiService.getResponseStatus<TeleCallDetailResponseModel>(
+          result.value,
+          (dynamic json) => TeleCallDetailResponseModel.fromJson(
+            json as Map<String, dynamic>,
+          ),
+        );
+      }
+
+      if (result is Error<dynamic>) {
+        return Error<TeleCallDetailResponseModel>(result.type);
+      }
+
+      return Error<TeleCallDetailResponseModel>(GenericError());
+    } catch (_) {
+      return Error<TeleCallDetailResponseModel>(DeserializationError());
     }
   }
 }

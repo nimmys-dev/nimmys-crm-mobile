@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:nimmys_crm/data/model/result.dart';
+import 'package:nimmys_crm/features/leads/model/call_log_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
@@ -23,9 +26,7 @@ class LeadRepository {
         search: search,
       );
     } catch (e) {
-      return Error<LeadListResponse>(
-        ErrorWithMessage(message: e.toString()),
-      );
+      return Error<LeadListResponse>(ErrorWithMessage(message: e.toString()));
     }
   }
 
@@ -33,9 +34,7 @@ class LeadRepository {
     try {
       return await _service.getLeadDetails(id);
     } catch (e) {
-      return Error<LeadDetailsSuccess>(
-        ErrorWithMessage(message: e.toString()),
-      );
+      return Error<LeadDetailsSuccess>(ErrorWithMessage(message: e.toString()));
     }
   }
 
@@ -64,9 +63,7 @@ class LeadRepository {
     try {
       return await _service.updateLead(id, payload);
     } catch (e) {
-      return Error<LeadDetailsSuccess>(
-        ErrorWithMessage(message: e.toString()),
-      );
+      return Error<LeadDetailsSuccess>(ErrorWithMessage(message: e.toString()));
     }
   }
 
@@ -74,9 +71,7 @@ class LeadRepository {
     try {
       return await _service.getLeadSources();
     } catch (e) {
-      return Error<LeadSourceModel>(
-        ErrorWithMessage(message: e.toString()),
-      );
+      return Error<LeadSourceModel>(ErrorWithMessage(message: e.toString()));
     }
   }
 
@@ -85,6 +80,42 @@ class LeadRepository {
       return await _service.getQuotationPdf(leadId);
     } catch (e) {
       return Error<QuotationPdfResponse>(
+        ErrorWithMessage(message: e.toString()),
+      );
+    }
+  }
+
+  Future<Result<TeleCallDetailResponseModel>> addCallLog({
+    required int leadId,
+    String? callStatus,
+    String? calledDate,
+    String? calledTime,
+    String? duration,
+    bool? interest,
+    String? reason,
+    bool? isItemSold,
+    String? invoiceNumber,
+    String? remarks,
+    String? nextFollowupDate,
+    File? invoiceFile,
+  }) async {
+    try {
+      return await _service.createCallLog(
+        leadId,
+        callStatus: callStatus,
+        calledDate: calledDate,
+        calledTime: calledTime,
+        duration: duration,
+        interest: interest,
+        reason: reason,
+        isItemSold: isItemSold,
+        invoiceNumber: invoiceNumber,
+        remarks: remarks,
+        nextFollowupDate: nextFollowupDate,
+        invoiceFile: invoiceFile,
+      );
+    } catch (e) {
+      return Error<TeleCallDetailResponseModel>(
         ErrorWithMessage(message: e.toString()),
       );
     }
