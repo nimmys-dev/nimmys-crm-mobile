@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nimmys_crm/core/theme/app_colors.dart';
@@ -203,6 +206,7 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
   String? _selectedCallStatus;
   bool _interest = false;
   bool _isItemSold = false;
+  File? _invoiceFile;
 
   @override
   void dispose() {
@@ -216,6 +220,30 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
     super.dispose();
   }
 
+  // ---------------------------------------------------------------------------
+  // File Picker
+  // ---------------------------------------------------------------------------
+  Future<void> _pickInvoiceFile() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.any,
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final pickedFile = result.files.first;
+        final path = pickedFile.path;
+        if (path != null) {
+          setState(() {
+            _invoiceFile = File(path);
+          });
+        }
+      }
+    } catch (e) {
+      // Handle error (e.g., user canceled picker)
+      debugPrint('File picker error: $e');
+    }
+  }
   // ---------------------------------------------------------------------------
   // Date
   // ---------------------------------------------------------------------------
@@ -284,6 +312,37 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
       return;
     }
 
+    if (_remarksController.text.trim().isEmpty) {
+      ToastMessages.error(message: 'Remarks is required');
+      return;
+    }
+
+    if (_interest == false && _reasonController.text.trim().isEmpty) {
+      ToastMessages.error(message: 'Not Interested Reason is required');
+      return;
+    }
+
+    if (_isItemSold == false &&
+        _interest == true &&
+        _nextFollowUpDateController.text.trim().isEmpty) {
+      ToastMessages.error(message: 'Next Follow-up Date is required');
+      return;
+    }
+
+    if (_isItemSold && _invoiceNumberController.text.trim().isEmpty) {
+      ToastMessages.error(
+        message: 'Invoice Number is required when Item Sold is true',
+      );
+      return;
+    }
+
+    if (_isItemSold && _invoiceFile == null) {
+      ToastMessages.error(
+        message: 'Invoice File is required when Item Sold is true',
+      );
+      return;
+    }
+
     final String callStatus = _selectedCallStatus!.toLowerCase();
 
     final Map<String, dynamic> detail = <String, dynamic>{
@@ -296,7 +355,7 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
       'invoice_number': _invoiceNumberController.text.trim(),
       'next_followup_date': _nextFollowUpDateController.text.trim(),
       'remarks': _remarksController.text.trim(),
-      'invoice_file': _invoiceFileController.text.trim(),
+      'invoice_file': _invoiceFile,
       'reason': _reasonController.text.trim(),
     };
 
@@ -425,6 +484,7 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                             Expanded(
                               child: AppFormField(
                                 label: 'Date',
+                                isRequired: true,
                                 child: AppTextField(
                                   hint: 'Select date',
                                   controller: _calledDateController,
@@ -438,6 +498,7 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                             Expanded(
                               child: AppFormField(
                                 label: 'Time',
+                                isRequired: true,
                                 child: AppTextField(
                                   hint: 'Select time',
                                   controller: _calledTimeController,
@@ -453,6 +514,7 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                         // Call Status
                         AppFormField(
                           label: 'Call Status',
+                          isRequired: true,
                           child: AppSelectField(
                             hint: 'Select status',
                             sheetTitle: 'Call status',
@@ -486,6 +548,7 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                         Visibility(
                           visible: !_interest,
                           child: AppFormField(
+                            isRequired: !_interest,
                             label: 'Not Interested Reason',
                             child: AppTextField(
                               hint: 'Reason for not being interested',
@@ -509,7 +572,8 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
 
                         // Invoice Number
                         AppFormField(
-                          label: 'Invoice Number (optional)',
+                          isRequired: _isItemSold,
+                          label: 'Invoice Number',
                           child: AppTextField(
                             hint: 'Invoice #',
                             controller: _invoiceNumberController,
@@ -531,6 +595,7 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
 
                         // Remarks
                         AppFormField(
+                          isRequired: true,
                           label: 'Remarks',
                           child: AppTextField(
                             hint: 'Notes / remarks',
@@ -541,12 +606,48 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                         ),
 
                         // Invoice File
+                        // Invoice File (REPLACED text field with file picker)
                         AppFormField(
-                          label: 'Invoice File (optional)',
-                          child: AppTextField(
-                            hint: 'File path / URL',
-                            controller: _invoiceFileController,
-                            icon: Icons.attach_file,
+                          isRequired: _isItemSold,
+                          label: 'Invoice File',
+                          child: GestureDetector(
+                            onTap: _pickInvoiceFile,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.sm,
+                                vertical: AppSpacing.sm,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: palette.line),
+                                borderRadius: BorderRadius.circular(8),
+                                color: palette.surface,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.attach_file_rounded,
+                                    size: 20,
+                                    color: palette.slate,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _invoiceFile == null
+                                          ? 'Choose file'
+                                          : _invoiceFile!.path
+                                                .split(Platform.pathSeparator)
+                                                .last,
+                                      style: const TextStyle(fontSize: 14),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.arrow_drop_down,
+                                    color: palette.slate,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
 

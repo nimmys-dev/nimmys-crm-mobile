@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -173,7 +175,6 @@ class _LeadDetailsBody extends StatelessWidget {
                 ],
               ),
             ),
-          // ⬇️ NEW: Quotation Section (shown only if quotation exists)
           if (quotation != null) ...[
             const SizedBox(height: AppSpacing.md),
             QuotationCard(quotation: quotation),
@@ -197,8 +198,7 @@ class _LeadDetailsBody extends StatelessWidget {
                 invoiceNumber: detail['invoice_number']?.toString(),
                 remarks: detail['remarks']?.toString(),
                 nextFollowupDate: detail['next_followup_date']?.toString(),
-                // invoiceFile:
-                //     _getInvoiceFile(detail['invoice_file']),
+                invoiceFile: detail['invoice_file'] as File?,
               );
             },
           ),
