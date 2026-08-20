@@ -107,7 +107,6 @@ class TeleCallDetailCard extends StatelessWidget {
     final itemSold = detail['is_item_sold'] == true ? 'Yes' : 'No';
     final nextFollowUp = detail['next_followup_date']?.toString() ?? '—';
     final remarks = detail['remarks']?.toString() ?? '';
-    final reason = detail['reason']?.toString() ?? '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -343,8 +342,9 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
       return;
     }
 
-    final String callStatus = _selectedCallStatus!.toLowerCase();
-
+    final String callStatus = _selectedCallStatus == 'Answered'
+        ? 'answered'
+        : 'not_answered';
     final Map<String, dynamic> detail = <String, dynamic>{
       'called_date': _calledDateController.text.trim(),
       'called_time': _calledTimeController.text.trim(),
@@ -519,7 +519,7 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                             hint: 'Select status',
                             sheetTitle: 'Call status',
                             icon: Icons.phone_in_talk,
-                            options: const ['Answered', 'Not_Answered'],
+                            options: const ['Answered', 'Not Answered'],
                             value: _selectedCallStatus,
                             onChanged: (value) {
                               setState(() {
