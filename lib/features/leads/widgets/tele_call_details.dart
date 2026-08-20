@@ -94,8 +94,6 @@ class TeleCallDetailCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-
-    final calledBy = detail['called_by']?.toString() ?? '—';
     final date = detail['called_date']?.toString() ?? '';
     final time = detail['called_time']?.toString() ?? '';
     final status =
@@ -106,6 +104,7 @@ class TeleCallDetailCard extends StatelessWidget {
     final itemSold = detail['is_item_sold'] == true ? 'Yes' : 'No';
     final nextFollowUp = detail['next_followup_date']?.toString() ?? '—';
     final remarks = detail['remarks']?.toString() ?? '';
+    final reason = detail['reason']?.toString() ?? '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -122,15 +121,6 @@ class TeleCallDetailCard extends StatelessWidget {
             children: [
               Icon(Icons.person_outline, size: 16, color: palette.slate),
               const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  calledBy,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
               Icon(Icons.phone_in_talk, size: 16, color: AppColors.red),
               const SizedBox(width: 4),
               Text(
@@ -204,11 +194,11 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
   final _calledByController = TextEditingController();
   final _calledDateController = TextEditingController();
   final _calledTimeController = TextEditingController();
-  final _durationController = TextEditingController();
   final _invoiceNumberController = TextEditingController();
   final _nextFollowUpDateController = TextEditingController();
   final _remarksController = TextEditingController();
   final _invoiceFileController = TextEditingController();
+  final _reasonController = TextEditingController();
 
   String? _selectedCallStatus;
   bool _interest = false;
@@ -216,14 +206,13 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
 
   @override
   void dispose() {
-    _calledByController.dispose();
     _calledDateController.dispose();
     _calledTimeController.dispose();
-    _durationController.dispose();
     _invoiceNumberController.dispose();
     _nextFollowUpDateController.dispose();
     _remarksController.dispose();
     _invoiceFileController.dispose();
+    _reasonController.dispose();
     super.dispose();
   }
 
@@ -280,11 +269,6 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
   // ---------------------------------------------------------------------------
 
   void _save() {
-    if (_calledByController.text.trim().isEmpty) {
-      ToastMessages.error(message: 'Called By is required');
-      return;
-    }
-
     if (_calledDateController.text.trim().isEmpty) {
       ToastMessages.error(message: 'Called Date is required');
       return;
@@ -303,10 +287,8 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
     final String callStatus = _selectedCallStatus!.toLowerCase();
 
     final Map<String, dynamic> detail = <String, dynamic>{
-      'called_by': _calledByController.text.trim(),
       'called_date': _calledDateController.text.trim(),
       'called_time': _calledTimeController.text.trim(),
-      'duration': _durationController.text.trim(),
       'call_status': callStatus,
       'call_status_label': _selectedCallStatus,
       'interest': _interest,
@@ -315,6 +297,7 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
       'next_followup_date': _nextFollowUpDateController.text.trim(),
       'remarks': _remarksController.text.trim(),
       'invoice_file': _invoiceFileController.text.trim(),
+      'reason': _reasonController.text.trim(),
     };
 
     // Send data to parent/Cubit; the sheet will be closed after API success.
@@ -350,7 +333,7 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
           final errorType = uiState?.errorType;
           ToastMessages.error(
             message:
-                errorType?.toString() ??
+                errorType?.getText(context) ??
                 'Failed to add call detail. Please try again.',
           );
         }
@@ -435,16 +418,6 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Called By
-                        AppFormField(
-                          label: 'Called By',
-                          child: AppTextField(
-                            hint: 'Name of caller',
-                            controller: _calledByController,
-                            icon: Icons.person_outline,
-                          ),
-                        ),
-
                         // Date + Time
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -477,16 +450,6 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                           ],
                         ),
 
-                        // Duration
-                        AppFormField(
-                          label: 'Duration (optional)',
-                          child: AppTextField(
-                            hint: 'e.g., 5 mins',
-                            controller: _durationController,
-                            icon: Icons.timer_outlined,
-                          ),
-                        ),
-
                         // Call Status
                         AppFormField(
                           label: 'Call Status',
@@ -494,7 +457,7 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                             hint: 'Select status',
                             sheetTitle: 'Call status',
                             icon: Icons.phone_in_talk,
-                            options: const ['Answered', 'Not Answered', 'Busy'],
+                            options: const ['Answered', 'Not_Answered'],
                             value: _selectedCallStatus,
                             onChanged: (value) {
                               setState(() {
@@ -512,11 +475,25 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                           onChanged: (value) {
                             setState(() {
                               _interest = value;
+                              if (_interest) {
+                                _reasonController.clear();
+                              }
                             });
                           },
                           activeColor: AppColors.red,
                         ),
-
+                        // Invoice Number
+                        Visibility(
+                          visible: !_interest,
+                          child: AppFormField(
+                            label: 'Not Interested Reason',
+                            child: AppTextField(
+                              hint: 'Reason for not being interested',
+                              controller: _reasonController,
+                              icon: Icons.report,
+                            ),
+                          ),
+                        ),
                         // Item Sold
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
@@ -579,6 +556,10 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                         _buildSaveButton(),
 
                         const SizedBox(height: AppSpacing.md),
+                        SizedBox(height: 45),
+                        SizedBox(
+                          height: MediaQuery.of(context).viewInsets.bottom,
+                        ),
                       ],
                     ),
                   ),
