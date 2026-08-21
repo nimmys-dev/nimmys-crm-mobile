@@ -271,7 +271,7 @@ class FollowUpTableRow extends StatelessWidget {
               name: entry.name,
               mobile: entry.mobile,
               enquiry: entry.requiredItems,
-              quotation: entry.quotation,
+              hasQuotation: entry.hasQuotation,
               onCall: onCall,
               onWhatsApp: onWhatsApp,
               leadId: 5 ?? 0,

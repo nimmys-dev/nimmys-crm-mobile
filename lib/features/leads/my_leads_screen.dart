@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
-import 'package:nimmys_crm/features/leads/domain/entities/lead.dart';
 import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
 import 'package:nimmys_crm/utils/toast_messages.dart';
 import '../../core/theme/app_colors.dart';
@@ -118,26 +117,29 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
                     current.leadListUIState?.status,
                 listener: _onLeadsStateChanged,
                 builder: (BuildContext context, LeadsState state) {
-                  return _MyLeadsBody(
-                    state: state,
-                    onRefresh: _onRefresh,
-                    onRetry: _onRefresh,
-                    onPreviousPage: () {
-                      final LeadPagination? pagination = state.leadPagination;
-                      if (pagination != null && pagination.hasPreviousPage) {
-                        context.read<LeadsCubit>().goToLeadsPage(
-                          pagination.previousPage,
-                        );
-                      }
-                    },
-                    onNextPage: () {
-                      final LeadPagination? pagination = state.leadPagination;
-                      if (pagination != null && pagination.hasNextPage) {
-                        context.read<LeadsCubit>().goToLeadsPage(
-                          pagination.nextPage,
-                        );
-                      }
-                    },
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 50),
+                    child: _MyLeadsBody(
+                      state: state,
+                      onRefresh: _onRefresh,
+                      onRetry: _onRefresh,
+                      onPreviousPage: () {
+                        final LeadPagination? pagination = state.leadPagination;
+                        if (pagination != null && pagination.hasPreviousPage) {
+                          context.read<LeadsCubit>().goToLeadsPage(
+                            pagination.previousPage,
+                          );
+                        }
+                      },
+                      onNextPage: () {
+                        final LeadPagination? pagination = state.leadPagination;
+                        if (pagination != null && pagination.hasNextPage) {
+                          context.read<LeadsCubit>().goToLeadsPage(
+                            pagination.nextPage,
+                          );
+                        }
+                      },
+                    ),
                   );
                 },
               ),
@@ -290,7 +292,7 @@ class _MyLeadsBodyState extends State<_MyLeadsBody> {
           bottom: AppSpacing.xl + 40,
         ),
         itemCount:
-            leads.length + 2, // 1 for count header, 1 for pagination footer
+            leads.length + 1, // 1 for count header, 1 for pagination footer
         itemBuilder: (BuildContext context, int index) {
           if (index == 0) {
             return MyLeadsCount(
@@ -298,16 +300,6 @@ class _MyLeadsBodyState extends State<_MyLeadsBody> {
               to: to,
               total: total,
               isLoading: isLoading,
-            );
-          }
-
-          if (index == leads.length + 1) {
-            if (pagination == null) return const SizedBox.shrink();
-            return MyLeadsPaginationBar(
-              pagination: pagination,
-              isLoading: isLoading,
-              onPreviousPage: widget.onPreviousPage,
-              onNextPage: widget.onNextPage,
             );
           }
 
@@ -352,7 +344,7 @@ class MyLeadsCount extends StatelessWidget {
         ? 'No leads'
         : (total <= to - from + 1
               ? '$total lead${total == 1 ? '' : 's'}'
-              : 'Showing $from–$to of $total leads');
+              : 'Showing $total leads');
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.xs, left: 2, top: 4),
@@ -392,6 +384,7 @@ class MyLeadTile extends StatelessWidget {
     final String displayName = lead.name?.trim().isNotEmpty == true
         ? lead.name!.trim()
         : 'Unnamed Lead';
+
     final String phone = lead.phone ?? '';
     final String description = lead.cleanDescription;
 
@@ -407,13 +400,18 @@ class MyLeadTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               AppInitialBubble(letter: displayName, size: 42, isAccent: false),
+
               const SizedBox(width: AppSpacing.sm),
+
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
+                    // --------------------------------------------------
+                    // NAME + REFERENCE
+                    // --------------------------------------------------
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Expanded(
                           child: Text(
@@ -423,8 +421,10 @@ class MyLeadTile extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+
                         if (lead.reference != null &&
-                            lead.reference!.trim().isNotEmpty)
+                            lead.reference!.trim().isNotEmpty) ...[
+                          const SizedBox(width: AppSpacing.xs),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,
@@ -443,8 +443,13 @@ class MyLeadTile extends StatelessWidget {
                               ),
                             ),
                           ),
+                        ],
                       ],
                     ),
+
+                    // --------------------------------------------------
+                    // PHONE
+                    // --------------------------------------------------
                     if (phone.isNotEmpty) ...<Widget>[
                       const SizedBox(height: 2),
                       Row(
@@ -466,6 +471,10 @@ class MyLeadTile extends StatelessWidget {
                         ],
                       ),
                     ],
+
+                    // --------------------------------------------------
+                    // DESCRIPTION
+                    // --------------------------------------------------
                     if (description.isNotEmpty) ...<Widget>[
                       const SizedBox(height: 3),
                       Text(
@@ -475,200 +484,71 @@ class MyLeadTile extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                    const SizedBox(height: 7),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: <Widget>[
-                        if (lead.source != null &&
-                            lead.source!.trim().isNotEmpty)
-                          AppTag(
-                            label: lead.source!.trim().toUpperCase(),
-                            icon: Icons.campaign_outlined,
-                            isAccent: false,
+
+                    // --------------------------------------------------
+                    // TAGS
+                    // --------------------------------------------------
+                    if (lead.source != null ||
+                        lead.assignedTo != null ||
+                        lead.createdBy != null) ...[
+                      const SizedBox(height: 7),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: <Widget>[
+                          if (lead.source != null &&
+                              lead.source!.trim().isNotEmpty)
+                            AppTag(
+                              label: lead.source!.trim().toUpperCase(),
+                              icon: Icons.campaign_outlined,
+                              isAccent: false,
+                            ),
+
+                          if (lead.assignedTo != null &&
+                              lead.assignedTo!.trim().isNotEmpty)
+                            AppTag(
+                              label: 'Assigned: ${lead.assignedTo!.trim()}',
+                              icon: Icons.badge_outlined,
+                              isAccent: false,
+                            ),
+
+                          if (lead.createdBy != null &&
+                              lead.createdBy!.trim().isNotEmpty)
+                            AppTag(
+                              label: 'By: ${lead.createdBy!.trim()}',
+                              icon: Icons.person_outline_rounded,
+                              isAccent: false,
+                            ),
+                        ],
+                      ),
+                    ],
+
+                    // --------------------------------------------------
+                    // CONTACT ACTIONS
+                    // ALWAYS BOTTOM RIGHT
+                    // --------------------------------------------------
+                    if (phone.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: LeadContactActions(
+                          key: ValueKey<int>(
+                            lead.id ?? Random().nextInt(1000000),
                           ),
-                        if (lead.assignedTo != null &&
-                            lead.assignedTo!.trim().isNotEmpty)
-                          AppTag(
-                            label: 'Assigned: ${lead.assignedTo!.trim()}',
-                            icon: Icons.badge_outlined,
-                            isAccent: false,
-                          ),
-                        if (lead.createdBy != null &&
-                            lead.createdBy!.trim().isNotEmpty)
-                          AppTag(
-                            label: 'By: ${lead.createdBy!.trim()}',
-                            icon: Icons.person_outline_rounded,
-                            isAccent: false,
-                          ),
-                      ],
-                    ),
+                          hasQuotation: lead.has_quotation == true,
+                          name: displayName,
+                          mobile: phone,
+                          enquiry: description.isNotEmpty ? description : null,
+                          onCall: onCall,
+                          leadId: lead.id ?? 0,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
-              if (phone.isNotEmpty) ...<Widget>[
-                const SizedBox(width: AppSpacing.xs),
-                LeadContactActions(
-                  key: ValueKey<int>(lead.id ?? Random().nextInt(1000000)),
-                  quotation: LeadQuotation(),
-                  name: displayName,
-                  mobile: phone,
-                  enquiry: description.isNotEmpty ? description : null,
-                  onCall: onCall,
-                  leadId: lead.id ?? 0,
-                ),
-              ],
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Server-side pagination controls (Previous, Page X of Y, Next, Total records).
-class MyLeadsPaginationBar extends StatelessWidget {
-  const MyLeadsPaginationBar({
-    super.key,
-    required this.pagination,
-    required this.onPreviousPage,
-    required this.onNextPage,
-    this.isLoading = false,
-  });
-
-  final LeadPagination pagination;
-  final VoidCallback onPreviousPage;
-  final VoidCallback onNextPage;
-  final bool isLoading;
-
-  @override
-  Widget build(BuildContext context) {
-    final int current = pagination.currentPage ?? 1;
-    final int last = pagination.lastPage ?? 1;
-    final int total = pagination.total ?? 0;
-    final bool canGoPrev = pagination.hasPreviousPage && !isLoading;
-    final bool canGoNext = pagination.hasNextPage && !isLoading;
-
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.md),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: AppSpacing.xs,
-        ),
-        decoration: BoxDecoration(
-          color: context.palette.surface,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: context.palette.line),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            // Previous Button
-            InkWell(
-              onTap: canGoPrev ? onPreviousPage : null,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: canGoPrev
-                      ? context.palette.redWash
-                      : context.palette.surfaceAlt,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  border: Border.all(
-                    color: canGoPrev
-                        ? context.palette.redBorder
-                        : context.palette.line,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Icon(
-                      Icons.chevron_left_rounded,
-                      size: 18,
-                      color: canGoPrev ? AppColors.red : context.palette.faint,
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      'Prev',
-                      style: context.type.caption.copyWith(
-                        color: canGoPrev
-                            ? AppColors.red
-                            : context.palette.faint,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Page Indicator
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  'Page $current of $last',
-                  style: context.type.body.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '$total total records',
-                  style: context.type.caption.copyWith(fontSize: 11),
-                ),
-              ],
-            ),
-
-            // Next Button
-            InkWell(
-              onTap: canGoNext ? onNextPage : null,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: canGoNext
-                      ? context.palette.redWash
-                      : context.palette.surfaceAlt,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  border: Border.all(
-                    color: canGoNext
-                        ? context.palette.redBorder
-                        : context.palette.line,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(
-                      'Next',
-                      style: context.type.caption.copyWith(
-                        color: canGoNext
-                            ? AppColors.red
-                            : context.palette.faint,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 18,
-                      color: canGoNext ? AppColors.red : context.palette.faint,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );

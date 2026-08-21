@@ -22,7 +22,7 @@ class LeadContactActions extends StatefulWidget {
     required this.mobile,
     required this.leadId,
     this.enquiry,
-    this.quotation,
+    this.hasQuotation,
     this.onCall,
     this.onWhatsApp,
     this.onSendQuotation,
@@ -33,13 +33,13 @@ class LeadContactActions extends StatefulWidget {
   final String mobile;
   final int leadId;
   final String? enquiry;
-  final LeadQuotation? quotation;
+  final bool? hasQuotation;
   final VoidCallback? onCall;
   final VoidCallback? onWhatsApp;
   final VoidCallback? onSendQuotation;
   final double spacing;
 
-  bool get _hasQuotation => true; // adjust as needed
+
 
   @override
   State<LeadContactActions> createState() => _LeadContactActionsState();
@@ -96,7 +96,7 @@ class _LeadContactActionsState extends State<LeadContactActions> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          if (widget._hasQuotation) ...[
+          if (widget.hasQuotation == true) ...[
             LeadActionButton(
               icon: _isLoading
                   ? const SizedBox(
