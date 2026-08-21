@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:nimmys_crm/data/model/result.dart';
+import 'package:nimmys_crm/features/leads/model/call_history_list_model.dart';
 import 'package:nimmys_crm/features/leads/model/call_log_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
@@ -116,6 +117,24 @@ class LeadRepository {
       );
     } catch (e) {
       return Error<TeleCallDetailResponseModel>(
+        ErrorWithMessage(message: e.toString()),
+      );
+    }
+  }
+
+  Future<Result<CallHistoryResponseListModel>> getCallHistory(
+    int leadId, {
+    int page = 1,
+    int perPage = 10,
+  }) async {
+    try {
+      return await _service.getCallHistory(
+        leadId,
+        page: page,
+        perPage: perPage,
+      );
+    } catch (e) {
+      return Error<CallHistoryResponseListModel>(
         ErrorWithMessage(message: e.toString()),
       );
     }

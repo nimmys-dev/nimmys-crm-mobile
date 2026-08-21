@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/network/api_service.dart';
 import 'package:nimmys_crm/data/network/api_urls.dart';
+import 'package:nimmys_crm/features/leads/model/call_history_list_model.dart';
 import 'package:nimmys_crm/features/leads/model/call_log_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
@@ -261,6 +262,41 @@ class LeadService {
       return Error<TeleCallDetailResponseModel>(GenericError());
     } catch (_) {
       return Error<TeleCallDetailResponseModel>(DeserializationError());
+    }
+  }
+
+  /// GET call history api
+
+  Future<Result<CallHistoryResponseListModel>> getCallHistory(
+    int leadId, {
+    int page = 1,
+    int perPage = 10,
+  }) async {
+    try {
+      final String url = ApiUrls.getcallHistory(leadId);
+      final Map<String, dynamic> queryParams = <String, dynamic>{
+        "page": page,
+        "per_page": perPage,
+      };
+      final Result<dynamic> result = await _apiService.get(
+        url,
+        queryParams: queryParams,
+      );
+      if (result is Success<dynamic>) {
+        return await _apiService
+            .getResponseStatus<CallHistoryResponseListModel>(
+              result.value,
+              (dynamic json) => CallHistoryResponseListModel.fromJson(
+                json as Map<String, dynamic>,
+              ),
+            );
+      } else if (result is Error<dynamic>) {
+        return Error<CallHistoryResponseListModel>(result.type);
+      } else {
+        return Error<CallHistoryResponseListModel>(GenericError());
+      }
+    } catch (_) {
+      return Error<CallHistoryResponseListModel>(DeserializationError());
     }
   }
 }

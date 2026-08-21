@@ -7,6 +7,7 @@ import 'package:nimmys_crm/core/reset_cubit_state.dart';
 import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/ui_state/ui_state.dart';
 import 'package:nimmys_crm/enum/status.dart';
+import 'package:nimmys_crm/features/leads/model/call_history_list_model.dart';
 import 'package:nimmys_crm/features/leads/model/call_log_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
@@ -485,6 +486,52 @@ class LeadsCubit extends BaseCubit<LeadsState> {
     _setAddCallLogUIState(
       resetUIState<TeleCallDetailResponseModel>(
         state.addCallLogUIState,
+      ),
+    );
+  }
+
+  
+  // ---------------------------------------------------------------------------
+  // Get Call History
+  // ---------------------------------------------------------------------------
+
+  void _setCallHistoryUIState(
+    UIState<CallHistoryResponseListModel>? uiState,
+  ) {
+    emit(
+      state.copyWith(
+        callHistoryUIState: uiState,
+      ),
+    );
+  }
+
+  Future<void> getCallHistory(int leadId, {int page = 1, int perPage = 10}) async {
+    _setCallHistoryUIState(
+      UIState.loading(),
+    );
+
+    final Result<CallHistoryResponseListModel> result =
+        await _repository.getCallHistory(
+      leadId,
+      page: page,
+      perPage: perPage,
+    );
+
+    if (result is Success<CallHistoryResponseListModel>) {
+      _setCallHistoryUIState(
+        UIState.success(result.value),
+      );
+    } else if (result is Error<CallHistoryResponseListModel>) {
+      _setCallHistoryUIState(
+        UIState.error(result.type),
+      );
+    }
+  }
+
+  void resetCallHistoryState() {
+    _setCallHistoryUIState(
+      resetUIState<CallHistoryResponseListModel>(
+        state.callHistoryUIState,
       ),
     );
   }

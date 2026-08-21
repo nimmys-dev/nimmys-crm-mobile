@@ -20,20 +20,70 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nimmys_crm/data/ui_state/ui_state.dart';
 
 // ---------- Tele Call Details Section ----------
-class TeleCallDetailsSection extends StatelessWidget {
+class TeleCallDetailsSection extends StatefulWidget {
   const TeleCallDetailsSection({
     super.key,
     required this.teleCallDetails,
     required this.onAddTeleCallDetail,
     required this.leadId,
+    this.hasMore = false,
+    this.isLoadingMore = false,
+    this.onLoadMore,
+    this.totalCount,
   });
 
   final List<Map<String, dynamic>> teleCallDetails;
-  final void Function(Map<String, dynamic> detail) onAddTeleCallDetail;
+  final Future<bool> Function(Map<String, dynamic> detail) onAddTeleCallDetail;
   final int leadId;
+  final bool hasMore;
+  final bool isLoadingMore;
+  final VoidCallback? onLoadMore;
+  final int? totalCount;
+
+  @override
+  State<TeleCallDetailsSection> createState() => _TeleCallDetailsSectionState();
+}
+
+class _TeleCallDetailsSectionState extends State<TeleCallDetailsSection> {
+  static const int _rowsPerPage = 10;
+  int _currentPage = 0;
+  int _previousItemCount = 0;
+  bool _waitingForNextPage = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _previousItemCount = widget.teleCallDetails.length;
+  }
+
+  @override
+  void didUpdateWidget(covariant TeleCallDetailsSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final int itemCount = widget.teleCallDetails.length;
+    if (itemCount > _previousItemCount && _waitingForNextPage) {
+      _currentPage++;
+      _waitingForNextPage = false;
+    }
+    _previousItemCount = itemCount;
+
+    final int lastPage = _pageCount(itemCount) - 1;
+    if (_currentPage > lastPage) {
+      _currentPage = lastPage;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final List<Map<String, dynamic>> details = widget.teleCallDetails;
+    final int pageCount = _pageCount(details.length);
+    final int firstRow = _currentPage * _rowsPerPage;
+    final int lastRow = (firstRow + _rowsPerPage).clamp(0, details.length);
+    final List<Map<String, dynamic>> pageItems = details.sublist(
+      firstRow,
+      lastRow,
+    );
+
     return AppSectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -52,7 +102,17 @@ class TeleCallDetailsSection extends StatelessWidget {
 
           const SizedBox(height: AppSpacing.md),
 
-          if (teleCallDetails.isEmpty)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Total calls: ${widget.totalCount ?? details.length}',
+              style: context.type.bodyMuted,
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.xs),
+
+          if (details.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
               child: Text(
@@ -62,12 +122,66 @@ class TeleCallDetailsSection extends StatelessWidget {
               ),
             )
           else
-            ...teleCallDetails.map(
-              (detail) => TeleCallDetailCard(detail: detail),
+            ...pageItems.map((detail) => TeleCallDetailCard(detail: detail)),
+
+          if (details.isNotEmpty && (pageCount > 1 || widget.hasMore)) ...[
+            const SizedBox(height: AppSpacing.xs),
+            _buildPaginationControls(context, pageCount),
+          ],
+          if (widget.isLoadingMore) ...[
+            const SizedBox(height: AppSpacing.xs),
+            const Center(
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
             ),
+          ],
         ],
       ),
     );
+  }
+
+  int _pageCount(int itemCount) {
+    if (itemCount == 0) return 1;
+    return (itemCount + _rowsPerPage - 1) ~/ _rowsPerPage;
+  }
+
+  Widget _buildPaginationControls(BuildContext context, int pageCount) {
+    final bool canGoPrevious = _currentPage > 0;
+    final bool canGoNext = _currentPage < pageCount - 1 || widget.hasMore;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(
+          tooltip: 'Previous page',
+          onPressed: canGoPrevious && !widget.isLoadingMore
+              ? () => setState(() => _currentPage--)
+              : null,
+          icon: const Icon(Icons.chevron_left_rounded),
+        ),
+        Text(
+          'Page ${_currentPage + 1} of ${widget.hasMore ? '${pageCount}+' : pageCount}',
+          style: context.type.bodyMuted,
+        ),
+        IconButton(
+          tooltip: 'Next page',
+          onPressed: canGoNext && !widget.isLoadingMore ? _goToNextPage : null,
+          icon: const Icon(Icons.chevron_right_rounded),
+        ),
+      ],
+    );
+  }
+
+  void _goToNextPage() {
+    if (_currentPage < _pageCount(widget.teleCallDetails.length) - 1) {
+      setState(() => _currentPage++);
+      return;
+    }
+    _waitingForNextPage = true;
+    widget.onLoadMore?.call();
   }
 
   void _showAddTeleCallSheet(BuildContext context) {
@@ -80,8 +194,8 @@ class TeleCallDetailsSection extends StatelessWidget {
       enableDrag: true,
       builder: (sheetContext) {
         return AddTeleCallDetailSheet(
-          leadId: leadId,
-          onSave: onAddTeleCallDetail,
+          leadId: widget.leadId,
+          onSave: widget.onAddTeleCallDetail,
         );
       },
     );
@@ -186,7 +300,7 @@ class AddTeleCallDetailSheet extends StatefulWidget {
   });
 
   final int leadId;
-  final void Function(Map<String, dynamic> detail) onSave;
+  final Future<bool> Function(Map<String, dynamic> detail) onSave;
 
   @override
   State<AddTeleCallDetailSheet> createState() => _AddTeleCallDetailSheetState();
@@ -295,7 +409,7 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
   // Save
   // ---------------------------------------------------------------------------
 
-  void _save() {
+  Future<void> _save() async {
     if (_calledDateController.text.trim().isEmpty) {
       ToastMessages.error(message: 'Called Date is required');
       return;
@@ -360,7 +474,15 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
     };
 
     // Send data to parent/Cubit; the sheet will be closed after API success.
-    widget.onSave(detail);
+    final success = await widget.onSave(detail);
+
+    if (!mounted) return;
+
+    if (success) {
+      FocusScope.of(context).unfocus();
+
+      Navigator.of(context).pop();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -377,14 +499,16 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
           previous.addCallLogUIState?.status !=
           current.addCallLogUIState?.status,
       listener: (context, state) {
-        final UIState<TeleCallDetailResponseModel>? uiState =
-            state.addCallLogUIState;
+        final uiState = state.addCallLogUIState;
 
         if (uiState?.status == Status.SUCCESS) {
           FocusScope.of(context).unfocus();
+
+          // Close the Add Tele Call Detail bottom sheet
           if (Navigator.of(context).canPop()) {
             Navigator.of(context).pop();
           }
+
           return;
         }
 

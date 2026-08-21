@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -7,6 +9,7 @@ import 'package:nimmys_crm/core/utils/phone_dialer.dart';
 import 'package:nimmys_crm/core/utils/whatsapp_launcher.dart';
 import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
 import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
+import 'package:nimmys_crm/features/leads/model/call_history_list_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_source_model.dart';
 import 'package:nimmys_crm/features/leads/widgets/tele_call_details.dart';
@@ -30,11 +33,21 @@ class _LeadDetailsBody extends StatelessWidget {
     required this.leadId,
     required this.state,
     required this.onRetry,
+    required this.teleCallDetails,
+    required this.totalCallHistoryCount,
+    required this.hasMoreCallHistory,
+    required this.isLoadingMoreCallHistory,
+    required this.onLoadMoreCallHistory,
   });
 
   final int? leadId;
   final LeadsState state;
   final Future<void> Function() onRetry;
+  final List<Map<String, dynamic>> teleCallDetails;
+  final int? totalCallHistoryCount;
+  final bool hasMoreCallHistory;
+  final bool isLoadingMoreCallHistory;
+  final VoidCallback onLoadMoreCallHistory;
 
   @override
   Widget build(BuildContext context) {
@@ -184,9 +197,15 @@ class _LeadDetailsBody extends StatelessWidget {
           SizedBox(height: 10),
           TeleCallDetailsSection(
             leadId: lead.id ?? 5,
-            teleCallDetails: [],
-            onAddTeleCallDetail: (detail) {
-              context.read<LeadsCubit>().addCallLog(
+            teleCallDetails: teleCallDetails,
+            totalCount: totalCallHistoryCount,
+            hasMore: hasMoreCallHistory,
+            isLoadingMore: isLoadingMoreCallHistory,
+            onLoadMore: onLoadMoreCallHistory,
+            onAddTeleCallDetail: (detail) async {
+              final cubit = context.read<LeadsCubit>();
+
+              await cubit.addCallLog(
                 leadId: lead.id ?? 5,
                 callStatus: detail['call_status']?.toString(),
                 calledDate: detail['called_date']?.toString(),
@@ -200,6 +219,8 @@ class _LeadDetailsBody extends StatelessWidget {
                 nextFollowupDate: detail['next_followup_date']?.toString(),
                 invoiceFile: detail['invoice_file'] as File?,
               );
+
+              return cubit.state.addCallLogUIState?.status == Status.SUCCESS;
             },
           ),
           SizedBox(height: 120),
@@ -675,6 +696,12 @@ class LeadDetailsScreen extends StatefulWidget {
 
 class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
   int _navIndex = 1;
+  final List<Map<String, dynamic>> _teleCallDetails = [];
+  int? _totalCallHistoryCount;
+  int _callHistoryPage = 0;
+  bool _hasMoreCallHistory = false;
+  bool _isLoadingMoreCallHistory = false;
+  int? _requestedCallHistoryPage;
 
   @override
   void initState() {
@@ -686,7 +713,8 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
         context.read<LeadsCubit>()
           ..getLeadDetails(id)
           ..getLeadSources()
-          ..getLeadAssignees(); // ← fetch assignees for the edit sheet
+          ..getLeadAssignees()
+          ..getCallHistory(id, page: 1);
       }
     });
   }
@@ -694,7 +722,56 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
   Future<void> _reload() async {
     final int? id = widget.leadId;
     if (id == null) return;
+    _resetCallHistory();
     await context.read<LeadsCubit>().getLeadDetails(id);
+    await _loadCallHistoryPage();
+  }
+
+  void _resetCallHistory() {
+    _teleCallDetails.clear();
+    _totalCallHistoryCount = null;
+    _callHistoryPage = 0;
+    _hasMoreCallHistory = false;
+    _requestedCallHistoryPage = null;
+  }
+
+  Future<void> _loadCallHistoryPage() async {
+    final int? id = widget.leadId;
+    if (id == null || _isLoadingMoreCallHistory) return;
+
+    final int page = _callHistoryPage + 1;
+    _requestedCallHistoryPage = page;
+    _isLoadingMoreCallHistory = true;
+    await context.read<LeadsCubit>().getCallHistory(id, page: page);
+  }
+
+  void _onCallHistoryLoaded(LeadsState state) {
+    final CallHistoryResponseListModel? response =
+        state.callHistoryUIState?.data;
+    if (response == null) return;
+
+    final int page =
+        response.pagination?.currentPage ?? _requestedCallHistoryPage ?? 1;
+    final List<Map<String, dynamic>> pageItems = (response.data ?? [])
+        .map((CallHistoryItem item) => item.toJson())
+        .toList();
+
+    if (page <= 1) {
+      _teleCallDetails
+        ..clear()
+        ..addAll(pageItems);
+    } else {
+      _teleCallDetails.addAll(pageItems);
+    }
+
+    _callHistoryPage = page;
+    _totalCallHistoryCount =
+        response.pagination?.total ??
+        _totalCallHistoryCount ??
+        _teleCallDetails.length;
+    _hasMoreCallHistory = page < (response.pagination?.lastPage ?? page);
+    _isLoadingMoreCallHistory = false;
+    _requestedCallHistoryPage = null;
   }
 
   void _onLeadDetailsStateChanged(BuildContext context, LeadsState state) {
@@ -723,6 +800,30 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
     }
   }
 
+  void _onCallHistoryStateChanged(BuildContext context, LeadsState state) {
+    final uiState = state.callHistoryUIState;
+    if (uiState?.status == Status.SUCCESS) {
+      setState(() => _onCallHistoryLoaded(state));
+    } else if (uiState?.status == Status.ERROR) {
+      _isLoadingMoreCallHistory = false;
+    }
+    if (uiState?.status == Status.ERROR) {
+      ToastMessages.error(
+        message:
+            uiState?.errorType?.getText(context) ??
+            'Failed to load call history',
+      );
+    }
+  }
+
+  void _onAddCallLogStateChanged(LeadsState state) {
+    if (state.addCallLogUIState?.status == Status.SUCCESS) {
+      _resetCallHistory();
+      _loadCallHistoryPage();
+      context.read<LeadsCubit>().resetAddCallLogState();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -733,10 +834,15 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
         listenWhen: (prev, curr) =>
             prev.leadDetailsUIState?.status !=
                 curr.leadDetailsUIState?.status ||
-            prev.updateLeadUIState?.status != curr.updateLeadUIState?.status,
+            prev.updateLeadUIState?.status != curr.updateLeadUIState?.status ||
+            prev.callHistoryUIState?.status !=
+                curr.callHistoryUIState?.status ||
+            prev.addCallLogUIState?.status != curr.addCallLogUIState?.status,
         listener: (context, state) {
           _onLeadDetailsStateChanged(context, state);
           _onUpdateStateChanged(context, state);
+          _onCallHistoryStateChanged(context, state);
+          _onAddCallLogStateChanged(state);
         },
         builder: (context, state) {
           final lead = state.leadDetailsUIState?.data?.data;
@@ -761,6 +867,11 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
                     leadId: widget.leadId,
                     state: state,
                     onRetry: _reload,
+                    teleCallDetails: _teleCallDetails,
+                    totalCallHistoryCount: _totalCallHistoryCount,
+                    hasMoreCallHistory: _hasMoreCallHistory,
+                    isLoadingMoreCallHistory: _isLoadingMoreCallHistory,
+                    onLoadMoreCallHistory: _loadCallHistoryPage,
                   ),
                 ),
 

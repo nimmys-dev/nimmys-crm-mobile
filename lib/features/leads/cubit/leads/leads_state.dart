@@ -22,16 +22,14 @@ class LeadsState extends Equatable {
   // ---------------------------------------------------------------------------
 
   /// Staff who can be assigned a lead.
-  final UIState<LeadAssigneeSuccess>?
-      leadAssigneesUIState;
+  final UIState<LeadAssigneeSuccess>? leadAssigneesUIState;
 
   // ---------------------------------------------------------------------------
   // Lead Sources
   // ---------------------------------------------------------------------------
 
   /// Available lead sources.
-  final UIState<LeadSourceModel>?
-      leadSourcesUIState;
+  final UIState<LeadSourceModel>? leadSourcesUIState;
 
   // ---------------------------------------------------------------------------
   // Create Lead
@@ -45,32 +43,30 @@ class LeadsState extends Equatable {
   // ---------------------------------------------------------------------------
 
   /// GET /api/view-lead/{id} state.
-  final UIState<LeadDetailsSuccess>?
-      leadDetailsUIState;
+  final UIState<LeadDetailsSuccess>? leadDetailsUIState;
 
   // ---------------------------------------------------------------------------
   // Update Lead
   // ---------------------------------------------------------------------------
 
   /// POST /api/update-lead/{id} state.
-  final UIState<LeadDetailsSuccess>?
-      updateLeadUIState;
+  final UIState<LeadDetailsSuccess>? updateLeadUIState;
 
   // ---------------------------------------------------------------------------
   // Quotation PDF
   // ---------------------------------------------------------------------------
 
   /// GET /api/quotation-pdf/{leadId} state.
-  final UIState<QuotationPdfResponse>?
-      quotationPdfUIState;
+  final UIState<QuotationPdfResponse>? quotationPdfUIState;
 
   // ---------------------------------------------------------------------------
   // Add Call Log
   // ---------------------------------------------------------------------------
 
   /// POST /api/leads/{leadId}/calls state.
-  final UIState<TeleCallDetailResponseModel>?
-      addCallLogUIState;
+  final UIState<TeleCallDetailResponseModel>? addCallLogUIState;
+
+  final UIState<CallHistoryResponseListModel>? callHistoryUIState;
 
   const LeadsState({
     this.leadListUIState,
@@ -84,6 +80,7 @@ class LeadsState extends Equatable {
     this.updateLeadUIState,
     this.quotationPdfUIState,
     this.addCallLogUIState,
+    this.callHistoryUIState,
   });
 
   LeadsState copyWith({
@@ -91,103 +88,88 @@ class LeadsState extends Equatable {
     List<LeadItemData>? leadList,
     LeadPagination? leadPagination,
     String? leadSearchQuery,
-    UIState<LeadAssigneeSuccess>?
-        leadAssigneesUIState,
-    UIState<LeadSourceModel>?
-        leadSourcesUIState,
+    UIState<LeadAssigneeSuccess>? leadAssigneesUIState,
+    UIState<LeadSourceModel>? leadSourcesUIState,
     UIState<dynamic>? createLeadUIState,
-    UIState<LeadDetailsSuccess>?
-        leadDetailsUIState,
-    UIState<LeadDetailsSuccess>?
-        updateLeadUIState,
-    UIState<QuotationPdfResponse>?
-        quotationPdfUIState,
-    UIState<TeleCallDetailResponseModel>?
-        addCallLogUIState,
+    UIState<LeadDetailsSuccess>? leadDetailsUIState,
+    UIState<LeadDetailsSuccess>? updateLeadUIState,
+    UIState<QuotationPdfResponse>? quotationPdfUIState,
+    UIState<TeleCallDetailResponseModel>? addCallLogUIState,
+    UIState<CallHistoryResponseListModel>? callHistoryUIState,
   }) {
     return LeadsState(
-      leadListUIState:
-          leadListUIState ?? this.leadListUIState,
+      leadListUIState: leadListUIState ?? this.leadListUIState,
       leadList: leadList ?? this.leadList,
-      leadPagination:
-          leadPagination ?? this.leadPagination,
-      leadSearchQuery:
-          leadSearchQuery ?? this.leadSearchQuery,
-      leadAssigneesUIState:
-          leadAssigneesUIState ??
-              this.leadAssigneesUIState,
-      leadSourcesUIState:
-          leadSourcesUIState ??
-              this.leadSourcesUIState,
-      createLeadUIState:
-          createLeadUIState ??
-              this.createLeadUIState,
-      leadDetailsUIState:
-          leadDetailsUIState ??
-              this.leadDetailsUIState,
-      updateLeadUIState:
-          updateLeadUIState ??
-              this.updateLeadUIState,
-      quotationPdfUIState:
-          quotationPdfUIState ??
-              this.quotationPdfUIState,
-      addCallLogUIState:
-          addCallLogUIState ??
-              this.addCallLogUIState,
+      leadPagination: leadPagination ?? this.leadPagination,
+      leadSearchQuery: leadSearchQuery ?? this.leadSearchQuery,
+      leadAssigneesUIState: leadAssigneesUIState ?? this.leadAssigneesUIState,
+      leadSourcesUIState: leadSourcesUIState ?? this.leadSourcesUIState,
+      createLeadUIState: createLeadUIState ?? this.createLeadUIState,
+      leadDetailsUIState: leadDetailsUIState ?? this.leadDetailsUIState,
+      updateLeadUIState: updateLeadUIState ?? this.updateLeadUIState,
+      quotationPdfUIState: quotationPdfUIState ?? this.quotationPdfUIState,
+      addCallLogUIState: addCallLogUIState ?? this.addCallLogUIState,
+      callHistoryUIState: callHistoryUIState ?? this.callHistoryUIState,
     );
   }
 
   @override
   List<Object?> get props => [
-        // Leads list
-        leadListUIState,
-        leadListUIState?.status,
-        leadListUIState?.data,
-        leadListUIState?.errorType,
-        leadList,
-        leadPagination,
-        leadSearchQuery,
+    // Leads list
+    leadListUIState,
+    leadListUIState?.status,
+    leadListUIState?.data,
+    leadListUIState?.errorType,
+    leadList,
+    leadPagination,
+    leadSearchQuery,
 
-        // Assignees
-        leadAssigneesUIState,
-        leadAssigneesUIState?.status,
-        leadAssigneesUIState?.data,
-        leadAssigneesUIState?.errorType,
+    // Assignees
+    leadAssigneesUIState,
+    leadAssigneesUIState?.status,
+    leadAssigneesUIState?.data,
+    leadAssigneesUIState?.errorType,
 
-        // Sources
-        leadSourcesUIState,
-        leadSourcesUIState?.status,
-        leadSourcesUIState?.data,
-        leadSourcesUIState?.errorType,
+    // Sources
+    leadSourcesUIState,
+    leadSourcesUIState?.status,
+    leadSourcesUIState?.data,
+    leadSourcesUIState?.errorType,
 
-        // Create lead
-        createLeadUIState,
-        createLeadUIState?.status,
-        createLeadUIState?.data,
-        createLeadUIState?.errorType,
+    // Create lead
+    createLeadUIState,
+    createLeadUIState?.status,
+    createLeadUIState?.data,
+    createLeadUIState?.errorType,
 
-        // Lead details
-        leadDetailsUIState,
-        leadDetailsUIState?.status,
-        leadDetailsUIState?.data,
-        leadDetailsUIState?.errorType,
+    // Lead details
+    leadDetailsUIState,
+    leadDetailsUIState?.status,
+    leadDetailsUIState?.data,
+    leadDetailsUIState?.errorType,
 
-        // Update lead
-        updateLeadUIState,
-        updateLeadUIState?.status,
-        updateLeadUIState?.data,
-        updateLeadUIState?.errorType,
+    // Update lead
+    updateLeadUIState,
+    updateLeadUIState?.status,
+    updateLeadUIState?.data,
+    updateLeadUIState?.errorType,
 
-        // Quotation PDF
-        quotationPdfUIState,
-        quotationPdfUIState?.status,
-        quotationPdfUIState?.data,
-        quotationPdfUIState?.errorType,
+    // Quotation PDF
+    quotationPdfUIState,
+    quotationPdfUIState?.status,
+    quotationPdfUIState?.data,
+    quotationPdfUIState?.errorType,
 
-        // Add call log
-        addCallLogUIState,
-        addCallLogUIState?.status,
-        addCallLogUIState?.data,
-        addCallLogUIState?.errorType,
-      ];
+    // Add call log
+    addCallLogUIState,
+    addCallLogUIState?.status,
+    addCallLogUIState?.data,
+    addCallLogUIState?.errorType,
+
+    // Call history
+    callHistoryUIState,
+    callHistoryUIState?.status,
+    callHistoryUIState?.data,
+    callHistoryUIState?.errorType,
+  ];
 }
