@@ -39,7 +39,7 @@ Future<void> initializeApp() async {
   );
 
   // Dependency Injection
-  initLocator();
+  await initLocator();
 
   // Channels, permissions, the FCM token and the foreground/tap handlers. The
   // GetIt registration alone is lazy, so without this call the service is never

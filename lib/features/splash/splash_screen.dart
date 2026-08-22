@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 import 'branded_splash_screen.dart';
 import 'splash_view_mode.dart';
 
-
 /// Launch screen: holds the brand animation, then routes on the stored session.
 ///
 /// Signed in goes straight to the dashboard; everything else — no token, or a
@@ -20,7 +19,6 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-
   final splashViewModel = locator<SplashViewModel>();
 
   /// How long the brand stays on screen regardless of how fast the session
@@ -34,31 +32,27 @@ class _SplashScreenState extends State<SplashScreen> {
     _routeOnSession();
   }
 
-  //  Init Function
   Future<void> _routeOnSession() async {
-    // Concurrent, not sequential: the hold and the lookup overlap, so a slow
-    // keychain read costs nothing on top of the 3 seconds already being spent.
-    //
-    // The session role is read here too, before the first route decision — the
-    // router's permission guard reads it synchronously, so it has to be in
-    // memory by the time anything can be navigated to.
-    await Future.wait<void>(<Future<void>>[
-      splashViewModel.fetchIsUserLogin(),
-      locator<SessionCubit>().loadSession(),
-      Future<void>.delayed(_brandHold),
-    ]);
+    try {
+      await Future.wait<void>([
+        splashViewModel.fetchIsUserLogin(),
+        locator<SessionCubit>().loadSession(),
+        Future<void>.delayed(_brandHold),
+      ]);
 
-    if (!mounted) {
-      return;
+      if (!mounted) return;
+
+      final isLoggedIn =
+          splashViewModel.checkIsUserLoginUIState?.status == Status.SUCCESS &&
+          splashViewModel.checkIsUserLoginUIState?.data == true;
+
+      context.go(isLoggedIn ? AppRouteName.home : AppRouteName.signIn);
+    } catch (e, stack) {
+      // Log the error to see what's wrong
+      print('Splash error: $e\n$stack');
+      // Optionally navigate to login on error
+      if (mounted) context.go(AppRouteName.signIn);
     }
-
-    final isLoggedIn =
-        splashViewModel.checkIsUserLoginUIState?.status == Status.SUCCESS &&
-        splashViewModel.checkIsUserLoginUIState?.data == true;
-
-    // `go`, not `push`: the splash must not sit under the next screen where a
-    // back gesture could return to it.
-    context.go(isLoggedIn ? AppRouteName.home : AppRouteName.signIn);
   }
 
   @override

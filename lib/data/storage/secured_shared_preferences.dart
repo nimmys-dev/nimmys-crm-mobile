@@ -1,48 +1,39 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SecuredSharedPreferences {
-  final FlutterSecureStorage _secureStorage;
-  SecuredSharedPreferences(this._secureStorage);
+  final SharedPreferences _preferences;
+
+  SecuredSharedPreferences(this._preferences);
 
   Future<void> saveKey(String key, String value) async {
-    await _secureStorage.write(key: key, value: value);
+    await _preferences.setString(key, value);
   }
 
   Future<String?> get(String key) async {
-    return await _secureStorage.read(key: key);
+    return _preferences.getString(key);
   }
 
   Future<void> deleteKey(String key) async {
-    await _secureStorage.delete(key: key);
+    await _preferences.remove(key);
   }
 
   Future<void> reset() async {
-    _secureStorage.deleteAll();
+    await _preferences.clear();
   }
 
   Future<void> saveInt(String key, int value) async {
-    await _secureStorage.write(key: key, value: value.toString());
+    await _preferences.setInt(key, value);
   }
 
   Future<void> saveBoolean(String key, bool value) async {
-    await _secureStorage.write(key: key, value: value.toString());
+    await _preferences.setBool(key, value);
   }
 
   Future<int?> getInt(String key) async {
-    String? value = await _secureStorage.read(key: key);
-    if (value != null) {
-      return int.tryParse(value);
-    }
-    return null;
+    return _preferences.getInt(key);
   }
 
-  Future<bool> getBooleans(String key) async {
-    String? value = await _secureStorage.read(key: key);
-    if (value != null) {
-      return true.toString() == value;
-    }
-    return false;
+  Future<bool?> getBoolean(String key) async {
+    return _preferences.getBool(key);
   }
-
-
 }

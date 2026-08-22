@@ -22,31 +22,37 @@ import 'package:nimmys_crm/features/staff/service/staff_service.dart';
 import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
 import 'package:nimmys_crm/features/leads/repository/lead_repository.dart';
 import 'package:nimmys_crm/features/leads/service/lead_service.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:nimmys_crm/service/push_notification/notification_service.dart';
 import 'package:nimmys_crm/utils/custom_log.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 var locator = GetIt.instance;
 
-void initLocator() {
+Future<void> initLocator() async {
   try {
     CustomLog.info(locator, "Registering services with GetIt...");
 
     // Shared Manager
-    locator.registerLazySingleton(() => const FlutterSecureStorage());
-    locator.registerLazySingleton(() => SecuredSharedPreferences(locator<FlutterSecureStorage>()));
-
+    final prefs = await SharedPreferences.getInstance();
+    locator.registerSingleton<SharedPreferences>(prefs);
+    locator.registerSingleton(SecuredSharedPreferences(prefs));
     // Firebase
     //locator.registerLazySingleton(() => AnalyticsHelper());
 
     // Auth Services
     locator.registerLazySingleton<Dio>(() => Dio());
-    locator.registerLazySingleton(() => ApiService(locator<Dio>(), locator<SecuredSharedPreferences>()));
+    locator.registerLazySingleton(
+      () => ApiService(locator<Dio>(), locator<SecuredSharedPreferences>()),
+    );
 
     // Service
-    locator.registerLazySingleton(() => SplashService(locator<UserInformationRepository>()));
-    locator.registerLazySingleton(() => NotificationService(locator<SecuredSharedPreferences>()));
+    locator.registerLazySingleton(
+      () => SplashService(locator<UserInformationRepository>()),
+    );
+    locator.registerLazySingleton(
+      () => NotificationService(locator<SecuredSharedPreferences>()),
+    );
     locator.registerLazySingleton(() => LoginService(locator<ApiService>()));
     locator.registerLazySingleton(() => AuthService(locator<ApiService>()));
     locator.registerLazySingleton(() => ProfileService(locator<ApiService>()));
@@ -54,30 +60,57 @@ void initLocator() {
     locator.registerLazySingleton(() => LeadService(locator<ApiService>()));
 
     // Repository
-    locator.registerLazySingleton(() => UserInformationRepository(locator<SecuredSharedPreferences>()));
-    locator.registerLazySingleton(() => SplashRepository(locator<SplashService>()));
-    locator.registerLazySingleton(() => AuthRepository(locator<SecuredSharedPreferences>(), locator<NotificationService>(), locator<AuthService>()));
-    locator.registerLazySingleton(() => LoginRepository(locator<LoginService>()));
-    locator.registerLazySingleton(() => ProfileRepository(locator<ProfileService>()));
-    locator.registerLazySingleton(() => StaffRepository(locator<StaffService>()));
+    locator.registerLazySingleton(
+      () => UserInformationRepository(locator<SecuredSharedPreferences>()),
+    );
+    locator.registerLazySingleton(
+      () => SplashRepository(locator<SplashService>()),
+    );
+    locator.registerLazySingleton(
+      () => AuthRepository(
+        locator<SecuredSharedPreferences>(),
+        locator<NotificationService>(),
+        locator<AuthService>(),
+      ),
+    );
+    locator.registerLazySingleton(
+      () => LoginRepository(locator<LoginService>()),
+    );
+    locator.registerLazySingleton(
+      () => ProfileRepository(locator<ProfileService>()),
+    );
+    locator.registerLazySingleton(
+      () => StaffRepository(locator<StaffService>()),
+    );
     locator.registerLazySingleton(() => LeadRepository(locator<LeadService>()));
 
     // View Model
-    locator.registerLazySingleton(() => SplashViewModel(locator<SplashRepository>(), locator<AuthRepository>()));
+    locator.registerLazySingleton(
+      () => SplashViewModel(
+        locator<SplashRepository>(),
+        locator<AuthRepository>(),
+      ),
+    );
 
     // Cubit
-    locator.registerLazySingleton(() => LoginCubit(locator<LoginRepository>(), locator<AuthRepository>()));
+    locator.registerLazySingleton(
+      () => LoginCubit(locator<LoginRepository>(), locator<AuthRepository>()),
+    );
     locator.registerLazySingleton(() => LogoutCubit(locator<AuthRepository>()));
-    locator.registerLazySingleton(() => SessionCubit(locator<UserInformationRepository>()));
-    locator.registerLazySingleton(() => ProfileCubit(locator<ProfileRepository>()));
+    locator.registerLazySingleton(
+      () => SessionCubit(locator<UserInformationRepository>()),
+    );
+    locator.registerLazySingleton(
+      () => ProfileCubit(locator<ProfileRepository>()),
+    );
     locator.registerLazySingleton(() => StaffCubit(locator<StaffRepository>()));
     locator.registerLazySingleton(() => LeadsCubit(locator<LeadRepository>()));
-    locator.registerLazySingleton(() => CompanyProfileCubit(locator<ProfileRepository>()));
-
+    locator.registerLazySingleton(
+      () => CompanyProfileCubit(locator<ProfileRepository>()),
+    );
 
     CustomLog.info(locator, "All instances registered.");
   } catch (e) {
     CustomLog.error(locator, "ERROR : All instances are not registered.", e);
   }
-
 }

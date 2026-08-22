@@ -54,7 +54,7 @@ dependencies:
 
   # Auth tokens live in the Keychain / EncryptedSharedPreferences, never in
   # SharedPreferences — see core/storage/token_storage.dart.
-  flutter_secure_storage: ^9.2.4
+
 
   # Lets the app fail fast with a "no connection" message instead of waiting
   # out a full request timeout.

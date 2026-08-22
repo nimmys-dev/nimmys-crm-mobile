@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:nimmys_crm/core/auth/user_role.dart';
 import 'package:nimmys_crm/data/storage/secured_shared_preferences.dart';
 import 'package:nimmys_crm/utils/app_string.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_theme.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -38,9 +38,10 @@ class DashboardHeader extends StatefulWidget {
 }
 
 class _DashboardHeaderState extends State<DashboardHeader> {
-  final SecuredSharedPreferences _securedSharedPref = SecuredSharedPreferences(
-    const FlutterSecureStorage(),
-  );
+  Future<SecuredSharedPreferences> _getPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    return SecuredSharedPreferences(prefs);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +64,7 @@ class _DashboardHeaderState extends State<DashboardHeader> {
             Row(
               children: <Widget>[
                 FutureBuilder<String?>(
-                  future: _securedSharedPref.get(AppString.sessionKey.userType),
+                  future: _getPrefs().then((prefs) => prefs.get(AppString.sessionKey.userType)),
                   builder: (context, snapshot) {
                     final role = (snapshot.data ?? '').toLowerCase();
 
