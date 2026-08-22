@@ -15,7 +15,6 @@ import '../../enum/status.dart';
 import '../../routing/app_route_name.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/app_buttons.dart';
-import '../../shared/widgets/app_gradient_header.dart';
 import '../../shared/widgets/app_section_card.dart';
 import '../../shared/widgets/app_search_field.dart';
 import '../../utils/toast_messages.dart';
@@ -197,18 +196,6 @@ class _StaffListScreenState extends State<StaffListScreen> {
             backgroundColor: context.palette.canvas,
             body: Column(
               children: <Widget>[
-                AppGradientHeader(
-                  title: 'Staff',
-                  eyebrow: 'TEAM',
-                  leading: const AppBackButton(),
-                  actions: <Widget>[
-                    if (canCreate)
-                      AppHeaderIconButton(
-                        icon: Icons.person_add_alt_1_rounded,
-                        onTap: _openCreateStaff,
-                      ),
-                  ],
-                ),
                 Expanded(
                   child: BlocConsumer<StaffCubit, StaffState>(
                     // Everything else this cubit does (list pagination, branch

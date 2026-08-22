@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/app_avatar.dart';
-import '../../shared/widgets/app_buttons.dart';
-import '../../shared/widgets/app_gradient_header.dart';
 import '../../shared/widgets/app_section_card.dart';
 import '../../shared/widgets/app_segmented_tabs.dart';
 import '../dashboard/widgets/dashboard_panels.dart';
@@ -117,12 +114,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
         backgroundColor: context.palette.canvas,
         body: Column(
           children: <Widget>[
-            const AppGradientHeader(
-              title: 'Reports',
-              eyebrow: 'PERFORMANCE',
-              leading: AppBackButton(),
-              actions: <Widget>[AppAvatar(initials: 'AB')],
-            ),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.only(

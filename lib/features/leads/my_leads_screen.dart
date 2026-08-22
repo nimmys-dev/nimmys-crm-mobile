@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
 import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
+import 'package:nimmys_crm/shared/widgets/app_gradient_header.dart';
 import 'package:nimmys_crm/utils/toast_messages.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
@@ -16,7 +17,6 @@ import '../../enum/status.dart';
 import '../../routing/app_route_name.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/app_buttons.dart';
-import '../../shared/widgets/app_gradient_header.dart';
 import '../../shared/widgets/app_search_field.dart';
 import '../../shared/widgets/app_section_card.dart';
 import 'widgets/lead_contact_actions.dart';
@@ -24,7 +24,8 @@ import 'widgets/lead_contact_actions.dart';
 /// Leads List screen — displays leads retrieved from `GET /api/leads` with
 /// server-side pagination.
 class MyLeadsScreen extends StatefulWidget {
-  const MyLeadsScreen({super.key});
+  final bool isAppHeaderRequired;
+  const MyLeadsScreen({super.key, required this.isAppHeaderRequired});
 
   @override
   State<MyLeadsScreen> createState() => _MyLeadsScreenState();
@@ -91,11 +92,14 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
         backgroundColor: context.palette.canvas,
         body: Column(
           children: <Widget>[
-            const AppGradientHeader(
-              title: 'My Leads',
-              eyebrow: 'LEAD MANAGEMENT',
-              leading: AppBackButton(),
-              actions: <Widget>[AppAvatar(initials: 'AB')],
+            Visibility(
+              visible: widget.isAppHeaderRequired,
+              child: const AppGradientHeader(
+                title: 'My Leads',
+                eyebrow: 'LEAD MANAGEMENT',
+                leading: AppBackButton(),
+                actions: <Widget>[AppAvatar(initials: 'AB')],
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -152,7 +156,6 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
   }
 }
 
-/// Picks between the list and its loading / error / empty stand-ins.
 /// Picks between the list and its loading / error / empty stand-ins.
 class _MyLeadsBody extends StatefulWidget {
   const _MyLeadsBody({
@@ -285,14 +288,13 @@ class _MyLeadsBodyState extends State<_MyLeadsBody> {
       onRefresh: widget.onRefresh,
       color: AppColors.red,
       child: ListView.builder(
-        controller: _scrollController, // attach scroll controller
+        controller: _scrollController,
         padding: const EdgeInsets.only(
           left: AppSpacing.gutter,
           right: AppSpacing.gutter,
           bottom: AppSpacing.xl + 40,
         ),
-        itemCount:
-            leads.length + 1, // 1 for count header, 1 for pagination footer
+        itemCount: leads.length + 1,
         itemBuilder: (BuildContext context, int index) {
           if (index == 0) {
             return MyLeadsCount(

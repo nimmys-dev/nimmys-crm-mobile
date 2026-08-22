@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nimmys_crm/features/dashboard/widgets/dashboard_drawer.dart';
+import 'package:nimmys_crm/features/leads/my_leads_screen.dart';
+import 'package:nimmys_crm/features/reports/reports_screen.dart';
+import 'package:nimmys_crm/features/staff/staff_list_screen.dart';
 import '../../core/theme/app_theme.dart';
 import 'package:flutter/services.dart';
 
@@ -20,7 +23,7 @@ import 'widgets/dashboard_header.dart';
 import 'widgets/dashboard_panels.dart';
 import 'widgets/stat_cards.dart';
 
-/// Home screen: duty counters, lead counters, totals and the report shortcut.
+/// Home screen with bottom navigation tabs.
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -35,9 +38,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    // Named header, real account. Cached after the first call, so returning to
-    // the dashboard does not re-hit the API — the profile sheet forces a refresh
-    // when the details actually matter.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<ProfileCubit>().getProfile();
@@ -45,19 +45,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  /// "Good morning" until noon, "Good afternoon" until 17:00, "Good evening"
-  /// after — the header greeted every user with "Good morning" before.
   String get _greeting {
     final int hour = DateTime.now().hour;
-    if (hour < 12) {
-      return 'Good morning';
-    }
-    if (hour < 17) {
-      return 'Good afternoon';
-    }
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
     return 'Good evening';
   }
 
+  // ---- Tab titles ----
+  String _getTabTitle(int index) {
+    switch (index) {
+      case 0:
+        return 'Dashboard';
+      case 1:
+        return 'My Leads';
+      case 2:
+        return 'Staff';
+      case 3:
+        return 'Reports';
+      default:
+        return 'Dashboard';
+    }
+  }
+
+  // ---- Stat items ----
   static final StatItem _todaysDuty = StatItem(
     label: "Today's My Duty",
     value: '12',
@@ -87,9 +98,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     route: AppRouteName.approvals,
   );
 
-  /// Approvals are an admin/manager concern, so the counter that leads into
-  /// them is not shown to an employee at all — a tile they can never act on is
-  /// noise at best and an invitation at worst.
   static List<StatItem> _dutyStatsFor(UserRole role) {
     return <StatItem>[
       _todaysDuty,
@@ -99,8 +107,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ];
   }
 
-  /// The "My Leads" tiles. All four open the leads list except today's
-  /// follow-up, which has a screen of its own already.
   static final List<StatItem> _leads = <StatItem>[
     StatItem(
       label: 'Unattended Leads',
@@ -132,6 +138,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ),
   ];
 
+  // ---- Bottom Nav Items ----
   static const AppNavItem _dashboardNav = AppNavItem(
     label: 'Dashboard',
     icon: Icons.home_outlined,
@@ -141,28 +148,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     label: 'Leads',
     icon: Icons.groups_outlined,
     activeIcon: Icons.groups_rounded,
-    route: AppRouteName.leads,
   );
   static const AppNavItem _staffNav = AppNavItem(
     label: 'Staff',
     icon: Icons.groups_2_outlined,
     activeIcon: Icons.groups_2_rounded,
-    route: AppRouteName.staffList,
   );
   static const AppNavItem _reportsNav = AppNavItem(
     label: 'Reports',
     icon: Icons.bar_chart_outlined,
     activeIcon: Icons.bar_chart_rounded,
-    route: AppRouteName.reports,
   );
 
-  /// Destinations the role can actually reach.
-  ///
-  /// Duties are deliberately absent for every role: the three duty tiles on the
-  /// dashboard already open the same list, and a nav item pointing at a screen
-  /// the page above it also links to is a second door onto one room. Leads
-  /// stays because it scopes itself to "mine" for an employee; Reports follows
-  /// the full-dashboard permission; Staff is admin/manager only.
   static List<AppNavItem> _navItemsFor(UserRole role) {
     return <AppNavItem>[
       _dashboardNav,
@@ -172,14 +169,73 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ];
   }
 
-  /// Items that own a route navigate; Dashboard is the screen already showing,
-  /// so it only moves the selection.
-  void _onNavTap(BuildContext context, List<AppNavItem> items, int index) {
-    final String? route = items[index].route;
-    if (route != null) {
-      context.push(route);
-      return;
+  // ---- Tab content builders ----
+  Widget _buildDashboardContent(BuildContext context, UserRole role) {
+    // This is the original dashboard content (the ListView)
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: <Widget>[
+        Transform.translate(
+          offset: const Offset(0, -22),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gutter),
+            child: Column(
+              children: <Widget>[
+                DashboardDutySection(items: _dutyStatsFor(role)),
+                DashboardLeadsSection(items: _leads),
+                AppSectionCard(
+                  child: DashboardTotalsCard(
+                    yourLeads: '40',
+                    totalLeads: role.can(AppPermission.viewAllLeads)
+                        ? '126'
+                        : null,
+                    onTap: () => context.push(
+                      '${AppRouteName.leads}?isAppHeaderRequired=true',
+                    ),
+                  ),
+                ),
+                if (role.hasFullDashboard)
+                  AppSectionCard(
+                    child: Column(
+                      children: <Widget>[
+                        AppSectionHeader(
+                          title: 'Report',
+                          actionLabel: 'View All',
+                          onAction: () => context.push(AppRouteName.reports),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        DashboardReportCard(
+                          onTap: () => context.push(AppRouteName.reports),
+                        ),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: AppSpacing.xs),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTabContent(int index, UserRole role) {
+    switch (index) {
+      case 0:
+        return _buildDashboardContent(context, role);
+      case 1:
+        return const MyLeadsScreen(isAppHeaderRequired: false);
+      case 2:
+        return const StaffListScreen();
+      case 3:
+        return const ReportsScreen();
+      default:
+        return const SizedBox.shrink();
     }
+  }
+
+  // ---- Navigation ----
+  void _onNavTap(int index) {
     setState(() => _navIndex = index);
   }
 
@@ -193,19 +249,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         builder: (BuildContext context, SessionState session) {
           final UserRole role = session.role;
           final List<AppNavItem> navItems = _navItemsFor(role);
-          // The item list shrinks with the role, so a stale index from a
-          // previous session could point past the end of it.
           final int navIndex = _navIndex.clamp(0, navItems.length - 1);
+          final String tabTitle = _getTabTitle(navIndex);
 
           return Scaffold(
-            key: _scaffoldKey, // assign the key
-            drawer: const DashboardDrawer(), // your drawer widget
+            key: _scaffoldKey,
+            drawer: const DashboardDrawer(),
             backgroundColor: context.palette.canvas,
-            body: ListView(
-              padding: EdgeInsets.zero,
+            body: Column(
               children: <Widget>[
-                // The bell badge tracks the same counter as the launcher badge, so
-                // the two never disagree.
+                // Persistent header
                 ValueListenableBuilder<int>(
                   valueListenable: NotificationService.unreadNotifications,
                   builder: (BuildContext context, int unread, _) {
@@ -214,63 +267,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         final ProfileUser? user =
                             state.profileUIState?.data?.user;
                         return DashboardHeader(
-                          // Placeholders only until the profile call lands; the
-                          // header is drawn before the response either way.
-                          onMenuTap: () => Scaffold.of(context).openDrawer(),
+                          onMenuTap: () =>
+                              _scaffoldKey.currentState?.openDrawer(),
                           userInitials: user?.initials ?? '··',
                           greeting: _greeting,
                           userName: user?.name ?? 'Loading…',
                           notificationCount: unread,
                           onAvatarTap: () => showProfileSheet(context),
+                          dashboardText: tabTitle,
                         );
                       },
                     );
                   },
                 ),
-                Transform.translate(
-                  offset: const Offset(0, -22),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.gutter,
-                    ),
-                    child: Column(
-                      children: <Widget>[
-                        DashboardDutySection(items: _dutyStatsFor(role)),
-                        DashboardLeadsSection(items: _leads),
-                        AppSectionCard(
-                          // "Total Leads" is the org-wide figure. An employee sees
-                          // their own count only, so the tile is dropped rather
-                          // than shown blank.
-                          child: DashboardTotalsCard(
-                            yourLeads: '40',
-                            totalLeads: role.can(AppPermission.viewAllLeads)
-                                ? '126'
-                                : null,
-                            onTap: () => context.push(AppRouteName.leads),
-                          ),
-                        ),
-                        // The performance report spans the whole team.
-                        if (role.hasFullDashboard)
-                          AppSectionCard(
-                            child: Column(
-                              children: <Widget>[
-                                AppSectionHeader(
-                                  title: 'Report',
-                                  actionLabel: 'View All',
-                                  onAction: () =>
-                                      context.push(AppRouteName.reports),
-                                ),
-                                const SizedBox(height: AppSpacing.sm),
-                                DashboardReportCard(
-                                  onTap: () =>
-                                      context.push(AppRouteName.reports),
-                                ),
-                              ],
-                            ),
-                          ),
-                        const SizedBox(height: AppSpacing.xs),
-                      ],
-                    ),
+                // Tab content
+                Expanded(
+                  child: IndexedStack(
+                    index: navIndex,
+                    children: navItems.map((item) {
+                      final int idx = navItems.indexOf(item);
+                      return _buildTabContent(idx, role);
+                    }).toList(),
                   ),
                 ),
               ],
@@ -278,14 +295,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             bottomNavigationBar: AppBottomNav(
               items: navItems,
               currentIndex: navIndex,
-              onTap: (int index) => _onNavTap(context, navItems, index),
-              // Lead capture is the one create action an employee keeps, so the
-              // centre button follows the permission rather than the role.
+              onTap: _onNavTap, // <-- now just updates index
               centerAction: role.canCreateLead
                   ? const AppNavItem(label: 'Add Lead', icon: Icons.add_rounded)
                   : null,
-              // Navigating by name, not by pushing the widget: the router's
-              // permission guard only runs on named routes.
               onCenterTap: () => context.push(AppRouteName.leadNew),
             ),
           );
@@ -361,7 +374,8 @@ class DashboardLeadsSection extends StatelessWidget {
           AppSectionHeader(
             title: 'My Leads',
             actionLabel: 'View All',
-            onAction: () => context.push(AppRouteName.leads),
+            onAction: () =>
+                context.push('${AppRouteName.leads}?isAppHeaderRequired=false'),
           ),
           const SizedBox(height: AppSpacing.sm),
           GridView.builder(

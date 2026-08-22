@@ -180,8 +180,13 @@ class AppRoutes {
       // Leads
       GoRoute(
         path: AppRouteName.leads,
-        builder: (BuildContext context, GoRouterState state) {
-          return const MyLeadsScreen();
+        builder: (context, state) {
+          final bool? isAppHeaderRequired = bool.tryParse(
+            state.uri.queryParameters['isAppHeaderRequired'] ?? '',
+          );
+          return MyLeadsScreen(
+            isAppHeaderRequired: isAppHeaderRequired ?? true,
+          );
         },
       ),
       GoRoute(

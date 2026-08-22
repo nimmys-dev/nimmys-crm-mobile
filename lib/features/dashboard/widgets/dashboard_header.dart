@@ -19,12 +19,14 @@ class DashboardHeader extends StatefulWidget {
     required this.userInitials,
     required this.greeting,
     required this.userName,
+    required this.dashboardText,
     this.notificationCount = 0,
     this.onMenuTap,
     this.onNotificationsTap,
     this.onAvatarTap,
   });
 
+  final String dashboardText;
   final String userInitials;
   final String greeting;
   final String userName;
@@ -64,7 +66,9 @@ class _DashboardHeaderState extends State<DashboardHeader> {
             Row(
               children: <Widget>[
                 FutureBuilder<String?>(
-                  future: _getPrefs().then((prefs) => prefs.get(AppString.sessionKey.userType)),
+                  future: _getPrefs().then(
+                    (prefs) => prefs.get(AppString.sessionKey.userType),
+                  ),
                   builder: (context, snapshot) {
                     final role = (snapshot.data ?? '').toLowerCase();
 
@@ -82,7 +86,10 @@ class _DashboardHeaderState extends State<DashboardHeader> {
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
-                  child: Text('DASHBOARD', style: context.type.screenTitle),
+                  child: Text(
+                    widget.dashboardText,
+                    style: context.type.screenTitle,
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 AppHeaderIconButton(
