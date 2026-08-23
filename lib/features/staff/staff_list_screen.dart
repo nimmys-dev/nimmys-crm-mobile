@@ -1,11 +1,10 @@
 import 'dart:async';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:nimmys_crm/features/leads/my_leads_screen.dart';
 import '../../core/auth/app_permission.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
@@ -83,19 +82,18 @@ class _StaffListScreenState extends State<StaffListScreen> {
 
   void _searchStaff([String? query]) {
     _searchDebounce?.cancel();
-    context.read<StaffCubit>().getStaffList(search: query ?? _searchController.text);
+    context.read<StaffCubit>().getStaffList(
+      search: query ?? _searchController.text,
+    );
   }
 
   void _onSearchChanged(String value) {
     _searchDebounce?.cancel();
-    _searchDebounce = Timer(
-      const Duration(milliseconds: 350),
-      () {
-        if (mounted) {
-          _searchStaff(value);
-        }
-      },
-    );
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (mounted) {
+        _searchStaff(value);
+      }
+    });
   }
 
   /// Opens Staff Creation by route, so the permission guard runs.
@@ -206,24 +204,28 @@ class _StaffListScreenState extends State<StaffListScreen> {
                         current.deleteStaffUIState?.status,
                     listener: _onDeleteStaffStateChanged,
                     builder: (BuildContext context, StaffState state) {
-                      return _StaffListBody(
-                        state: state,
-                        canCreate: canCreate,
-                        canDelete: canDelete,
-                        scrollController: _scrollController,
-                        onRefresh: _refresh,
-                        onCreate: _openCreateStaff,
-                        onRetry: _refresh,
-                        onDelete: _confirmAndDelete,
-                        searchController: _searchController,
-                        onSearchChanged: _onSearchChanged,
-                        onSearchSubmitted: _searchStaff,
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        child: _StaffListBody(
+                          state: state,
+                          canCreate: canCreate,
+                          canDelete: canDelete,
+                          scrollController: _scrollController,
+                          onRefresh: _refresh,
+                          onCreate: _openCreateStaff,
+                          onRetry: _refresh,
+                          onDelete: _confirmAndDelete,
+                          searchController: _searchController,
+                          onSearchChanged: _onSearchChanged,
+                          onSearchSubmitted: _searchStaff,
+                        ),
                       );
                     },
                   ),
                 ),
               ],
             ),
+            floatingActionButton: MyLeadsFab(onPressed: _openCreateStaff),
           );
         },
       ),
@@ -290,13 +292,17 @@ class _StaffListBody extends StatelessWidget {
     } else if (staff.isEmpty) {
       content = StaffListMessage(
         icon: Icons.groups_outlined,
-        title: state.staffSearchQuery.isEmpty ? 'No staff yet' : 'No staff found',
+        title: state.staffSearchQuery.isEmpty
+            ? 'No staff yet'
+            : 'No staff found',
         message: state.staffSearchQuery.isEmpty
             ? (canCreate
                   ? 'Add your first team member to get started.'
                   : 'No team members have been added yet.')
             : 'No staff match "${state.staffSearchQuery}".',
-        actionLabel: state.staffSearchQuery.isEmpty && canCreate ? 'Add Staff' : null,
+        actionLabel: state.staffSearchQuery.isEmpty && canCreate
+            ? 'Add Staff'
+            : null,
         actionIcon: Icons.person_add_alt_1_rounded,
         onAction: canCreate ? () async => onCreate() : null,
       );

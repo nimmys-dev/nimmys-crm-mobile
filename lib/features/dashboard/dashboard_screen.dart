@@ -175,6 +175,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return ListView(
       padding: EdgeInsets.zero,
       children: <Widget>[
+        SizedBox(height: 50),
         Transform.translate(
           offset: const Offset(0, -22),
           child: Padding(

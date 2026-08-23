@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nimmys_crm/core/preferences/app_preferences.dart';
 import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
 import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_source_model.dart';
@@ -77,6 +78,28 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
       item.dispose();
     }
     super.dispose();
+  }
+
+  void autoSelectLoggedInUser(List<LeadAssigneeData> assignees) {
+    if (_selectedAssignee != null || assignees.isEmpty) return;
+
+    final int? savedUserId = AppPreferences.instance.userId;
+
+    if (savedUserId == null) return;
+
+    final matched = assignees.where((assignee) {
+      return assignee.id == savedUserId;
+    }).firstOrNull;
+
+    if (matched == null) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _selectedAssignee != null) return;
+
+      setState(() {
+        _selectedAssignee = matched;
+      });
+    });
   }
 
   void _addQuotationItem() =>
@@ -229,6 +252,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
           // ---- Assignees ----
           final assignees =
               state.leadAssigneesUIState?.data?.validAssignees ?? [];
+          autoSelectLoggedInUser(assignees);
           final isLoadingAssignees =
               state.leadAssigneesUIState?.status == Status.LOADING ||
               state.leadAssigneesUIState?.status == null ||

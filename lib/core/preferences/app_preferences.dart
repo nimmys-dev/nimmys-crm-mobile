@@ -39,6 +39,7 @@ class AppPreferences {
   static const String _keyRememberMe = 'auth.remember_me';
   static const String _keySavedEmail = 'auth.saved_email';
   static const String _keyLastUserName = 'auth.user_name';
+  static const String _keyUserId = 'auth.user_id';
 
   // -------------------------------------------------------------- Theme mode
   ThemeMode get themeMode {
@@ -73,4 +74,9 @@ class AppPreferences {
 
   Future<void> setUserName(String value) =>
       _prefs.setString(_keyLastUserName, value);
+  int? get userId => _prefs.getInt(_keyUserId);
+
+  Future<void> setUserId(int value) => _prefs.setInt(_keyUserId, value);
+
+  Future<void> clearUserId() => _prefs.remove(_keyUserId);
 }

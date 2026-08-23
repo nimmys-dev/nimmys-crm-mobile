@@ -115,13 +115,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Reacts to the one terminal state per attempt: toast on failure, hand off
   /// to the host app on success.
-  Future<void> _onLoginStateChanged(BuildContext context, LoginState state) async {
+  Future<void> _onLoginStateChanged(
+    BuildContext context,
+    LoginState state,
+  ) async {
     switch (state.loginUIState?.status) {
       case Status.SUCCESS:
         final String name = state.loginUIState?.data?.user?.name ?? '';
         ToastMessages.success(
           message: name.isEmpty ? 'Login successful' : 'Welcome back, $name',
         );
+        final AppPreferences prefs = AppPreferences.instance;
+        await prefs.setUserId(state.loginUIState?.data?.user?.id ?? 1);
         // The profile cubit is a singleton that outlives this screen: without
         // clearing it, signing in as a second user would show the first user's
         // name in the dashboard header until something forced a refresh.
@@ -138,7 +143,8 @@ class _LoginScreenState extends State<LoginScreen> {
         widget.onSignedIn?.call();
       case Status.ERROR:
         ToastMessages.error(
-          message: state.loginUIState?.errorType?.getText(context) ??
+          message:
+              state.loginUIState?.errorType?.getText(context) ??
               'Login attempt unsuccessful, Please try again later',
         );
       case Status.LOADING:
@@ -172,7 +178,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       left: AppSpacing.lg,
                       right: AppSpacing.lg,
                       top: AppSpacing.xl,
-                      bottom: MediaQuery.of(context).viewInsets.bottom +
+                      bottom:
+                          MediaQuery.of(context).viewInsets.bottom +
                           AppSpacing.xl,
                     ),
                     child: Column(
@@ -243,7 +250,11 @@ class LoginFieldError extends StatelessWidget {
       padding: const EdgeInsets.only(top: 6, left: 4),
       child: Row(
         children: <Widget>[
-          const Icon(Icons.error_outline_rounded, size: 14, color: AppColors.red),
+          const Icon(
+            Icons.error_outline_rounded,
+            size: 14,
+            color: AppColors.red,
+          ),
           const SizedBox(width: 4),
           Expanded(
             child: Text(
