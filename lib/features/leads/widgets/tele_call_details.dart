@@ -621,12 +621,6 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
       return;
     }
 
-    if (_isItemSold && _invoiceFile == null) {
-      ToastMessages.error(
-        message: 'Invoice File is required when Item Sold is true',
-      );
-      return;
-    }
 
     final String callStatus = _selectedCallStatus == 'Answered'
         ? 'answered'
