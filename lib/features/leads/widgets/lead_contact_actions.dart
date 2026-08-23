@@ -7,11 +7,9 @@ import 'package:nimmys_crm/core/theme/app_colors.dart';
 import 'package:nimmys_crm/core/theme/app_theme.dart';
 import 'package:nimmys_crm/core/utils/phone_dialer.dart';
 import 'package:nimmys_crm/core/utils/whatsapp_launcher.dart';
-import 'package:nimmys_crm/enum/status.dart'; // ✅ correct import
+import 'package:nimmys_crm/enum/status.dart'; 
 import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
-import 'package:nimmys_crm/features/leads/model/quotation_pdf_model.dart';
 import 'package:nimmys_crm/utils/toast_messages.dart';
-import '../domain/entities/lead.dart';
 
 const Color kWhatsAppGreen = Color(0xFF25D366);
 
@@ -39,21 +37,12 @@ class LeadContactActions extends StatefulWidget {
   final VoidCallback? onSendQuotation;
   final double spacing;
 
-
-
   @override
   State<LeadContactActions> createState() => _LeadContactActionsState();
 }
 
 class _LeadContactActionsState extends State<LeadContactActions> {
   bool _isLoading = false;
-
-  String get _enquiryText =>
-      (widget.enquiry ?? '').trim().replaceAll(RegExp(r'\.+$'), '');
-
-  String get _greeting => _enquiryText.isEmpty
-      ? 'Hi ${widget.name}, following up on your enquiry.'
-      : 'Hi ${widget.name}, following up on your enquiry for $_enquiryText.';
 
   void _sendQuotation() {
     if (_isLoading) return;
@@ -131,11 +120,7 @@ class _LeadContactActionsState extends State<LeadContactActions> {
             tooltip: 'WhatsApp message',
             onPressed:
                 widget.onWhatsApp ??
-                () => WhatsAppLauncher.openChat(
-                  context,
-                  widget.mobile,
-                  message: _greeting,
-                ),
+                () => WhatsAppLauncher.openChat(context, widget.mobile),
           ),
           SizedBox(width: widget.spacing),
           LeadCallButton(
@@ -276,4 +261,3 @@ class LeadCallButton extends StatelessWidget {
     );
   }
 }
-

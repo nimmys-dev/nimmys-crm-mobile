@@ -498,14 +498,6 @@ class MyLeadTile extends StatelessWidget {
                         spacing: 6,
                         runSpacing: 6,
                         children: <Widget>[
-                          if (lead.source != null &&
-                              lead.source!.trim().isNotEmpty)
-                            AppTag(
-                              label: lead.source!.trim().toUpperCase(),
-                              icon: Icons.campaign_outlined,
-                              isAccent: false,
-                            ),
-
                           if (lead.assignedTo != null &&
                               lead.assignedTo!.trim().isNotEmpty)
                             AppTag(
