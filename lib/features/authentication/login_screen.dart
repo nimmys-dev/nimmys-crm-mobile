@@ -218,8 +218,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: AppSpacing.xl),
                         const LoginSecurityNote(),
                         const SizedBox(height: AppSpacing.lg),
-                        const LoginAppearanceSection(),
-                        const SizedBox(height: AppSpacing.lg),
                         const LoginFooter(),
                       ],
                     ),
@@ -446,7 +444,10 @@ class LoginOptionsRow extends StatelessWidget {
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             foregroundColor: AppColors.red,
           ),
-          child: Text('Forgot password?', style: context.type.link),
+          child: Text(
+            'Forgot password?',
+            style: context.type.link.copyWith(fontSize: 12),
+          ),
         ),
       ],
     );
@@ -482,36 +483,6 @@ class LoginSecurityNote extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// Lets the user pick light / dark / system before signing in.
-///
-/// The choice is written straight to shared preferences, so it survives
-/// restarts and applies to every screen.
-class LoginAppearanceSection extends StatelessWidget {
-  const LoginAppearanceSection({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Row(
-          children: <Widget>[
-            Icon(
-              Icons.palette_outlined,
-              size: 15,
-              color: context.palette.muted,
-            ),
-            const SizedBox(width: 6),
-            Text('Appearance', style: context.type.caption),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        const ThemeModeSelector(),
-      ],
     );
   }
 }

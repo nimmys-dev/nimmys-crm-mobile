@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:nimmys_crm/core/theme/app_colors.dart';
 import 'package:nimmys_crm/core/theme/app_dimens.dart';
@@ -517,6 +516,16 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
   File? _invoiceFile;
 
   @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _calledDateController.text =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    _calledTimeController.text =
+        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+  }
+
+  @override
   void dispose() {
     _calledByController.dispose();
     _calledDateController.dispose();
@@ -533,29 +542,6 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
   // ======================================================
   // FILE PICKER
   // ======================================================
-
-  Future<void> _pickInvoiceFile() async {
-    try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.any,
-        allowMultiple: false,
-      );
-
-      if (result != null && result.files.isNotEmpty) {
-        final pickedFile = result.files.first;
-
-        final path = pickedFile.path;
-
-        if (path != null) {
-          setState(() {
-            _invoiceFile = File(path);
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint('File picker error: $e');
-    }
-  }
 
   // ======================================================
   // DATE PICKER
@@ -580,19 +566,6 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
   // ======================================================
   // TIME PICKER
   // ======================================================
-
-  Future<void> _pickTime(TextEditingController controller) async {
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-
-    if (time != null) {
-      controller.text =
-          '${time.hour.toString().padLeft(2, '0')}:'
-          '${time.minute.toString().padLeft(2, '0')}';
-    }
-  }
 
   // ======================================================
   // CLOSE
@@ -842,74 +815,15 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
 
                       children: [
-                        // ==================================================
-                        // DATE + TIME
-                        // ==================================================
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-
-                          children: [
-                            Expanded(
-                              child: AppFormField(
-                                label: 'Date',
-                                isRequired: true,
-
-                                child: AppTextField(
-                                  hint: 'Select date',
-
-                                  controller: _calledDateController,
-
-                                  icon: Icons.calendar_today,
-
-                                  readOnly: true,
-
-                                  onTap: () => _pickDate(_calledDateController),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(width: AppSpacing.xs),
-
-                            Expanded(
-                              child: AppFormField(
-                                label: 'Time',
-                                isRequired: true,
-
-                                child: AppTextField(
-                                  hint: 'Select time',
-
-                                  controller: _calledTimeController,
-
-                                  icon: Icons.access_time,
-
-                                  readOnly: true,
-
-                                  onTap: () => _pickTime(_calledTimeController),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        // ==================================================
-                        // CALL STATUS
-                        // ==================================================
                         AppFormField(
                           label: 'Call Status',
-
                           isRequired: true,
-
                           child: AppSelectField(
                             hint: 'Select status',
-
                             sheetTitle: 'Call status',
-
                             icon: Icons.phone_in_talk,
-
                             options: const ['Answered', 'Not Answered'],
-
                             value: _selectedCallStatus,
-
                             onChanged: (value) {
                               setState(() {
                                 _selectedCallStatus = value;
@@ -1035,66 +949,6 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                             maxLines: 3,
                           ),
                         ),
-
-                        // ==================================================
-                        // INVOICE FILE
-                        // ==================================================
-                        AppFormField(
-                          isRequired: _isItemSold,
-
-                          label: 'Invoice File',
-
-                          child: GestureDetector(
-                            onTap: _pickInvoiceFile,
-
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.sm,
-                                vertical: AppSpacing.sm,
-                              ),
-
-                              decoration: BoxDecoration(
-                                border: Border.all(color: palette.line),
-
-                                borderRadius: BorderRadius.circular(8),
-
-                                color: palette.surface,
-                              ),
-
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.attach_file_rounded,
-                                    size: 20,
-                                    color: palette.slate,
-                                  ),
-
-                                  const SizedBox(width: 8),
-
-                                  Expanded(
-                                    child: Text(
-                                      _invoiceFile == null
-                                          ? 'Choose file'
-                                          : _invoiceFile!.path
-                                                .split(Platform.pathSeparator)
-                                                .last,
-
-                                      style: const TextStyle(fontSize: 14),
-
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-
-                                  Icon(
-                                    Icons.arrow_drop_down,
-                                    color: palette.slate,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-
                         const SizedBox(height: AppSpacing.md),
 
                         // ==================================================
