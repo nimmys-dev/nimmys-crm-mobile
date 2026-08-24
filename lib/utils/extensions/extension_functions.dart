@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 extension TextStyleExtension on TextStyle {
-  TextStyle withColor(Color color) => this.copyWith(color: color);
+  TextStyle withColor(Color color) => copyWith(color: color);
 }
 
 extension ClickListener on Widget {

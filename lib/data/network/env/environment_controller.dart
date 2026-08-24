@@ -1,4 +1,6 @@
 
+// ignore_for_file: constant_identifier_names
+
 /// Controls the current environment setting
 abstract class EnvironmentController {
   static const int DEV = 0;

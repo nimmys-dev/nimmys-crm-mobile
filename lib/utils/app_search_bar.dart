@@ -29,7 +29,6 @@ class _AppSearchBarState extends State<AppSearchBar> {
 
   @override
   void initState() {
-    // TODO: implement initState
     _listener = () {
       if (mounted) {
         setState(() {});
@@ -37,7 +36,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
     };
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.searchController!.addListener(_listener);
+      widget.searchController.addListener(_listener);
     });
       super.initState();
   }

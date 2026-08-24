@@ -85,7 +85,7 @@ extension NullableExtensions<T> on T? {
 void main() {
   String? nullableString = null;
 
-  print('${nullableString.orNotAvailable()}'); // Output: ""
+  // Output: ""
   print(nullableString.orDefault('Default Value')); // Output: "Default Value"
 
   nullableString = '  Hello  ';

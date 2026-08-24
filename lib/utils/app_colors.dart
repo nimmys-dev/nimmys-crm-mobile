@@ -21,7 +21,7 @@ class AppColors {
 
   static const Color activeGreenColor = CupertinoColors.activeGreen;
   static const Color lightPrimaryColor = Color(0xffFFFAE5);
-  static const Color extraLightPrimaryColor = Color(0xffFFFFCF2);
+  static const Color extraLightPrimaryColor = Color(0xffffffcf2);
   static const Color activeBlueColor = CupertinoColors.activeBlue;
   static const Color greyIconColor = Colors.black38;
   static const Color lightGreyIconColor = Colors.black26;

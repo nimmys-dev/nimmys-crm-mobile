@@ -7,7 +7,6 @@ import 'package:nimmys_crm/features/authentication/access_denied_screen.dart';
 import 'package:nimmys_crm/features/authentication/cubit/session/session_cubit.dart';
 import 'package:nimmys_crm/features/authentication/login_screen.dart';
 import 'package:nimmys_crm/features/dashboard/dashboard_screen.dart';
-import 'package:nimmys_crm/features/duties/add_duty_screen.dart';
 import 'package:nimmys_crm/features/duties/create_task_screen.dart';
 import 'package:nimmys_crm/features/duties/domain/entities/duty_item.dart';
 import 'package:nimmys_crm/features/duties/duty_list_screen.dart';

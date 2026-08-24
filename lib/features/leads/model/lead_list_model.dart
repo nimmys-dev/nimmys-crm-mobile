@@ -1,3 +1,5 @@
+// ignore_for_file: non_constant_identifier_names
+
 /// `GET /api/leads?per_page=10&page=1` response.
 class LeadListResponse {
   LeadListResponse({

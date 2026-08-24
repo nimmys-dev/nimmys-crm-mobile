@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:nimmys_crm/core/auth/user_role.dart';
 import 'package:nimmys_crm/data/storage/secured_shared_preferences.dart';
 import 'package:nimmys_crm/utils/app_string.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,7 +8,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimens.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../../shared/widgets/app_gradient_header.dart';
-import '../../../shared/widgets/theme_toggle_button.dart';
 
 /// Dashboard hero: menu, wordmark title, notifications and profile avatar.
 class DashboardHeader extends StatefulWidget {

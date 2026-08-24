@@ -1,8 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/theme/app_theme.dart';
 import 'package:flutter/services.dart';
-
+import 'package:in_app_update_flutter/in_app_update_flutter.dart';
 import '../../core/preferences/app_preferences.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
@@ -11,7 +13,6 @@ import '../../shared/widgets/app_buttons.dart';
 import '../../shared/widgets/app_field_label.dart';
 import '../../shared/widgets/app_logo.dart';
 import '../../shared/widgets/app_text_field.dart';
-import '../../shared/widgets/theme_toggle_button.dart';
 import '../../utils/toast_messages.dart';
 import '../../utils/validator.dart';
 import '../profile/cubit/profile/profile_cubit.dart';
@@ -58,6 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<LoginCubit>().resetLoginState();
+        _checkForUpdate();
       }
     });
   }
@@ -78,6 +80,26 @@ class _LoginScreenState extends State<LoginScreen> {
     await prefs.setRememberMe(value);
     if (!value) {
       await prefs.clearSavedEmail();
+    }
+  }
+
+  Future<void> _checkForUpdate() async {
+    try {
+      final updater = InAppUpdateFlutter();
+
+      if (Platform.isAndroid) {
+        final info = await updater.checkUpdateAndroid();
+
+        if (info.updateAvailability ==
+                UpdateAvailabilityAndroid.updateAvailable &&
+            info.isImmediateUpdateAllowed) {
+          await updater.startImmediateUpdateAndroid();
+        }
+      } else if (Platform.isIOS) {
+        await updater.showUpdateForIos(appStoreId: 'YOUR_APP_STORE_ID');
+      }
+    } catch (e, stack) {
+      debugPrint('App update check failed: $e\n$stack');
     }
   }
 

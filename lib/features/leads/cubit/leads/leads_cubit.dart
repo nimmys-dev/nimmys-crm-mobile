@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:equatable/equatable.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nimmys_crm/core/reset_cubit_state.dart';
 import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/ui_state/ui_state.dart';
@@ -86,7 +85,6 @@ class LeadsCubit extends BaseCubit<LeadsState> {
               .leadSearchQuery; // but query already computed before loading; need keep? Actually query computed local before await. We can use query variable. But searchChanged also computed before await; could use final bool searchChanged from earlier. But state.leadSearchQuery may have changed? We computed before. Use `final bool isFirstPage = page == 1; final bool shouldReplace = isFirstPage || searchChanged;`
       final List<LeadItemData> newItems = result.value.data;
       final bool shouldReplace = page == 1 || searchChanged;
-      final bool isFirstPage = page == 1;
 
       final List<LeadItemData> updatedLeads = shouldReplace
           ? newItems

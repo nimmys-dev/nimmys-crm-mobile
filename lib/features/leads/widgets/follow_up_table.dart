@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -274,7 +272,7 @@ class FollowUpTableRow extends StatelessWidget {
               hasQuotation: entry.hasQuotation,
               onCall: onCall,
               onWhatsApp: onWhatsApp,
-              leadId: 5 ?? 0,
+              leadId: 5,
               onSendQuotation: onSendQuotation,
             ),
           ],

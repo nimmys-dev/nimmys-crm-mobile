@@ -267,7 +267,6 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
               state.leadSourcesUIState?.status == null ||
               state.leadSourcesUIState?.status == Status.INITIAL;
           final sourceLabels = sources.map((s) => s.label ?? '').toList();
-          print('Lead sources: ${sourceLabels}'); // Debug print
           print(
             'Lead sources UI state: ${state.leadSourcesUIState}',
           ); // Debug print

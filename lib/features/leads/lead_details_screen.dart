@@ -695,7 +695,6 @@ class LeadDetailsScreen extends StatefulWidget {
 }
 
 class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
-  int _navIndex = 1;
   final List<Map<String, dynamic>> _teleCallDetails = [];
   int? _totalCallHistoryCount;
   int _callHistoryPage = 0;

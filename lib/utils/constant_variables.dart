@@ -1,10 +1,8 @@
+// ignore_for_file: constant_identifier_names
+
 library;
-
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
-/// Constant Global variables
 const double commonButtonRadius = 2;
 const double commonPadding = 10;
 const double commonSafeAreaPadding = 20.0;
