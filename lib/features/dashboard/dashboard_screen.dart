@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -399,7 +398,7 @@ class DashboardLeadsSection extends StatelessWidget {
             title: 'My Leads',
             actionLabel: 'View All',
             onAction: () =>
-                context.push('${AppRouteName.leads}?isAppHeaderRequired=false'),
+                context.push('${AppRouteName.leads}?isAppHeaderRequired=true'),
           ),
           const SizedBox(height: AppSpacing.sm),
           GridView.builder(

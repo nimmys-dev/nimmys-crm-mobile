@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nimmys_crm/features/staff/model/staff_list_model.dart';
+import 'package:nimmys_crm/features/staff/widgets/staff_task_widget.dart';
 
 import '../../core/auth/app_permission.dart';
 import '../../core/theme/app_colors.dart';
@@ -53,7 +55,8 @@ class _StaffDetailsScreenState extends State<StaffDetailsScreen> {
         context.read<StaffCubit>()
           ..getStaffDetails(widget.staffId)
           ..getBranches()
-          ..getUserRoles();
+          ..getUserRoles()
+          ..getStaffList(); // <-- ADDED: fetch staff list for transfer
       }
     });
   }
@@ -80,36 +83,38 @@ class _StaffDetailsScreenState extends State<StaffDetailsScreen> {
         builder: (BuildContext context, SessionState session) {
           final bool canEdit = session.role.canEditStaff;
 
-          return Scaffold(
-            backgroundColor: context.palette.canvas,
-            body: Column(
-              children: <Widget>[
-                AppGradientHeader(
-                  title: 'Staff Details',
-                  eyebrow: 'TEAM',
-                  leading: const AppBackButton(),
-                  actions: <Widget>[
-                    if (canEdit)
-                      AppHeaderIconButton(
-                        icon: Icons.edit_outlined,
-                        onTap: _openEdit,
-                      ),
-                  ],
-                ),
-                Expanded(
-                  child: BlocBuilder<StaffCubit, StaffState>(
-                    builder: (BuildContext context, StaffState state) {
-                      return _StaffDetailsBody(
-                        state: state,
-                        onRetry: () => context
-                            .read<StaffCubit>()
-                            .getStaffDetails(widget.staffId),
-                      );
-                    },
+          return SafeArea(
+            child: Scaffold(
+              backgroundColor: context.palette.canvas,
+              body: Column(
+                children: <Widget>[
+                  AppGradientHeader(
+                    title: 'Staff Details',
+                    eyebrow: 'TEAM',
+                    leading: const AppBackButton(),
+                    actions: <Widget>[
+                      if (canEdit)
+                        AppHeaderIconButton(
+                          icon: Icons.edit_outlined,
+                          onTap: _openEdit,
+                        ),
+                    ],
                   ),
-                ),
-                SizedBox(height: MediaQuery.of(context).padding.bottom),
-              ],
+                  Expanded(
+                    child: BlocBuilder<StaffCubit, StaffState>(
+                      builder: (BuildContext context, StaffState state) {
+                        return _StaffDetailsBody(
+                          state: state,
+                          onRetry: () => context
+                              .read<StaffCubit>()
+                              .getStaffDetails(widget.staffId),
+                        );
+                      },
+                    ),
+                  ),
+                  SizedBox(height: MediaQuery.of(context).padding.bottom),
+                ],
+              ),
             ),
           );
         },
@@ -157,6 +162,10 @@ class _StaffDetailsBody extends StatelessWidget {
         state.branchesUIState?.data?.activeBranches ?? <StoreResponseData>[];
     final List<UserRoleOption> roles =
         state.userRolesUIState?.data?.selectableRoles ?? <UserRoleOption>[];
+
+    // <-- ADDED: get staff list for transfer
+    final List<StaffListItem> staffList =
+        state.staffListUIState?.data?.data ?? <StaffListItem>[];
 
     return ListView(
       padding: const EdgeInsets.symmetric(
@@ -316,6 +325,11 @@ class _StaffDetailsBody extends StatelessWidget {
               ),
             ],
           ),
+        ),
+        // ---- Tasks Section ----
+        StaffTasksSection(
+          staffId: staff.id!,
+          staffList: staffList, // <-- CHANGED: pass staff list, not branches
         ),
       ],
     );
