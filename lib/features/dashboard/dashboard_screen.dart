@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:in_app_update_flutter/in_app_update_flutter.dart';
 import 'package:nimmys_crm/features/dashboard/widgets/dashboard_drawer.dart';
 import 'package:nimmys_crm/features/leads/my_leads_screen.dart';
 import 'package:nimmys_crm/features/reports/reports_screen.dart';
@@ -40,8 +43,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<ProfileCubit>().getProfile();
+        _checkForUpdate();
       }
     });
+  }
+
+  Future<void> _checkForUpdate() async {
+    try {
+      final updater = InAppUpdateFlutter();
+
+      if (Platform.isAndroid) {
+        final info = await updater.checkUpdateAndroid();
+
+        if (info.updateAvailability ==
+                UpdateAvailabilityAndroid.updateAvailable &&
+            info.isImmediateUpdateAllowed) {
+          await updater.startImmediateUpdateAndroid();
+        }
+      } else if (Platform.isIOS) {
+        await updater.showUpdateForIos(appStoreId: 'YOUR_APP_STORE_ID');
+      }
+    } catch (e, stack) {
+      debugPrint('App update check failed: $e\n$stack');
+    }
   }
 
   String get _greeting {
