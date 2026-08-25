@@ -57,6 +57,9 @@ class _DutyListScreenState extends State<DutyListScreen> {
     }
   }
 
+  Future<void> _refreshTasks() =>
+      context.read<TasksCubit>().getTasks(refresh: true);
+
   /// Filter tasks by search query (title, description, assignee name)
   List<Task> _visibleDuties(List<Task> allTasks) {
     final needle = _query.trim().toLowerCase();
@@ -142,53 +145,86 @@ class _DutyListScreenState extends State<DutyListScreen> {
     required List<Task> allTasks,
   }) {
     if (isLoading && allTasks.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return RefreshIndicator(
+        onRefresh: _refreshTasks,
+        child: const _AlwaysScrollableBody(
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
     }
 
     if (hasError && allTasks.isEmpty) {
-      return _ErrorRetry(
-        onRetry: () => context.read<TasksCubit>().refreshTasks(),
+      return RefreshIndicator(
+        onRefresh: _refreshTasks,
+        child: _AlwaysScrollableBody(
+          child: _ErrorRetry(onRetry: _refreshTasks),
+        ),
       );
     }
 
     final tasks = _visibleDuties(allTasks);
 
     if (tasks.isEmpty) {
-      return DutyEmptyState(hasQuery: _query.isNotEmpty);
+      return RefreshIndicator(
+        onRefresh: _refreshTasks,
+        child: _AlwaysScrollableBody(
+          child: DutyEmptyState(hasQuery: _query.isNotEmpty),
+        ),
+      );
     }
 
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.only(
-        left: AppSpacing.gutter,
-        right: AppSpacing.gutter,
-        bottom: AppSpacing.xl,
-      ),
-      itemCount: tasks.length + (isLoading ? 1 : 0) + 1,
-      itemBuilder: (BuildContext context, int index) {
-        if (index == 0) {
-          return DutyListCount(count: tasks.length, total: allTasks.length);
-        }
-        if (index <= tasks.length) {
-          final task = tasks[index - 1];
-          return InkWell(
-            onTap: () {
-              if (task.id != null) {
-                context.push(AppRouteName.taskDetailsFor(task.id ?? 8));
-              } else {
-                context.push(AppRouteName.taskDetails);
-              }
-            },
-            child: DutyListTile(task: task),
+    return RefreshIndicator(
+      onRefresh: _refreshTasks,
+      child: ListView.builder(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(
+          left: AppSpacing.gutter,
+          right: AppSpacing.gutter,
+          bottom: AppSpacing.xl,
+        ),
+        itemCount: tasks.length + (isLoading ? 1 : 0) + 1,
+        itemBuilder: (BuildContext context, int index) {
+          if (index == 0) {
+            return DutyListCount(count: tasks.length, total: allTasks.length);
+          }
+          if (index <= tasks.length) {
+            final task = tasks[index - 1];
+            return InkWell(
+              onTap: () {
+                if (task.id != null) {
+                  context.push(AppRouteName.taskDetailsFor(task.id ?? 8));
+                } else {
+                  context.push(AppRouteName.taskDetails);
+                }
+              },
+              child: DutyListTile(task: task),
+            );
+          }
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
           );
-        }
-        return const Padding(
-          padding: EdgeInsets.symmetric(vertical: 12),
-          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-        );
-      },
+        },
+      ),
     );
   }
+}
+
+/// A scrollable shell keeps pull-to-refresh available for empty, loading and
+/// error states, where a regular [Center] cannot receive an overscroll drag.
+class _AlwaysScrollableBody extends StatelessWidget {
+  const _AlwaysScrollableBody({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (BuildContext context, BoxConstraints constraints) => ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: <Widget>[SizedBox(height: constraints.maxHeight, child: child)],
+    ),
+  );
 }
 
 // ---------------------------------------------------------------------------

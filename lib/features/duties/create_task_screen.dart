@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nimmys_crm/features/duties/cubit/tasks_cubit.dart';
 import '../../core/theme/app_theme.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
+import '../../routing/app_route_name.dart';
 import '../../enum/status.dart';
 import '../../shared/widgets/app_buttons.dart';
 import '../../shared/widgets/app_form_field.dart';
@@ -296,22 +298,17 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
           listener: (context, state) {
             final createState = state.createTaskUIState;
             final updateState = state.updateTaskUIState;
-            final requestStatus = _isEditing
-                ? updateState?.status
-                : createState?.status;
-            if (requestStatus == Status.SUCCESS) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    _isEditing
-                        ? 'Task updated successfully.'
-                        : 'Task created successfully.',
-                  ),
-                ),
-              );
-              // Optionally navigate back
-              // context.pop();
-            } else if (requestStatus == Status.ERROR) {
+            if (!_isEditing && createState?.status == Status.SUCCESS) {
+              context.read<TasksCubit>().resetCreateTaskState();
+              context.go(AppRouteName.duties);
+            } else if (_isEditing && updateState?.status == Status.SUCCESS) {
+              context.read<TasksCubit>().resetUpdateTaskState();
+              context.go(AppRouteName.duties);
+            } else {
+              final requestStatus = _isEditing
+                  ? updateState?.status
+                  : createState?.status;
+              if (requestStatus != Status.ERROR) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
