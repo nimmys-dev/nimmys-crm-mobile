@@ -113,7 +113,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
                       hint: 'Search duties, people…',
                       controller: _searchController,
                       onChanged: (String value) =>
-                          setState(() => _query = value),
+                          context.read<TasksCubit>().getTasks(search: value),
                     ),
                   ),
                   Expanded(
