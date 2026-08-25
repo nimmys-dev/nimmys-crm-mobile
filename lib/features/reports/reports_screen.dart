@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:nimmys_crm/shared/widgets/app_buttons.dart';
+import 'package:nimmys_crm/shared/widgets/app_gradient_header.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
@@ -34,7 +36,8 @@ enum ReportPeriod {
 /// hard-coded for the same reason. The widgets take plain values, so wiring a
 /// cubit in later touches only [_figuresFor].
 class ReportsScreen extends StatefulWidget {
-  const ReportsScreen({super.key});
+  final bool isAppHeaderRequired;
+  const ReportsScreen({super.key, required this.isAppHeaderRequired});
 
   @override
   State<ReportsScreen> createState() => _ReportsScreenState();
@@ -114,6 +117,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
         backgroundColor: context.palette.canvas,
         body: Column(
           children: <Widget>[
+            Visibility(
+              visible: widget.isAppHeaderRequired,
+              child: const AppGradientHeader(
+                title: 'My Reports',
+                eyebrow: 'REPORTS',
+                leading: AppBackButton(),
+                actions: <Widget>[AppAvatar(initials: 'AB')],
+              ),
+            ),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.only(

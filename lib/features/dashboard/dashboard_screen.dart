@@ -224,11 +224,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         AppSectionHeader(
                           title: 'Report',
                           actionLabel: 'View All',
-                          onAction: () => context.push(AppRouteName.reports),
+                          onAction: () => context.push(
+                            '${AppRouteName.reports}?isAppHeaderRequired=true',
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         DashboardReportCard(
-                          onTap: () => context.push(AppRouteName.reports),
+                          onTap: () => context.push(
+                            '${AppRouteName.reports}?isAppHeaderRequired=true',
+                          ),
                         ),
                       ],
                     ),
@@ -251,7 +255,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 2:
         return const StaffListScreen();
       case 3:
-        return const ReportsScreen();
+        return const ReportsScreen(isAppHeaderRequired: false,);
       default:
         return const SizedBox.shrink();
     }

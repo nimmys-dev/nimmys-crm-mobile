@@ -217,7 +217,12 @@ class AppRoutes {
       GoRoute(
         path: AppRouteName.reports,
         builder: (BuildContext context, GoRouterState state) {
-          return const ReportsScreen();
+          final bool? isAppHeaderRequired = bool.tryParse(
+            state.uri.queryParameters['isAppHeaderRequired'] ?? '',
+          );
+          return ReportsScreen(
+            isAppHeaderRequired: isAppHeaderRequired ?? false,
+          );
         },
       ),
 
