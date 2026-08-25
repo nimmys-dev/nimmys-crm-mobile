@@ -74,7 +74,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// Loading / Error Views (unchanged)
+// Loading / Error Views
 // ---------------------------------------------------------------------------
 
 class _LoadingView extends StatelessWidget {
@@ -114,7 +114,7 @@ class _ErrorView extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Main Content (now uses TaskDetail)
+// Main Content
 // ---------------------------------------------------------------------------
 
 class _TaskDetailsContent extends StatelessWidget {
@@ -141,14 +141,14 @@ class _TaskDetailsContent extends StatelessWidget {
               bottom: AppSpacing.xl,
             ),
             children: <Widget>[
-              _buildStatusCard(context),
+              StatusCard(task: task),
               const SizedBox(height: AppSpacing.sm),
-              _buildAssignmentCard(context),
+              AssignmentCard(task: task),
               const SizedBox(height: AppSpacing.sm),
-              _buildScheduleCard(context),
+              ScheduleCard(task: task),
               if (task.description?.isNotEmpty ?? false) ...<Widget>[
                 const SizedBox(height: AppSpacing.sm),
-                _buildDescriptionCard(context),
+                DescriptionCard(task: task),
               ],
               const SizedBox(height: AppSpacing.md),
               Row(
@@ -192,11 +192,21 @@ class _TaskDetailsContent extends StatelessWidget {
       ],
     );
   }
+}
 
-  Widget _buildStatusCard(BuildContext context) {
+// ---------------------------------------------------------------------------
+// Individual Section Cards
+// ---------------------------------------------------------------------------
+
+class StatusCard extends StatelessWidget {
+  const StatusCard({super.key, required this.task});
+
+  final TaskDetail task;
+
+  @override
+  Widget build(BuildContext context) {
     final status = task.status ?? 'Unknown';
 
-    // Use colors from AppColors (make sure you added green, blue, orange, purple)
     final Color statusColor = switch (status.toLowerCase()) {
       'completed' => AppColors.green,
       'ongoing' => AppColors.blue,
@@ -250,11 +260,18 @@ class _TaskDetailsContent extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildAssignmentCard(BuildContext context) {
+class AssignmentCard extends StatelessWidget {
+  const AssignmentCard({super.key, required this.task});
+
+  final TaskDetail task;
+
+  @override
+  Widget build(BuildContext context) {
     final assignee = task.assignedUser;
     final approver = task.approvedBy;
-
+    print('approver ${approver?.id}${approver?.name}');
     return AppSectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,14 +287,21 @@ class _TaskDetailsContent extends StatelessWidget {
           _InfoRow(
             icon: Icons.verified_user_outlined,
             label: 'Approved by',
-            value: approver?.name ?? 'Not set',
+            value: task.approvedBy?.name ?? 'Not set',
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildScheduleCard(BuildContext context) {
+class ScheduleCard extends StatelessWidget {
+  const ScheduleCard({super.key, required this.task});
+
+  final TaskDetail task;
+
+  @override
+  Widget build(BuildContext context) {
     final type = task.taskType ?? 'one-time';
     final List<Widget> rows = <Widget>[];
 
@@ -367,8 +391,15 @@ class _TaskDetailsContent extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildDescriptionCard(BuildContext context) {
+class DescriptionCard extends StatelessWidget {
+  const DescriptionCard({super.key, required this.task});
+
+  final TaskDetail task;
+
+  @override
+  Widget build(BuildContext context) {
     return AppSectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
