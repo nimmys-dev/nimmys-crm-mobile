@@ -507,9 +507,9 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
 
   final _reasonController = TextEditingController();
 
-  String? _selectedCallStatus;
+  String? _selectedCallStatus = 'Answered';
 
-  bool _interest = false;
+  bool _interest = true;
 
   bool _isItemSold = false;
 
@@ -620,7 +620,6 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
       );
       return;
     }
-
 
     final String callStatus = _selectedCallStatus == 'Answered'
         ? 'answered'
@@ -892,17 +891,20 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                         // ==================================================
                         // INVOICE NUMBER
                         // ==================================================
-                        AppFormField(
-                          isRequired: _isItemSold,
+                        Visibility(
+                          visible: _isItemSold,
+                          child: AppFormField(
+                            isRequired: _isItemSold,
 
-                          label: 'Invoice Number',
+                            label: 'Invoice Number',
 
-                          child: AppTextField(
-                            hint: 'Invoice #',
+                            child: AppTextField(
+                              hint: 'Invoice #',
 
-                            controller: _invoiceNumberController,
+                              controller: _invoiceNumberController,
 
-                            icon: Icons.receipt_long,
+                              icon: Icons.receipt_long,
+                            ),
                           ),
                         ),
 
