@@ -356,7 +356,9 @@ class TaskSchedule extends Equatable {
         }
         return null;
       case TaskFrequency.monthly:
-        return _rangeError(monthlyRange, 'end');
+        return monthDays.isEmpty
+            ? 'Select at least one day between 1 and $kMaxMonthDay.'
+            : null;
       case TaskFrequency.quarterly:
         if (selectedQuarters.isEmpty) {
           return 'Select at least one quarter.';
@@ -401,14 +403,13 @@ class TaskSchedule extends Equatable {
         if (startTimeMinutes != null) 'start_time_minutes': startTimeMinutes,
         if (endTimeMinutes != null) 'end_time_minutes': endTimeMinutes,
       },
-      if (frequency == TaskFrequency.weekly)
-        ...<String, dynamic>{
-          if (weekStartDay != null)
-            'week_start_day': weekdayWireValue(weekStartDay!),
-          if (weekEndDay != null) 'week_end_day': weekdayWireValue(weekEndDay!),
-        },
+      if (frequency == TaskFrequency.weekly) ...<String, dynamic>{
+        if (weekStartDay != null)
+          'week_start_day': weekdayWireValue(weekStartDay!),
+        if (weekEndDay != null) 'week_end_day': weekdayWireValue(weekEndDay!),
+      },
       if (frequency == TaskFrequency.monthly) ...<String, dynamic>{
-        ..._rangeJson(monthlyRange, 'monthly_start_date', 'monthly_end_date'),
+        'month_days': (monthDays.toList()..sort()),
       },
       if (frequency == TaskFrequency.quarterly)
         'quarters': <String, dynamic>{

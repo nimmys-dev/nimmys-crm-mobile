@@ -28,6 +28,47 @@ class DateTimeHelper {
     return formatter.format(date);
   }
 
+  /// Formats a date as `Aug 25th 2026`.
+  ///
+  /// Accepts an ISO/API date string such as:
+  /// `2026-08-24T18:30:00.000000Z`
+  ///
+  /// The date is converted to the device's local timezone before formatting.
+  static String getFormattedDateWithOrdinal(String? dateString) {
+    if (dateString == null || dateString.isEmpty) {
+      return '';
+    }
+
+    try {
+      final parsedDate = DateTime.parse(dateString).toLocal();
+      final day = parsedDate.day;
+      final suffix = _getOrdinalSuffix(day);
+      final month = DateFormat('MMM').format(parsedDate);
+
+      return '$month $day$suffix ${parsedDate.year}';
+    } catch (e) {
+      debugPrint('Error formatting date with ordinal: $e');
+      return '';
+    }
+  }
+
+  static String _getOrdinalSuffix(int day) {
+    if (day >= 11 && day <= 13) {
+      return 'th';
+    }
+
+    switch (day % 10) {
+      case 1:
+        return 'st';
+      case 2:
+        return 'nd';
+      case 3:
+        return 'rd';
+      default:
+        return 'th';
+    }
+  }
+
   /// Date format the CRM API expects on request bodies — `15-05-2025`.
   ///
   /// Deliberately not [getFormattedDate]: that one uses slashes for display,
@@ -68,23 +109,52 @@ class DateTimeHelper {
     try {
       DateTime parsedDate = DateFormat("dd/MM/yyyy").parse(date);
       DateTime now = DateTime.now();
-      return DateTime(parsedDate.year, parsedDate.month, parsedDate.day, now.hour, now.minute, now.second);
+
+      return DateTime(
+        parsedDate.year,
+        parsedDate.month,
+        parsedDate.day,
+        now.hour,
+        now.minute,
+        now.second,
+      );
     } catch (e) {
       debugPrint("Error parsing date: $e");
       return DateTime.now(); // Return current date-time in case of error
     }
   }
 
-  /// Input Format hh : mm a , example- 05 : 15 PM
+  /// Input Format hh : mm a, example - 05 : 15 PM
   static TimeOfDay convertStringToTimeOfDay(String timeString) {
     try {
       final DateFormat format = DateFormat("hh : mm a");
       final DateTime parsedDateTime = format.parse(timeString);
-      return TimeOfDay(hour: parsedDateTime.hour, minute: parsedDateTime.minute);
+
+      return TimeOfDay(
+        hour: parsedDateTime.hour,
+        minute: parsedDateTime.minute,
+      );
     } catch (e) {
       debugPrint("Error parsing time: $e");
       return TimeOfDay.now(); // Return current time if parsing fails
     }
   }
 
+  /// Example:
+  /// `12:24:00` → `12:24 PM`
+  /// `14:24:00` → `02:24 PM`
+  /// `00:24:00` → `12:24 AM`
+  static String get12HourTimeFormat(String? time) {
+    if (time == null || time.isEmpty) {
+      return '';
+    }
+
+    try {
+      final parsedTime = DateFormat('HH:mm:ss').parse(time);
+      return DateFormat('hh:mm a').format(parsedTime);
+    } catch (e) {
+      debugPrint('Error formatting time: $e');
+      return '';
+    }
+  }
 }

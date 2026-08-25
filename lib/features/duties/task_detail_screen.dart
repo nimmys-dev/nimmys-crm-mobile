@@ -4,6 +4,7 @@ import 'package:nimmys_crm/enum/status.dart';
 import 'package:nimmys_crm/features/duties/cubit/tasks_cubit.dart';
 import 'package:nimmys_crm/features/duties/create_task_screen.dart';
 import 'package:nimmys_crm/features/duties/model/task_details_model.dart';
+import 'package:nimmys_crm/helpers/date_helper.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
@@ -306,39 +307,52 @@ class ScheduleCard extends StatelessWidget {
     final List<Widget> rows = <Widget>[];
 
     rows.add(
-      _InfoRow(
-        icon: Icons.calendar_today_outlined,
-        label: 'Task Type',
-        value: type.toUpperCase(),
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: _InfoRow(
+          icon: Icons.calendar_today_outlined,
+          label: 'Task Type',
+          value: type.toUpperCase(),
+        ),
       ),
     );
 
     switch (type) {
       case 'daily':
         rows.add(
-          _InfoRow(
-            icon: Icons.schedule_rounded,
-            label: 'Time',
-            value: '${task.startTime ?? '—'} - ${task.endTime ?? '—'}',
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: _InfoRow(
+              icon: Icons.schedule_rounded,
+              label: 'Time',
+              value:
+                  "${DateTimeHelper.get12HourTimeFormat(task.startTime)} - ${DateTimeHelper.get12HourTimeFormat(task.endTime)}",
+            ),
           ),
         );
         break;
       case 'weekly':
         rows.add(
-          _InfoRow(
-            icon: Icons.date_range_outlined,
-            label: 'Days',
-            value: '${task.weekStartDay ?? '—'} to ${task.weekEndDay ?? '—'}',
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: _InfoRow(
+              icon: Icons.date_range_outlined,
+              label: 'Days',
+              value: '${task.weekStartDay ?? '—'} to ${task.weekEndDay ?? '—'}',
+            ),
           ),
         );
         break;
       case 'monthly':
         rows.add(
-          _InfoRow(
-            icon: Icons.date_range_outlined,
-            label: 'Date Range',
-            value:
-                '${task.monthlyStartDate ?? '—'} to ${task.monthlyEndDate ?? '—'}',
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: _InfoRow(
+              icon: Icons.date_range_outlined,
+              label: 'Date Range',
+              value:
+                  '${DateTimeHelper.getFormattedDateWithOrdinal('${task.monthlyStartDate}')} to ${DateTimeHelper.getFormattedDateWithOrdinal('${task.monthlyEndDate}')}',
+            ),
           ),
         );
         break;
@@ -346,40 +360,52 @@ class ScheduleCard extends StatelessWidget {
         if (task.quarters != null && task.quarters!.isNotEmpty) {
           for (final quarter in task.quarters!) {
             rows.add(
-              _InfoRow(
-                icon: Icons.event_note_outlined,
-                label: '${quarter.quarter?.toUpperCase()}',
-                value:
-                    '${quarter.startDate ?? '—'} to ${quarter.endDate ?? '—'}',
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: _InfoRow(
+                  icon: Icons.event_note_outlined,
+                  label: '${quarter.quarter?.toUpperCase()}',
+                  value:
+                      '${quarter.startDate ?? '—'} to ${quarter.endDate ?? '—'}',
+                ),
               ),
             );
           }
         } else {
           rows.add(
-            _InfoRow(
-              icon: Icons.date_range_outlined,
-              label: 'Quarter',
-              value: task.quarter ?? '—',
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: _InfoRow(
+                icon: Icons.date_range_outlined,
+                label: 'Quarter',
+                value: task.quarter ?? '—',
+              ),
             ),
           );
         }
         break;
       case 'yearly':
         rows.add(
-          _InfoRow(
-            icon: Icons.date_range_outlined,
-            label: 'Yearly Range',
-            value:
-                '${task.yearlyStartDate ?? '—'} to ${task.yearlyEndDate ?? '—'}',
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: _InfoRow(
+              icon: Icons.date_range_outlined,
+              label: 'Yearly Range',
+              value:
+                  '${DateTimeHelper.getFormattedDateWithOrdinal('${task.yearlyStartDate}')}  to ${DateTimeHelper.getFormattedDateWithOrdinal('${task.yearlyEndDate}')}',
+            ),
           ),
         );
         break;
       default:
         rows.add(
-          const _InfoRow(
-            icon: Icons.info_outline_rounded,
-            label: 'Schedule',
-            value: 'One-time task',
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: const _InfoRow(
+              icon: Icons.info_outline_rounded,
+              label: 'Schedule',
+              value: 'One-time task',
+            ),
           ),
         );
     }

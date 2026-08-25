@@ -137,10 +137,13 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         payload['week_end_day'] = weekdayWireValue(_schedule.weekEndDay!);
         break;
       case TaskFrequency.monthly:
+        final List<int> selectedDays = _schedule.monthDays.toList()..sort();
         payload['monthly_start_date'] = _formatDate(
-          _schedule.monthlyRange.from!,
+          _dateInCurrentMonth(selectedDays.first),
         );
-        payload['monthly_end_date'] = _formatDate(_schedule.monthlyRange.to!);
+        payload['monthly_end_date'] = _formatDate(
+          _dateInCurrentMonth(selectedDays.last),
+        );
         break;
       case TaskFrequency.quarterly:
         payload['quarters'] = _schedule.selectedQuarters.map((
@@ -191,6 +194,10 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         from: _parseApiDate(task.monthlyStartDate),
         to: _parseApiDate(task.monthlyEndDate),
       ),
+      monthDays: _monthDaysForRange(
+        _parseApiDate(task.monthlyStartDate),
+        _parseApiDate(task.monthlyEndDate),
+      ),
       quarterRanges: quarters,
       yearlyRange: TaskDateRange(
         from: _parseApiDate(task.yearlyStartDate),
@@ -206,6 +213,13 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     // API timestamps are UTC; restore their date in the device's timezone.
     final DateTime local = parsed.toLocal();
     return DateTime(local.year, local.month, local.day);
+  }
+
+  Set<int> _monthDaysForRange(DateTime? start, DateTime? end) {
+    if (start == null || end == null) return <int>{};
+    final int first = start.day.clamp(1, kMaxMonthDay);
+    final int last = end.day.clamp(1, kMaxMonthDay);
+    return <int>{for (int day = first; day <= last; day++) day};
   }
 
   int? _parseApiTime(String? value) {
@@ -235,6 +249,13 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       '${date.year.toString().padLeft(4, '0')}-'
       '${date.month.toString().padLeft(2, '0')}-'
       '${date.day.toString().padLeft(2, '0')}';
+
+  /// Builds a date from today's month/year; users only choose its day.
+  DateTime _dateInCurrentMonth(int day) {
+    final DateTime now = DateTime.now();
+    final int lastDay = DateTime(now.year, now.month + 1, 0).day;
+    return DateTime(now.year, now.month, day.clamp(1, lastDay));
+  }
 
   /// Validates form fields and schedule, then calls the cubit.
   Future<void> _submit() async {

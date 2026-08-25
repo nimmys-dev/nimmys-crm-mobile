@@ -123,6 +123,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
                       hasError: hasError,
                       error: error,
                       allTasks: allTasks,
+                      totalTaskCount: state.tasksPagination?.total ?? 0,
                     ),
                   ),
                 ],
@@ -143,6 +144,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
     required bool hasError,
     required Object? error,
     required List<Task> allTasks,
+    required totalTaskCount,
   }) {
     if (isLoading && allTasks.isEmpty) {
       return RefreshIndicator(
@@ -186,7 +188,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
         itemCount: tasks.length + (isLoading ? 1 : 0) + 1,
         itemBuilder: (BuildContext context, int index) {
           if (index == 0) {
-            return DutyListCount(count: tasks.length, total: allTasks.length);
+            return DutyListCount(count: totalTaskCount, total: allTasks.length);
           }
           if (index <= tasks.length) {
             final task = tasks[index - 1];
@@ -266,10 +268,6 @@ class DutyListCount extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String label = count == total
-        ? '$count dut${count == 1 ? 'y' : 'ies'}'
-        : 'Showing $count of $total duties';
-
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.xs, left: 2),
       child: Row(
@@ -280,7 +278,7 @@ class DutyListCount extends StatelessWidget {
             color: context.palette.muted,
           ),
           const SizedBox(width: 5),
-          Text(label, style: context.type.caption),
+          Text('${count.toString()} Tasks', style: context.type.caption),
         ],
       ),
     );

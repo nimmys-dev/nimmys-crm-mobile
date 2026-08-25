@@ -187,7 +187,7 @@ class _WeekdayFields extends StatelessWidget {
   }
 }
 
-/// Monthly runs on chosen dates of the month, inside a start/end window.
+/// Monthly tasks select days only; the screen supplies the current month/year.
 class _MonthlyFields extends StatelessWidget {
   const _MonthlyFields({required this.schedule, required this.onChanged});
 
@@ -199,15 +199,16 @@ class _MonthlyFields extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        TaskDateRangeFields(
-          range: schedule.monthlyRange,
-          endLabel: 'End Date',
-          onChanged: (TaskDateRange range) =>
-              onChanged(schedule.copyWith(monthlyRange: range)),
+        const AppFieldLabel(text: 'Repeat On', isRequired: true),
+        TaskMonthDayBox(
+          selected: schedule.monthDays,
+          onToggle: (int day) => onChanged(schedule.toggleMonthDay(day)),
         ),
         const SizedBox(height: AppSpacing.xs),
-        const TaskScheduleCaption(
-          text: 'The task is active between the selected monthly dates.',
+        TaskScheduleCaption(
+          text: schedule.monthDays.isEmpty
+              ? 'Select one or more days between 1 and 30.'
+              : 'Repeats on ${_ordinalList(schedule.monthDays)} each month.',
         ),
       ],
     );
