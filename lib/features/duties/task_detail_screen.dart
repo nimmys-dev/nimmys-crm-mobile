@@ -4,8 +4,9 @@ import 'package:nimmys_crm/enum/status.dart';
 import 'package:nimmys_crm/features/duties/cubit/tasks_cubit.dart';
 import 'package:nimmys_crm/features/duties/create_task_screen.dart';
 import 'package:nimmys_crm/features/duties/model/task_details_model.dart';
+import 'package:nimmys_crm/features/duties/widgets/task_details_shimmer.dart';
 import 'package:nimmys_crm/helpers/date_helper.dart';
-
+import 'package:shimmer/shimmer.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
@@ -47,7 +48,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
           final uiState = state.taskDetailsUIState;
 
           if (uiState?.status == Status.LOADING) {
-            return const _LoadingView();
+            return const TaskDetailsLoadingView();
           }
 
           if (uiState?.status == Status.ERROR || uiState?.data == null) {
@@ -77,15 +78,6 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
 // ---------------------------------------------------------------------------
 // Loading / Error Views
 // ---------------------------------------------------------------------------
-
-class _LoadingView extends StatelessWidget {
-  const _LoadingView();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(child: CircularProgressIndicator());
-  }
-}
 
 class _ErrorView extends StatelessWidget {
   const _ErrorView({required this.onRetry});
@@ -128,10 +120,9 @@ class _TaskDetailsContent extends StatelessWidget {
     return Column(
       children: <Widget>[
         AppGradientHeader(
-          title: task.title ?? 'Task Details',
+          // title: task.title ?? 'Task Details',
           eyebrow: 'TASK DETAILS',
           leading: const AppBackButton(),
-          actions: const <Widget>[AppAvatar(initials: 'AB')],
         ),
         Expanded(
           child: ListView(
@@ -187,6 +178,7 @@ class _TaskDetailsContent extends StatelessWidget {
                   ),
                 ],
               ),
+              SizedBox(height: 80),
             ],
           ),
         ),
@@ -220,6 +212,11 @@ class StatusCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          Text("Task Details", style: context.type.caption),
+
+          const SizedBox(height: AppSpacing.xs),
+          Text(task.description ?? ""),
+          const SizedBox(height: AppSpacing.xs),
           Text('Status', style: context.type.caption),
           const SizedBox(height: AppSpacing.xs),
           Row(

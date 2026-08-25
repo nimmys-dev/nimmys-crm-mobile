@@ -8,7 +8,7 @@ import '../../core/theme/app_dimens.dart';
 class AppGradientHeader extends StatelessWidget {
   const AppGradientHeader({
     super.key,
-    required this.title,
+    this.title,
     this.leading,
     this.actions = const <Widget>[],
     this.eyebrow,
@@ -16,7 +16,7 @@ class AppGradientHeader extends StatelessWidget {
     this.height = 118,
   });
 
-  final String title;
+  final String? title;
   final Widget? leading;
   final List<Widget> actions;
 
@@ -60,14 +60,17 @@ class AppGradientHeader extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         if (eyebrow != null) ...<Widget>[
-                          Text(eyebrow!, style: context.type.headerEyebrow),
+                          Text(eyebrow!, style: context.type.screenTitle),
                           const SizedBox(height: AppSpacing.xxs),
                         ],
-                        Text(
-                          title,
-                          style: context.type.screenTitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        Visibility(
+                          visible: title?.isNotEmpty ?? false,
+                          child: Text(
+                            title ?? '',
+                            style: context.type.headerEyebrow,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),

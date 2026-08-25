@@ -122,11 +122,6 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       'repeat_mode': repeats,
     };
 
-    if (!repeats) {
-      // One-time task: no schedule fields
-      return payload;
-    }
-
     switch (frequency) {
       case TaskFrequency.daily:
         payload['start_time'] = _formatTime(_schedule.startTimeMinutes!);
@@ -435,30 +430,28 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                               _schedule.copyWith(repeat: value),
                             ),
                           ),
-                          if (repeats) ...<Widget>[
-                            const SizedBox(height: AppSpacing.md),
-                            AppFormField(
-                              label: 'Task Type',
-                              isRequired: true,
-                              bottomSpacing: isYearly ? 0 : AppSpacing.md,
-                              child: AppSegmentedTabs(
-                                options: TaskFrequency.labels,
-                                selectedIndex: TaskFrequency.values.indexOf(
-                                  _schedule.frequency,
-                                ),
-                                onChanged: (int index) => _updateSchedule(
-                                  _schedule.copyWith(
-                                    frequency: TaskFrequency.values[index],
-                                  ),
+                          const SizedBox(height: AppSpacing.md),
+                          AppFormField(
+                            label: 'Task Type',
+                            isRequired: true,
+                            bottomSpacing: isYearly ? 0 : AppSpacing.md,
+                            child: AppSegmentedTabs(
+                              options: TaskFrequency.labels,
+                              selectedIndex: TaskFrequency.values.indexOf(
+                                _schedule.frequency,
+                              ),
+                              onChanged: (int index) => _updateSchedule(
+                                _schedule.copyWith(
+                                  frequency: TaskFrequency.values[index],
                                 ),
                               ),
                             ),
-                            TaskScheduleFields(
-                              schedule: _schedule,
-                              onChanged: _updateSchedule,
-                              errorText: isYearly ? null : _scheduleError,
-                            ),
-                          ],
+                          ),
+                          TaskScheduleFields(
+                            schedule: _schedule,
+                            onChanged: _updateSchedule,
+                            errorText: isYearly ? null : _scheduleError,
+                          ),
                         ],
                       ),
                     ),
