@@ -238,8 +238,14 @@ class AppRoutes {
       GoRoute(
         path: AppRouteName.taskDetails,
         builder: (BuildContext context, GoRouterState state) {
-          final int? id = int.tryParse(state.uri.queryParameters['id'] ?? '');
-          return TaskDetailsScreen(taskId: id ?? 1);
+          final String? idParam = state.uri.queryParameters['id'];
+          final int? id = int.tryParse(idParam ?? '');
+
+          if (id == null) {
+            return const Scaffold(body: Center(child: Text('Invalid task ID')));
+          }
+
+          return TaskDetailsScreen(taskId: id);
         },
       ),
     ],

@@ -151,38 +151,35 @@ class TasksCubit extends BaseCubit<TasksState> {
   // Update Task
   // ---------------------------------------------------------------------------
 
-  // void _setUpdateTaskUIState(UIState<Task>? uiState) {
-  //   emit(state.copyWith(updateTaskUIState: uiState));
-  // }
+  void _setUpdateTaskUIState(UIState<TaskDetailsResponse>? uiState) {
+    emit(state.copyWith(updateTaskUIState: uiState));
+  }
 
-  // Future<void> updateTask(int id, Map<String, dynamic> payload) async {
-  //   if (state.updateTaskUIState?.status == Status.LOADING) {
-  //     return;
-  //   }
+  Future<void> updateTask(int id, Map<String, dynamic> payload) async {
+    if (state.updateTaskUIState?.status == Status.LOADING) return;
 
-  //   _setUpdateTaskUIState(UIState.loading());
+    _setUpdateTaskUIState(UIState.loading());
+    final Result<TaskDetailsResponse> result = await _repository.updateTask(
+      id,
+      payload,
+    );
 
-  //   final Result<Task> result = await _repository.updateTask(id, payload);
+    if (result is Success<TaskDetailsResponse>) {
+      _setUpdateTaskUIState(UIState.success(result.value));
+      if (state.taskDetailsUIState?.data?.data?.id == id) {
+        _setTaskDetailsUIState(UIState.success(result.value));
+      }
+      unawaited(getTasks(refresh: true));
+    } else if (result is Error<TaskDetailsResponse>) {
+      _setUpdateTaskUIState(UIState.error(result.type));
+    }
+  }
 
-  //   if (result is Success<Task>) {
-  //     _setUpdateTaskUIState(UIState.success(result.value));
-
-  //     // Optionally update details if currently viewing the same task
-  //     if (state.taskDetailsUIState?.data?.id == id) {
-  //       _setTaskDetailsUIState(UIState.success(result.value));
-  //     }
-
-  //     unawaited(getTasks(refresh: true));
-  //   } else if (result is Error<Task>) {
-  //     _setUpdateTaskUIState(UIState.error(result.type));
-  //   }
-  // }
-
-  // void resetUpdateTaskState() {
-  //   _setUpdateTaskUIState(
-  //     resetUIState<Task>(state.updateTaskUIState),
-  //   );
-  // }
+  void resetUpdateTaskState() {
+    _setUpdateTaskUIState(
+      resetUIState<TaskDetailsResponse>(state.updateTaskUIState),
+    );
+  }
 
   // ---------------------------------------------------------------------------
   // Delete Task

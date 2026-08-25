@@ -36,7 +36,7 @@ class TasksState extends Equatable {
   // ---------------------------------------------------------------------------
 
   /// PUT /api/tasks/{id} state.
-  final UIState<Task>? updateTaskUIState;
+  final UIState<TaskDetailsResponse>? updateTaskUIState;
 
   // ---------------------------------------------------------------------------
   // Delete Task
@@ -63,7 +63,7 @@ class TasksState extends Equatable {
     String? tasksSearchQuery,
     UIState<TaskDetailsResponse>? taskDetailsUIState,
     UIState<dynamic>? createTaskUIState,
-    UIState<Task>? updateTaskUIState,
+    UIState<TaskDetailsResponse>? updateTaskUIState,
     UIState<dynamic>? deleteTaskUIState,
   }) {
     return TasksState(
@@ -80,37 +80,37 @@ class TasksState extends Equatable {
 
   @override
   List<Object?> get props => [
-        // Tasks list
-        tasksListUIState,
-        tasksListUIState?.status,
-        tasksListUIState?.data,
-        tasksListUIState?.errorType,
-        tasksList,
-        tasksPagination,
-        tasksSearchQuery,
+    // Tasks list
+    tasksListUIState,
+    tasksListUIState?.status,
+    tasksListUIState?.data,
+    tasksListUIState?.errorType,
+    tasksList,
+    tasksPagination,
+    tasksSearchQuery,
 
-        // Task details
-        taskDetailsUIState,
-        taskDetailsUIState?.status,
-        taskDetailsUIState?.data,
-        taskDetailsUIState?.errorType,
+    // Task details
+    taskDetailsUIState,
+    taskDetailsUIState?.status,
+    taskDetailsUIState?.data,
+    taskDetailsUIState?.errorType,
 
-        // Create task
-        createTaskUIState,
-        createTaskUIState?.status,
-        createTaskUIState?.data,
-        createTaskUIState?.errorType,
+    // Create task
+    createTaskUIState,
+    createTaskUIState?.status,
+    createTaskUIState?.data,
+    createTaskUIState?.errorType,
 
-        // Update task
-        updateTaskUIState,
-        updateTaskUIState?.status,
-        updateTaskUIState?.data,
-        updateTaskUIState?.errorType,
+    // Update task
+    updateTaskUIState,
+    updateTaskUIState?.status,
+    updateTaskUIState?.data,
+    updateTaskUIState?.errorType,
 
-        // Delete task
-        deleteTaskUIState,
-        deleteTaskUIState?.status,
-        deleteTaskUIState?.data,
-        deleteTaskUIState?.errorType,
-      ];
+    // Delete task
+    deleteTaskUIState,
+    deleteTaskUIState?.status,
+    deleteTaskUIState?.data,
+    deleteTaskUIState?.errorType,
+  ];
 }

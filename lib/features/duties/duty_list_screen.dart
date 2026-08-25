@@ -173,7 +173,11 @@ class _DutyListScreenState extends State<DutyListScreen> {
           final task = tasks[index - 1];
           return InkWell(
             onTap: () {
-              context.push(AppRouteName.taskDetails, extra: {'id': task.id});
+              if (task.id != null) {
+                context.push(AppRouteName.taskDetailsFor(task.id ?? 8));
+              } else {
+                context.push(AppRouteName.taskDetails);
+              }
             },
             child: DutyListTile(task: task),
           );
@@ -259,7 +263,11 @@ class DutyListTile extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        context.push(AppRouteName.taskDetails, extra: {'id': task.id});
+        if (task.id != null) {
+          context.push(AppRouteName.taskDetailsFor(task.id ?? 8));
+        } else {
+          context.push(AppRouteName.taskDetails);
+        }
       },
       child: AppSectionCard(
         padding: EdgeInsets.zero,

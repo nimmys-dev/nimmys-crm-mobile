@@ -29,7 +29,9 @@ class TasksRepository {
     try {
       return await _service.getTaskDetails(id);
     } catch (e) {
-      return Error<TaskDetailsResponse>(ErrorWithMessage(message: e.toString()));
+      return Error<TaskDetailsResponse>(
+        ErrorWithMessage(message: e.toString()),
+      );
     }
   }
 
@@ -46,6 +48,19 @@ class TasksRepository {
       return await _service.createTask(payload);
     } catch (e) {
       return Error<dynamic>(ErrorWithMessage(message: e.toString()));
+    }
+  }
+
+  Future<Result<TaskDetailsResponse>> updateTask(
+    int id,
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      return await _service.updateTask(id, payload);
+    } catch (e) {
+      return Error<TaskDetailsResponse>(
+        ErrorWithMessage(message: e.toString()),
+      );
     }
   }
 }

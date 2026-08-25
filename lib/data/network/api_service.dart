@@ -12,9 +12,10 @@ import 'package:nimmys_crm/utils/app_string.dart';
 import 'package:nimmys_crm/utils/constant_variables.dart';
 import 'package:nimmys_crm/utils/custom_log.dart';
 
-
 class ApiService {
-  final Duration _timeout = const Duration(seconds: 30);  // General timeout for all requests
+  final Duration _timeout = const Duration(
+    seconds: 30,
+  ); // General timeout for all requests
   final Dio _dio;
   final SecuredSharedPreferences _secureSharedPrefs;
 
@@ -22,7 +23,6 @@ class ApiService {
     _dio.options.connectTimeout = _timeout;
     _dio.options.receiveTimeout = _timeout;
   }
-
 
   // Header
   Future<Map<String, String>> _getHeaders({bool isMultipart = false}) async {
@@ -33,7 +33,9 @@ class ApiService {
 
     // Bearer wins when the user is signed in: the CRM API authenticates with a
     // Sanctum token, and login itself is the one call that legitimately has none.
-    final bearerToken = await _secureSharedPrefs.get(AppString.sessionKey.userToken);
+    final bearerToken = await _secureSharedPrefs.get(
+      AppString.sessionKey.userToken,
+    );
     if (bearerToken != null && bearerToken.isNotEmpty) {
       headers['Authorization'] = 'Bearer $bearerToken';
       return headers;
@@ -43,13 +45,16 @@ class ApiService {
     // "send no Authorization header" rather than a failure.
     final username = dotenv.env["API_BASIC_AUTH_USERNAME"];
     final password = dotenv.env["API_BASIC_AUTH_PASSWORD"];
-    if (username != null && username.isNotEmpty && password != null && password.isNotEmpty) {
-      headers['Authorization'] = 'Basic ${base64Encode(utf8.encode('$username:$password'))}';
+    if (username != null &&
+        username.isNotEmpty &&
+        password != null &&
+        password.isNotEmpty) {
+      headers['Authorization'] =
+          'Basic ${base64Encode(utf8.encode('$username:$password'))}';
     }
 
     return headers;
   }
-
 
   // Clear Cache
   //
@@ -61,12 +66,19 @@ class ApiService {
     CustomLog.info(this, "No response cache configured — nothing to clear");
   }
 
-
   // Get
-  Future<Result<dynamic>> get(String url, {Map<String, dynamic>? queryParams, bool forceRefresh = false, CancelToken? cancelToken}) async {
-    CustomLog.debug(this, "\nMethod : Get, \nURL : $url,n\,QueryParams : $queryParams");
+  Future<Result<dynamic>> get(
+    String url, {
+    Map<String, dynamic>? queryParams,
+    bool forceRefresh = false,
+    CancelToken? cancelToken,
+  }) async {
+    CustomLog.debug(
+      this,
+      "\nMethod : Get, \nURL : $url,n\,QueryParams : $queryParams",
+    );
     try {
-      if(HasInternetConnection.isInternet != true){
+      if (HasInternetConnection.isInternet != true) {
         return Error(InternetNetworkError());
       }
       final response = await _dio.get(
@@ -87,16 +99,24 @@ class ApiService {
     }
   }
 
-
   // Post
-  Future<Result<dynamic>> post(String url, {dynamic body,  Map<String, dynamic>? queryParams }) async {
+  Future<Result<dynamic>> post(
+    String url, {
+    dynamic body,
+    Map<String, dynamic>? queryParams,
+  }) async {
     Object prettyBodyString;
-    if(queryParams != null){
-      prettyBodyString  = const JsonEncoder.withIndent('  ').convert(queryParams);
-    }else{
+    if (queryParams != null) {
+      prettyBodyString = const JsonEncoder.withIndent(
+        '  ',
+      ).convert(queryParams);
+    } else {
       prettyBodyString = const JsonEncoder.withIndent('  ').convert(body);
     }
-    CustomLog.debug(this, "\nMethod: Post \nURL: $url \nRequest: $prettyBodyString");
+    CustomLog.debug(
+      this,
+      "\nMethod: Post \nURL: $url \nRequest: $prettyBodyString",
+    );
     try {
       if (!HasInternetConnection.isInternet) {
         return Error(InternetNetworkError());
@@ -106,9 +126,9 @@ class ApiService {
         data: body,
         queryParameters: queryParams,
         options: Options(
-            headers: await _getHeaders(),
-            sendTimeout: _timeout,
-            receiveTimeout: _timeout,
+          headers: await _getHeaders(),
+          sendTimeout: _timeout,
+          receiveTimeout: _timeout,
         ),
       );
       return _handleBodyResponse(response);
@@ -120,6 +140,36 @@ class ApiService {
     }
   }
 
+  // Put
+  Future<Result<dynamic>> put(String url, {dynamic body}) async {
+    final Object prettyBodyString = const JsonEncoder.withIndent(
+      '  ',
+    ).convert(body);
+    CustomLog.debug(
+      this,
+      "\nMethod: Put \nURL: $url \nRequest: $prettyBodyString",
+    );
+    try {
+      if (!HasInternetConnection.isInternet) {
+        return Error(InternetNetworkError());
+      }
+      final response = await _dio.put(
+        url,
+        data: body,
+        options: Options(
+          headers: await _getHeaders(),
+          sendTimeout: _timeout,
+          receiveTimeout: _timeout,
+        ),
+      );
+      return _handleBodyResponse(response);
+    } on DioException catch (dioError) {
+      return _handleDioError(dioError);
+    } catch (exception) {
+      CustomLog.error(this, "Generic PUT HTTP call error", exception);
+      return Error(GenericError());
+    }
+  }
 
   // Delete
   Future<Result<dynamic>> delete(String url) async {
@@ -129,7 +179,8 @@ class ApiService {
         return Error(InternetNetworkError());
       }
 
-      final response = await _dio.delete(url,
+      final response = await _dio.delete(
+        url,
         options: Options(
           headers: await _getHeaders(),
           sendTimeout: _timeout,
@@ -138,7 +189,6 @@ class ApiService {
       );
       return _handleBodyResponse(response);
     } on DioException catch (dioError) {
-
       return _handleDioError(dioError);
     } catch (exception) {
       CustomLog.error(this, "Generic HTTP call error", exception);
@@ -146,16 +196,25 @@ class ApiService {
     }
   }
 
-
   // Multi parts
-  Future<Result<dynamic>> multipart(String url, dynamic files, {Map<String, String>? fields, String? pathName}) async {
+  Future<Result<dynamic>> multipart(
+    String url,
+    dynamic files, {
+    Map<String, String>? fields,
+    String? pathName,
+  }) async {
     try {
       if (!HasInternetConnection.isInternet) {
         return Error(InternetNetworkError());
       }
 
-      final prettyFieldsString = const JsonEncoder.withIndent('  ').convert(fields);
-      CustomLog.debug(this, "\nMethod : Multipart \nURL : $url \nPath name : $pathName \nFiles : $files \nFields : $prettyFieldsString");
+      final prettyFieldsString = const JsonEncoder.withIndent(
+        '  ',
+      ).convert(fields);
+      CustomLog.debug(
+        this,
+        "\nMethod : Multipart \nURL : $url \nPath name : $pathName \nFiles : $files \nFields : $prettyFieldsString",
+      );
 
       FormData formData = FormData();
 
@@ -164,25 +223,31 @@ class ApiService {
         if (files is List<File>) {
           for (var file in files) {
             if (await file.exists()) {
-              formData.files.add(MapEntry(
-                pathName ?? "file",
-                await MultipartFile.fromFile(file.path),
-              ));
+              formData.files.add(
+                MapEntry(
+                  pathName ?? "file",
+                  await MultipartFile.fromFile(file.path),
+                ),
+              );
             } else {
               CustomLog.debug(this, "File not found: ${file.path}");
             }
           }
         } else if (files is File) {
           if (await files.exists()) {
-            formData.files.add(MapEntry(
-              pathName ?? "file",
-              await MultipartFile.fromFile(files.path),
-            ));
+            formData.files.add(
+              MapEntry(
+                pathName ?? "file",
+                await MultipartFile.fromFile(files.path),
+              ),
+            );
           } else {
             CustomLog.debug(this, "File not found: ${files.path}");
           }
         } else {
-          return Error(ErrorWithMessage(message: "Invalid file type provided."));
+          return Error(
+            ErrorWithMessage(message: "Invalid file type provided."),
+          );
         }
       }
 
@@ -198,7 +263,7 @@ class ApiService {
         url,
         data: formData,
         options: Options(
-          headers:  await _getHeaders(isMultipart: true),
+          headers: await _getHeaders(isMultipart: true),
           sendTimeout: _timeout,
           receiveTimeout: _timeout,
         ),
@@ -213,13 +278,15 @@ class ApiService {
     }
   }
 
-
-
-
   // Handle Body Response
   Result<dynamic> _handleBodyResponse(Response response) {
-    final prettyBodyString = const JsonEncoder.withIndent('  ').convert(response.data);
-    CustomLog.debug(this, "\nResponse status code: ${response.statusCode}, \nResponse data: $prettyBodyString");
+    final prettyBodyString = const JsonEncoder.withIndent(
+      '  ',
+    ).convert(response.data);
+    CustomLog.debug(
+      this,
+      "\nResponse status code: ${response.statusCode}, \nResponse data: $prettyBodyString",
+    );
     try {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return Success(response.data);
@@ -231,7 +298,6 @@ class ApiService {
       return Error(GenericError());
     }
   }
-
 
   // Handel HTTP Error
   //
@@ -248,7 +314,6 @@ class ApiService {
     );
     return Error(error);
   }
-
 
   // Status Code to Error Type
   ErrorType _errorForResponse(Response? response) {
@@ -279,13 +344,16 @@ class ApiService {
     }
   }
 
-
   // Handle Dio Error
   Result<dynamic> _handleDioError(DioException error) {
-    CustomLog.error(this, "DIO HTTP call error,Status Code : ${error.response?.statusCode} response : ${error.response}", error);
+    CustomLog.error(
+      this,
+      "DIO HTTP call error,Status Code : ${error.response?.statusCode} response : ${error.response}",
+      error,
+    );
     switch (error.type) {
       case DioExceptionType.badResponse:
-          return _handleHttpError(error.response);
+        return _handleHttpError(error.response);
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
@@ -295,35 +363,45 @@ class ApiService {
     }
   }
 
-
   // Json to Query Params
   String jsonToQueryParams(Map<String, dynamic> json) {
     String stringQueryParams = "";
     try {
-      return json.entries.map((e) {
-        final key = Uri.encodeComponent(e.key);
-        final value = Uri.decodeComponent(e.value.toString());
-        stringQueryParams = '$key=$value';
-        return stringQueryParams;
-      }).join('&');
+      return json.entries
+          .map((e) {
+            final key = Uri.encodeComponent(e.key);
+            final value = Uri.decodeComponent(e.value.toString());
+            stringQueryParams = '$key=$value';
+            return stringQueryParams;
+          })
+          .join('&');
     } catch (e) {
-      CustomLog.error(this, "QueryParams : $stringQueryParams,\nRun type : ${stringQueryParams.runtimeType}", e);
+      CustomLog.error(
+        this,
+        "QueryParams : $stringQueryParams,\nRun type : ${stringQueryParams.runtimeType}",
+        e,
+      );
       return stringQueryParams;
     }
   }
 
-
   String decodeQueryParams(String queryString) {
-    return Uri.splitQueryString(queryString).entries.map((e) {
-      final key = e.key;
-      final value = Uri.decodeComponent(e.value); // Decode percent-encoded values
-      return '$key = $value';
-    }).join('\n');
+    return Uri.splitQueryString(queryString).entries
+        .map((e) {
+          final key = e.key;
+          final value = Uri.decodeComponent(
+            e.value,
+          ); // Decode percent-encoded values
+          return '$key = $value';
+        })
+        .join('\n');
   }
 
-
   // Get Response Result Status
-  Future<Result<T>> getResponseStatus<T>(dynamic result, T Function(dynamic) fromJson) async {
+  Future<Result<T>> getResponseStatus<T>(
+    dynamic result,
+    T Function(dynamic) fromJson,
+  ) async {
     if (result[STATUS] == true) {
       final data = fromJson(result);
       return Success(data);
@@ -333,5 +411,4 @@ class ApiService {
       return Error(ResponseStatusFailed());
     }
   }
-
 }

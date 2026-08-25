@@ -28,6 +28,7 @@ class AppRouteName {
   static const String leadDetails = "/lead/details";
   static const String followUpToday = "/followUp/today";
   static const String companyDetails = "/companyDetails";
+  static const String taskDetails = "/taskDetails";
 
   /// Where the router sends anyone who asks for a route their role does not
   /// carry the permission for.
@@ -47,5 +48,5 @@ class AppRouteName {
   static String staffDetailsFor(int id) => "$staffDetails?id=$id";
   static String staffEditFor(int id) => "$staffEdit?id=$id";
   static String leadDetailsFor(int id) => "$leadDetails?id=$id";
-  static String taskDetails = "/taskDetails";
+  static String taskDetailsFor(int id) => "$taskDetails?id=$id";
 }

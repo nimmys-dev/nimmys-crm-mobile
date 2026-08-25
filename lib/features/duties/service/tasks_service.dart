@@ -5,7 +5,6 @@ import 'package:nimmys_crm/features/duties/model/task_details_model.dart';
 import 'package:nimmys_crm/features/duties/model/task_type_model.dart';
 import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
 
-
 /// Network access for task reads, writes and lookups.
 class TasksService {
   TasksService(this._apiService);
@@ -53,7 +52,8 @@ class TasksService {
       if (result is Success<dynamic>) {
         return await _apiService.getResponseStatus<TaskDetailsResponse>(
           result.value,
-          (dynamic json) => TaskDetailsResponse.fromJson(json as Map<String, dynamic>),
+          (dynamic json) =>
+              TaskDetailsResponse.fromJson(json as Map<String, dynamic>),
         );
       } else if (result is Error<dynamic>) {
         return Error<TaskDetailsResponse>(result.type);
@@ -109,38 +109,30 @@ class TasksService {
     }
   }
 
-  // /// PUT /api/update-task/{id}. Updates an existing task.
-  // Future<Result<Task>> updateTask(
-  //   int id,
-  //   Map<String, dynamic> payload,
-  // ) async {
-  //   try {
-  //     final Result<dynamic> result = await _apiService.(
-  //       ApiUrls.updateTask(id),
-  //       body: payload,
-  //     );
-  //     if (result is Success<dynamic>) {
-  //       if (result.value is Map && result.value['status'] == false) {
-  //         final Object? message = result.value['message'];
-  //         return Error<Task>(
-  //           ErrorWithMessage(
-  //             message: message is String ? message : 'Could not update task.',
-  //           ),
-  //         );
-  //       }
-  //       return await _apiService.getResponseStatus<Task>(
-  //         result.value,
-  //         (dynamic json) => Task.fromJson(json as Map<String, dynamic>),
-  //       );
-  //     } else if (result is Error<dynamic>) {
-  //       return Error<Task>(result.type);
-  //     } else {
-  //       return Error<Task>(GenericError());
-  //     }
-  //   } catch (_) {
-  //     return Error<Task>(DeserializationError());
-  //   }
-  // }
+  /// PUT /api/update-task/{id}. Returns the same shape as task details.
+  Future<Result<TaskDetailsResponse>> updateTask(
+    int id,
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      final Result<dynamic> result = await _apiService.put(
+        ApiUrls.updateTask(id),
+        body: payload,
+      );
+      if (result is Success<dynamic>) {
+        return await _apiService.getResponseStatus<TaskDetailsResponse>(
+          result.value,
+          (dynamic json) =>
+              TaskDetailsResponse.fromJson(json as Map<String, dynamic>),
+        );
+      } else if (result is Error<dynamic>) {
+        return Error<TaskDetailsResponse>(result.type);
+      }
+      return Error<TaskDetailsResponse>(GenericError());
+    } catch (_) {
+      return Error<TaskDetailsResponse>(DeserializationError());
+    }
+  }
 
   // /// DELETE /api/tasks/{id}. Deletes a task.
   // Future<Result<dynamic>> deleteTask(int id) async {

@@ -13,14 +13,16 @@ import '../../shared/widgets/app_segmented_tabs.dart';
 import '../../shared/widgets/app_select_field.dart';
 import '../../shared/widgets/app_text_field.dart';
 import 'domain/entities/task_schedule.dart';
+import 'model/task_details_model.dart';
 import 'widgets/task_schedule_fields.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CreateTaskScreen extends StatefulWidget {
-  const CreateTaskScreen({super.key, this.initialSchedule});
+  const CreateTaskScreen({super.key, this.initialSchedule, this.taskToEdit});
 
   final TaskSchedule? initialSchedule;
+  final TaskDetail? taskToEdit;
 
   @override
   State<CreateTaskScreen> createState() => _CreateTaskScreenState();
@@ -51,6 +53,22 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
 
   late TaskSchedule _schedule = widget.initialSchedule ?? const TaskSchedule();
   String? _scheduleError;
+
+  bool get _isEditing => widget.taskToEdit?.id != null;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<TasksCubit>().resetUpdateTaskState();
+    final TaskDetail? task = widget.taskToEdit;
+    if (task == null) return;
+
+    _taskController.text = task.title ?? '';
+    _descriptionController.text = task.description ?? '';
+    _assignee = _nameForId(_employeeIds, task.assignedTo);
+    _approver = _nameForId(_approverIds, task.approvedBy?.id);
+    _schedule = _scheduleFromTask(task);
+  }
 
   @override
   void dispose() {
@@ -117,20 +135,22 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         payload['week_end_day'] = weekdayWireValue(_schedule.weekEndDay!);
         break;
       case TaskFrequency.monthly:
-        payload['monthly_start_date'] = _formatDate(_schedule.monthlyRange.from!);
+        payload['monthly_start_date'] = _formatDate(
+          _schedule.monthlyRange.from!,
+        );
         payload['monthly_end_date'] = _formatDate(_schedule.monthlyRange.to!);
         break;
       case TaskFrequency.quarterly:
-        payload['quarters'] = _schedule.selectedQuarters
-            .map((TaskQuarter quarter) {
-              final TaskDateRange range = _schedule.rangeFor(quarter);
-              return <String, dynamic>{
-                'quarter': quarter.wireValue,
-                'start_date': _formatDate(range.from!),
-                'end_date': _formatDate(range.to!),
-              };
-            })
-            .toList();
+        payload['quarters'] = _schedule.selectedQuarters.map((
+          TaskQuarter quarter,
+        ) {
+          final TaskDateRange range = _schedule.rangeFor(quarter);
+          return <String, dynamic>{
+            'quarter': quarter.wireValue,
+            'start_date': _formatDate(range.from!),
+            'end_date': _formatDate(range.to!),
+          };
+        }).toList();
         break;
       case TaskFrequency.yearly:
         payload['yearly_start_date'] = _formatDate(_schedule.yearlyRange.from!);
@@ -138,6 +158,69 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         break;
     }
     return payload;
+  }
+
+  String? _nameForId(Map<String, int> choices, int? id) {
+    for (final MapEntry<String, int> entry in choices.entries) {
+      if (entry.value == id) return entry.key;
+    }
+    return null;
+  }
+
+  TaskSchedule _scheduleFromTask(TaskDetail task) {
+    final Map<TaskQuarter, TaskDateRange> quarters =
+        <TaskQuarter, TaskDateRange>{
+          for (final Quarter item in task.quarters ?? <Quarter>[])
+            if (TaskQuarter.fromWire(item.quarter)
+                case final TaskQuarter quarter)
+              quarter: TaskDateRange(
+                from: _parseApiDate(item.startDate),
+                to: _parseApiDate(item.endDate),
+              ),
+        };
+    return TaskSchedule(
+      repeat: task.repeatMode ?? false,
+      frequency: TaskFrequency.fromWire(task.taskType),
+      startTimeMinutes: _parseApiTime(task.startTime),
+      endTimeMinutes: _parseApiTime(task.endTime),
+      weekStartDay: _weekdayFromWire(task.weekStartDay),
+      weekEndDay: _weekdayFromWire(task.weekEndDay),
+      monthlyRange: TaskDateRange(
+        from: _parseApiDate(task.monthlyStartDate),
+        to: _parseApiDate(task.monthlyEndDate),
+      ),
+      quarterRanges: quarters,
+      yearlyRange: TaskDateRange(
+        from: _parseApiDate(task.yearlyStartDate),
+        to: _parseApiDate(task.yearlyEndDate),
+      ),
+    );
+  }
+
+  DateTime? _parseApiDate(String? value) {
+    if (value == null) return null;
+    final DateTime? parsed = DateTime.tryParse(value);
+    if (parsed == null) return null;
+    // API timestamps are UTC; restore their date in the device's timezone.
+    final DateTime local = parsed.toLocal();
+    return DateTime(local.year, local.month, local.day);
+  }
+
+  int? _parseApiTime(String? value) {
+    if (value == null) return null;
+    final List<String> parts = value.split(':');
+    if (parts.length < 2) return null;
+    final int? hour = int.tryParse(parts[0]);
+    final int? minute = int.tryParse(parts[1]);
+    if (hour == null || minute == null || hour > 23 || minute > 59) return null;
+    return hour * 60 + minute;
+  }
+
+  int? _weekdayFromWire(String? value) {
+    for (final int weekday in kWeekdayOrder) {
+      if (weekdayWireValue(weekday) == value?.toLowerCase()) return weekday;
+    }
+    return null;
   }
 
   String _formatTime(int minutes) {
@@ -187,8 +270,14 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
 
     final payload = _buildPayload();
 
-    // Call cubit
-    await context.read<TasksCubit>().createTask(payload);
+    if (_isEditing) {
+      await context.read<TasksCubit>().updateTask(
+        widget.taskToEdit!.id!,
+        payload,
+      );
+    } else {
+      await context.read<TasksCubit>().createTask(payload);
+    }
   }
 
   @override
@@ -206,22 +295,38 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         body: BlocListener<TasksCubit, TasksState>(
           listener: (context, state) {
             final createState = state.createTaskUIState;
-            if (createState?.status == Status.SUCCESS) {
+            final updateState = state.updateTaskUIState;
+            final requestStatus = _isEditing
+                ? updateState?.status
+                : createState?.status;
+            if (requestStatus == Status.SUCCESS) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Task created successfully.')),
+                SnackBar(
+                  content: Text(
+                    _isEditing
+                        ? 'Task updated successfully.'
+                        : 'Task created successfully.',
+                  ),
+                ),
               );
               // Optionally navigate back
               // context.pop();
-            } else if (createState?.status == Status.ERROR) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text('Failed to create task.')));
+            } else if (requestStatus == Status.ERROR) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    _isEditing
+                        ? 'Failed to update task.'
+                        : 'Failed to create task.',
+                  ),
+                ),
+              );
             }
           },
           child: Column(
             children: <Widget>[
               AppGradientHeader(
-                title: 'Create Task',
+                title: _isEditing ? 'Edit Task' : 'Create Task',
                 eyebrow: 'DUTY MANAGEMENT',
                 leading: const AppBackButton(),
                 actions: <Widget>[
@@ -406,11 +511,18 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     const SizedBox(height: AppSpacing.xs),
                     BlocBuilder<TasksCubit, TasksState>(
                       builder: (context, state) {
-                        final isLoading =
-                            state.createTaskUIState?.status == Status.LOADING;
+                        final bool isLoading = _isEditing
+                            ? state.updateTaskUIState?.status == Status.LOADING
+                            : state.createTaskUIState?.status == Status.LOADING;
                         return AppPrimaryButton(
-                          label: isLoading ? 'Creating...' : 'Create Task',
-                          icon: isLoading ? null : Icons.add_task_rounded,
+                          label: isLoading
+                              ? (_isEditing ? 'Updating...' : 'Creating...')
+                              : (_isEditing ? 'Update Task' : 'Create Task'),
+                          icon: isLoading
+                              ? null
+                              : (_isEditing
+                                    ? Icons.save_outlined
+                                    : Icons.add_task_rounded),
                           onPressed: isLoading ? null : _submit,
                         );
                       },

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nimmys_crm/enum/status.dart';
 import 'package:nimmys_crm/features/duties/cubit/tasks_cubit.dart';
+import 'package:nimmys_crm/features/duties/create_task_screen.dart';
 import 'package:nimmys_crm/features/duties/model/task_details_model.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -156,9 +157,21 @@ class _TaskDetailsContent extends StatelessWidget {
                     child: AppPrimaryButton(
                       label: 'Edit',
                       icon: Icons.edit_outlined,
-                      onPressed: () {
-                        // Navigate to edit screen if available
-                      },
+                      onPressed: task.id == null
+                          ? null
+                          : () async {
+                              await Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) =>
+                                      CreateTaskScreen(taskToEdit: task),
+                                ),
+                              );
+                              if (context.mounted) {
+                                context.read<TasksCubit>().getTaskDetails(
+                                  task.id!,
+                                );
+                              }
+                            },
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
