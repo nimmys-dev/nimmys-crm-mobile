@@ -47,4 +47,5 @@ class AppRouteName {
   static String staffDetailsFor(int id) => "$staffDetails?id=$id";
   static String staffEditFor(int id) => "$staffEdit?id=$id";
   static String leadDetailsFor(int id) => "$leadDetails?id=$id";
+  static String taskDetails = "/taskDetails";
 }

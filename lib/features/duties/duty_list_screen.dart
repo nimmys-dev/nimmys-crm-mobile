@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:nimmys_crm/enum/status.dart';
+import 'package:nimmys_crm/features/duties/cubit/tasks_cubit.dart';
+import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
@@ -11,207 +14,210 @@ import '../../shared/widgets/app_buttons.dart';
 import '../../shared/widgets/app_gradient_header.dart';
 import '../../shared/widgets/app_search_field.dart';
 import '../../shared/widgets/app_section_card.dart';
-import '../../shared/widgets/app_segmented_tabs.dart';
-import '../../shared/widgets/app_select_field.dart';
-import 'domain/entities/duty_item.dart';
 
-/// Duty list — today's, overdue and upcoming duties behind one set of tabs.
-///
-/// The dashboard's three duty tiles all land here, each opening on its own tab
-/// via `?filter=`. One screen rather than three: see [DutyFilter].
-///
-/// DATA — the rows below are sample data. This project has no duties endpoint
-/// yet (`ApiUrls` covers auth, profile and staff only), and the dashboard
-/// counters this screen is opened from are hard-coded for the same reason. When
-/// a duties API lands, replace [_allDuties] with a cubit following the staff
-/// list; nothing else in this file has to change.
 class DutyListScreen extends StatefulWidget {
-  const DutyListScreen({super.key, this.initialFilter = DutyFilter.today});
-
-  final DutyFilter initialFilter;
+  const DutyListScreen({super.key});
 
   @override
   State<DutyListScreen> createState() => _DutyListScreenState();
 }
 
 class _DutyListScreenState extends State<DutyListScreen> {
-  /// Dated relative to today so the three tabs always partition correctly,
-  /// however long after this was written the app is opened.
-  static final List<DutyItem> _allDuties = <DutyItem>[
-    DutyItem(
-      title: 'Call back Sejun about the Sigma lens',
-      detail: 'Confirm availability and share the revised quotation.',
-      dueAt: _at(0, 10, 30),
-      assignee: 'Abin Babu',
-    ),
-    DutyItem(
-      title: 'Stock check — Sony bodies',
-      detail: 'Verify the display units against the counter register.',
-      dueAt: _at(0, 15, 0),
-      assignee: 'Sijo',
-    ),
-    DutyItem(
-      title: 'Send invoice to Madhu',
-      detail: 'Mac Mini M4 order — invoice and warranty card.',
-      dueAt: _at(0, 17, 45),
-      assignee: 'Mathew Thomas',
-    ),
-    DutyItem(
-      title: 'Service follow-up — Canon repair',
-      detail: 'Workshop promised an update on the shutter replacement.',
-      dueAt: _at(-1, 12, 0),
-      assignee: 'Abin Babu',
-    ),
-    DutyItem(
-      title: 'Submit weekly sales report',
-      detail: 'Branch-wise numbers for the Ettumanoor and Hill Palace stores.',
-      dueAt: _at(-3, 18, 0),
-      assignee: 'Thomas John',
-    ),
-    DutyItem(
-      title: 'Reconcile petty cash',
-      detail: 'Closed last week — kept for the record.',
-      dueAt: _at(-4, 19, 0),
-      assignee: 'Sijo',
-      isCompleted: true,
-    ),
-    DutyItem(
-      title: 'Tripod stock arrival',
-      detail: 'Receive and shelve the Manfrotto consignment.',
-      dueAt: _at(1, 11, 0),
-      assignee: 'Mathew Thomas',
-    ),
-    DutyItem(
-      title: 'Quarterly stock audit',
-      detail: 'Full count across both branches with the accounts team.',
-      dueAt: _at(4, 9, 30),
-      assignee: 'Thomas John',
-    ),
-  ];
-
-  /// Sample timestamp [days] from today at [hour]:[minute].
-  static DateTime _at(int days, int hour, int minute) {
-    final DateTime now = DateTime.now();
-    return DateTime(now.year, now.month, now.day + days, hour, minute);
-  }
-
   final TextEditingController _searchController = TextEditingController();
-  late DutyFilter _filter;
+  final ScrollController _scrollController = ScrollController();
   String _query = '';
 
   @override
   void initState() {
     super.initState();
-    _filter = widget.initialFilter;
+    _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TasksCubit>().getTasks();
+    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  /// Rows for the active tab, narrowed further by the search box. The search
-  /// text is deliberately kept when the tab changes — it reads as a filter over
-  /// the whole list, not a property of one tab.
-  List<DutyItem> get _visibleDuties {
-    final List<DutyItem> inWindow =
-        _allDuties.where((DutyItem duty) => duty.matches(_filter)).toList()
-          ..sort((DutyItem a, DutyItem b) => a.dueAt.compareTo(b.dueAt));
-
-    final String needle = _query.trim().toLowerCase();
-    if (needle.isEmpty) {
-      return inWindow;
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      final cubit = context.read<TasksCubit>();
+      final pagination = cubit.state.tasksPagination;
+      if (pagination != null &&
+          pagination.currentPage != null &&
+          pagination.lastPage != null &&
+          pagination.currentPage! < pagination.lastPage!) {
+        cubit.goToTasksPage(pagination.currentPage! + 1);
+      }
     }
-    return inWindow.where((DutyItem duty) {
-      return duty.title.toLowerCase().contains(needle) ||
-          duty.detail.toLowerCase().contains(needle) ||
-          duty.assignee.toLowerCase().contains(needle);
+  }
+
+  /// Filter tasks by search query (title, description, assignee name)
+  List<Task> _visibleDuties(List<Task> allTasks) {
+    final needle = _query.trim().toLowerCase();
+    if (needle.isEmpty) {
+      return allTasks;
+    }
+
+    return allTasks.where((task) {
+      final title = task.title?.toLowerCase() ?? '';
+      final description = task.description?.toLowerCase() ?? '';
+      final assignee = task.assignedUser?.name?.toLowerCase() ?? '';
+      return title.contains(needle) ||
+          description.contains(needle) ||
+          assignee.contains(needle);
     }).toList();
   }
 
-  int _countFor(DutyFilter filter) =>
-      _allDuties.where((DutyItem duty) => duty.matches(filter)).length;
-
   @override
   Widget build(BuildContext context) {
-    final List<DutyItem> duties = _visibleDuties;
-
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
         statusBarColor: Colors.transparent,
       ),
-      child: Scaffold(
-        backgroundColor: context.palette.canvas,
-        body: Column(
-          children: <Widget>[
-            AppGradientHeader(
-              title: _filter.title,
-              eyebrow: 'MY DUTIES',
-              leading: const AppBackButton(),
-              actions: const <Widget>[AppAvatar(initials: 'AB')],
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.gutter,
-                AppSpacing.md,
-                AppSpacing.gutter,
-                AppSpacing.sm,
-              ),
-              child: Column(
+      child: SafeArea(
+        child: Scaffold(
+          backgroundColor: context.palette.canvas,
+          body: BlocBuilder<TasksCubit, TasksState>(
+            builder: (context, state) {
+              final allTasks = state.tasksList;
+              final isLoading =
+                  state.tasksListUIState?.status == Status.LOADING;
+              final hasError = state.tasksListUIState?.status == Status.ERROR;
+              final error = state.tasksListUIState?.errorType;
+
+              return Column(
                 children: <Widget>[
-                  AppSegmentedTabs(
-                    options: DutyFilter.labels,
-                    selectedIndex: DutyFilter.values.indexOf(_filter),
-                    onChanged: (int index) =>
-                        setState(() => _filter = DutyFilter.values[index]),
+                  AppGradientHeader(
+                    title: 'Duties',
+                    eyebrow: 'MY DUTIES',
+                    leading: const AppBackButton(),
+                    actions: const <Widget>[AppAvatar(initials: 'AB')],
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  AppSearchField(
-                    hint: 'Search duties, people…',
-                    controller: _searchController,
-                    onChanged: (String value) => setState(() => _query = value),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.gutter,
+                      AppSpacing.md,
+                      AppSpacing.gutter,
+                      AppSpacing.sm,
+                    ),
+                    child: AppSearchField(
+                      hint: 'Search duties, people…',
+                      controller: _searchController,
+                      onChanged: (String value) =>
+                          setState(() => _query = value),
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildBody(
+                      context,
+                      isLoading: isLoading,
+                      hasError: hasError,
+                      error: error,
+                      allTasks: allTasks,
+                    ),
                   ),
                 ],
-              ),
-            ),
-            Expanded(
-              child: duties.isEmpty
-                  ? DutyEmptyState(filter: _filter, hasQuery: _query.isNotEmpty)
-                  : ListView.builder(
-                      padding: const EdgeInsets.only(
-                        left: AppSpacing.gutter,
-                        right: AppSpacing.gutter,
-                        bottom: AppSpacing.xl,
-                      ),
-                      itemCount: duties.length + 1,
-                      itemBuilder: (BuildContext context, int index) {
-                        if (index == 0) {
-                          return DutyListCount(
-                            count: duties.length,
-                            total: _countFor(_filter),
-                          );
-                        }
-                        return DutyListTile(
-                          duty: duties[index - 1],
-                          filter: _filter,
-                        );
-                      },
-                    ),
-            ),
-          ],
+              );
+            },
+          ),
+          floatingActionButton: DutyListFab(
+            onPressed: () => context.push(AppRouteName.dutyAdd),
+          ),
         ),
-        // Same red compose affordance the follow-up list uses, pointing at the
-        // duty form that already exists.
-        floatingActionButton: DutyListFab(
-          onPressed: () => context.push(AppRouteName.dutyAdd),
-        ),
+      ),
+    );
+  }
+
+  Widget _buildBody(
+    BuildContext context, {
+    required bool isLoading,
+    required bool hasError,
+    required Object? error,
+    required List<Task> allTasks,
+  }) {
+    if (isLoading && allTasks.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (hasError && allTasks.isEmpty) {
+      return _ErrorRetry(
+        onRetry: () => context.read<TasksCubit>().refreshTasks(),
+      );
+    }
+
+    final tasks = _visibleDuties(allTasks);
+
+    if (tasks.isEmpty) {
+      return DutyEmptyState(hasQuery: _query.isNotEmpty);
+    }
+
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.only(
+        left: AppSpacing.gutter,
+        right: AppSpacing.gutter,
+        bottom: AppSpacing.xl,
+      ),
+      itemCount: tasks.length + (isLoading ? 1 : 0) + 1,
+      itemBuilder: (BuildContext context, int index) {
+        if (index == 0) {
+          return DutyListCount(count: tasks.length, total: allTasks.length);
+        }
+        if (index <= tasks.length) {
+          final task = tasks[index - 1];
+          return InkWell(
+            onTap: () {
+              context.push(AppRouteName.taskDetails, extra: {'id': task.id});
+            },
+            child: DutyListTile(task: task),
+          );
+        }
+        return const Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        );
+      },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helper widgets
+// ---------------------------------------------------------------------------
+
+class _ErrorRetry extends StatelessWidget {
+  const _ErrorRetry({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(Icons.error_outline, size: 48, color: context.palette.muted),
+          const SizedBox(height: AppSpacing.sm),
+          Text('Could not load duties', style: context.type.cardTitle),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Please check your connection and try again.',
+            style: context.type.bodyMuted,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppPrimaryButton(label: 'Retry', onPressed: onRetry),
+        ],
       ),
     );
   }
 }
 
-/// "3 of 3 duties" strip above the rows.
 class DutyListCount extends StatelessWidget {
   const DutyListCount({super.key, required this.count, required this.total});
 
@@ -241,52 +247,34 @@ class DutyListCount extends StatelessWidget {
   }
 }
 
-/// One duty row.
 class DutyListTile extends StatelessWidget {
-  const DutyListTile({
-    super.key,
-    required this.duty,
-    required this.filter,
-    this.onTap,
-  });
+  const DutyListTile({super.key, required this.task});
 
-  final DutyItem duty;
-  final DutyFilter filter;
-  final VoidCallback? onTap;
-
-  /// "10:30 AM" — 12-hour regardless of the device's 24-hour setting, matching
-  /// `AppTimeField.format`.
-  static String _time(DateTime value) {
-    final int rawHour = value.hour % 12;
-    final int hour = rawHour == 0 ? 12 : rawHour;
-    final String minute = value.minute.toString().padLeft(2, '0');
-    final String period = value.hour < 12 ? 'AM' : 'PM';
-    return '${hour.toString().padLeft(2, '0')}:$minute $period';
-  }
+  final Task task;
 
   @override
   Widget build(BuildContext context) {
-    final int lateBy = duty.daysOverdue();
-    final bool isOverdue = filter == DutyFilter.overdue && lateBy > 0;
+    final assignee = task.assignedUser?.name ?? 'Unassigned';
+    final status = task.status ?? 'unknown';
 
-    return AppSectionCard(
-      padding: EdgeInsets.zero,
-      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-      accentBorder: isOverdue,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+    return InkWell(
+      onTap: () {
+        context.push(AppRouteName.taskDetails, extra: {'id': task.id});
+      },
+      child: AppSectionCard(
+        padding: EdgeInsets.zero,
+        margin: const EdgeInsets.only(bottom: AppSpacing.xs),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.sm),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               AppIconChip(
-                icon: duty.isCompleted
+                icon: status == 'completed'
                     ? Icons.check_circle_outline_rounded
                     : Icons.fact_check_outlined,
                 size: 38,
-                tone: isOverdue ? AppIconChipTone.red : AppIconChipTone.ink,
+                tone: AppIconChipTone.ink,
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
@@ -295,14 +283,14 @@ class DutyListTile extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Text(
-                      duty.title,
+                      task.title ?? 'Untitled',
                       style: context.type.cardTitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      duty.detail,
+                      task.description ?? '',
                       style: context.type.caption,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -313,30 +301,16 @@ class DutyListTile extends StatelessWidget {
                       runSpacing: 6,
                       children: <Widget>[
                         AppTag(
-                          label: filter == DutyFilter.today
-                              ? _time(duty.dueAt)
-                              : AppDateField.format(duty.dueAt),
-                          icon: Icons.schedule_rounded,
-                          isAccent: isOverdue,
-                        ),
-                        if (isOverdue)
-                          AppTag(
-                            label: lateBy == 1
-                                ? '1 day late'
-                                : '$lateBy days late',
-                            icon: Icons.error_outline_rounded,
-                          ),
-                        if (duty.isCompleted)
-                          const AppTag(
-                            label: 'DONE',
-                            icon: Icons.check_rounded,
-                            isAccent: false,
-                          ),
-                        AppTag(
-                          label: duty.assignee,
+                          label: assignee,
                           icon: Icons.person_outline_rounded,
                           isAccent: false,
                         ),
+                        if (task.taskType != null)
+                          AppTag(
+                            label: task.taskType!.toUpperCase(),
+                            icon: Icons.repeat_rounded,
+                            isAccent: false,
+                          ),
                       ],
                     ),
                   ],
@@ -350,16 +324,9 @@ class DutyListTile extends StatelessWidget {
   }
 }
 
-/// Nothing in this window — which for "overdue" is good news, and is worded
-/// that way rather than as a failure.
 class DutyEmptyState extends StatelessWidget {
-  const DutyEmptyState({
-    super.key,
-    required this.filter,
-    required this.hasQuery,
-  });
+  const DutyEmptyState({super.key, required this.hasQuery});
 
-  final DutyFilter filter;
   final bool hasQuery;
 
   @override
@@ -371,22 +338,11 @@ class DutyEmptyState extends StatelessWidget {
     if (hasQuery) {
       icon = Icons.search_off_rounded;
       title = 'No matching duties';
-      message = 'Nothing in ${filter.label.toLowerCase()} matches that search.';
+      message = 'Nothing matches that search.';
     } else {
-      switch (filter) {
-        case DutyFilter.today:
-          icon = Icons.event_available_outlined;
-          title = 'Nothing due today';
-          message = 'You are all caught up. Enjoy the quiet.';
-        case DutyFilter.overdue:
-          icon = Icons.verified_outlined;
-          title = 'No overdue duties';
-          message = 'Everything assigned to you has been handled on time.';
-        case DutyFilter.upcoming:
-          icon = Icons.schedule_rounded;
-          title = 'Nothing scheduled';
-          message = 'No duties are booked beyond today yet.';
-      }
+      icon = Icons.event_available_outlined;
+      title = 'No duties';
+      message = 'You have no duties assigned yet.';
     }
 
     return Center(
@@ -423,7 +379,6 @@ class DutyEmptyState extends StatelessWidget {
   }
 }
 
-/// Red compose button, matching the follow-up list's.
 class DutyListFab extends StatelessWidget {
   const DutyListFab({super.key, this.onPressed});
 

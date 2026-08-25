@@ -31,7 +31,16 @@ class ApiUrls {
   static String leadSources = "$_baseUrl/lead-sources";
   static String companyProfile = "$_baseUrl/company-profile";
   static String updateCompanyProfile = "$_baseUrl/company-profile/update";
-  static String quotationPdf(int leadId) => "$_baseUrl/leads/$leadId/quotation/pdf-details";
+  static String quotationPdf(int leadId) =>
+      "$_baseUrl/leads/$leadId/quotation/pdf-details";
   static String leadCalls(int leadId) => "$_baseUrl/leads/$leadId/calls";
-  static String getcallHistory(int leadId) => "$_baseUrl/lead-call-history/$leadId/calls";
+  static String getcallHistory(int leadId) =>
+      "$_baseUrl/lead-call-history/$leadId/calls";
+
+  // Tasks
+  static String tasks = "$_baseUrl/tasks";
+  static String taskTypes = "$_baseUrl/task-types";
+  static String viewTask(int id) => "$_baseUrl/tasks/$id";
+  static String updateTask(int id) => "$_baseUrl/update-task/$id";
+  static String deleteTask(int id) => "$_baseUrl/tasks/$id"; // if needed
 }

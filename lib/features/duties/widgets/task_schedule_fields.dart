@@ -139,13 +139,50 @@ class _WeekdayFields extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TaskWeekdayPicker(
-      label: 'Repeat On',
-      selected: schedule.weekdays,
-      onToggle: (int weekday) => onChanged(schedule.toggleWeekday(weekday)),
-      emptyCaption:
-          'Pick one or more days. The task repeats every week on those days.',
-      filledCaption: (String days) => 'Repeats every week on $days.',
+    final Map<String, int> days = <String, int>{
+      for (final int weekday in kWeekdayOrder) weekdayName(weekday): weekday,
+    };
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Expanded(
+          child: AppFormField(
+            label: 'Start Day',
+            isRequired: true,
+            bottomSpacing: 0,
+            child: AppSelectField(
+              hint: 'Select day',
+              sheetTitle: 'Week starts on',
+              icon: Icons.calendar_view_week_outlined,
+              options: days.keys.toList(),
+              value: schedule.weekStartDay == null
+                  ? null
+                  : weekdayName(schedule.weekStartDay!),
+              onChanged: (String value) =>
+                  onChanged(schedule.copyWith(weekStartDay: days[value])),
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: AppFormField(
+            label: 'End Day',
+            isRequired: true,
+            bottomSpacing: 0,
+            child: AppSelectField(
+              hint: 'Select day',
+              sheetTitle: 'Week ends on',
+              icon: Icons.event_available_outlined,
+              options: days.keys.toList(),
+              value: schedule.weekEndDay == null
+                  ? null
+                  : weekdayName(schedule.weekEndDay!),
+              onChanged: (String value) =>
+                  onChanged(schedule.copyWith(weekEndDay: days[value])),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -168,17 +205,9 @@ class _MonthlyFields extends StatelessWidget {
           onChanged: (TaskDateRange range) =>
               onChanged(schedule.copyWith(monthlyRange: range)),
         ),
-        const SizedBox(height: AppSpacing.md),
-        const AppFieldLabel(text: 'Repeat On', isRequired: true),
-        TaskMonthDayBox(
-          selected: schedule.monthDays,
-          onToggle: (int day) => onChanged(schedule.toggleMonthDay(day)),
-        ),
         const SizedBox(height: AppSpacing.xs),
-        TaskScheduleCaption(
-          text: schedule.monthDays.isEmpty
-              ? 'Pick one or more dates. The task repeats every month on those dates.'
-              : 'Repeats every month on ${_ordinalList(schedule.monthDays)}.',
+        const TaskScheduleCaption(
+          text: 'The task is active between the selected monthly dates.',
         ),
       ],
     );

@@ -30,6 +30,11 @@ class AppColors {
   /// Static muted grey – for fallback or non‑themed use.
   /// For themed text colours, prefer [AppPalette.muted].
   static const Color muted = Color(0xFF8C93A1);
+  // Status colours (added)
+  static const Color green = Color(0xFF2E7D32);
+  static const Color blue = Color(0xFF1565C0);
+  static const Color orange = Color(0xFFE65100);
+  static const Color purple = Color(0xFF6A1B9A);
 
   // ---------------------------------------------------------------- Gradients
   /// Primary call-to-action fill. Identical in both themes.

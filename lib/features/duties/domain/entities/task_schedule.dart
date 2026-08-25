@@ -148,6 +148,9 @@ const Map<int, String> _weekdayNames = <int, String>{
 /// "Monday" for `DateTime.monday`.
 String weekdayName(int weekday) => _weekdayNames[weekday]!;
 
+/// API value for a weekday, for example `monday`.
+String weekdayWireValue(int weekday) => weekdayName(weekday).toLowerCase();
+
 /// "MON" for `DateTime.monday` — the chip caption.
 String weekdayShortName(int weekday) =>
     weekdayName(weekday).substring(0, 3).toUpperCase();
@@ -228,6 +231,8 @@ class TaskSchedule extends Equatable {
     this.frequency = TaskFrequency.daily,
     this.startTimeMinutes,
     this.endTimeMinutes,
+    this.weekStartDay,
+    this.weekEndDay,
     this.weekdays = const <int>{},
     this.monthlyRange = const TaskDateRange(),
     this.monthDays = const <int>{},
@@ -261,6 +266,8 @@ class TaskSchedule extends Equatable {
       frequency: TaskFrequency.fromWire(json['frequency'] as String?),
       startTimeMinutes: (json['start_time_minutes'] as num?)?.toInt(),
       endTimeMinutes: (json['end_time_minutes'] as num?)?.toInt(),
+      weekStartDay: _weekday(json['week_start_day']),
+      weekEndDay: _weekday(json['week_end_day']),
       weekdays: _intSet(json['weekdays']),
       monthlyRange: TaskDateRange.fromJson(<String, dynamic>{
         'from': json['monthly_start_date'],
@@ -288,6 +295,10 @@ class TaskSchedule extends Equatable {
   /// the widget boundary.
   final int? startTimeMinutes;
   final int? endTimeMinutes;
+
+  /// Inclusive weekday window for [TaskFrequency.weekly].
+  final int? weekStartDay;
+  final int? weekEndDay;
 
   /// `DateTime.monday`–`DateTime.sunday`, for [TaskFrequency.weekly]. A
   /// weekly task is only its days: it carries no date window.
@@ -340,15 +351,12 @@ class TaskSchedule extends Equatable {
         }
         return null;
       case TaskFrequency.weekly:
-        return weekdays.isEmpty ? 'Select at least one day of the week.' : null;
-      case TaskFrequency.monthly:
-        final String? window = _rangeError(monthlyRange, 'end');
-        if (window != null) {
-          return window;
+        if (weekStartDay == null || weekEndDay == null) {
+          return 'Select a start day and an end day.';
         }
-        return monthDays.isEmpty
-            ? 'Select at least one date between 1 and $kMaxMonthDay.'
-            : null;
+        return null;
+      case TaskFrequency.monthly:
+        return _rangeError(monthlyRange, 'end');
       case TaskFrequency.quarterly:
         if (selectedQuarters.isEmpty) {
           return 'Select at least one quarter.';
@@ -394,10 +402,13 @@ class TaskSchedule extends Equatable {
         if (endTimeMinutes != null) 'end_time_minutes': endTimeMinutes,
       },
       if (frequency == TaskFrequency.weekly)
-        'weekdays': (weekdays.toList()..sort()),
+        ...<String, dynamic>{
+          if (weekStartDay != null)
+            'week_start_day': weekdayWireValue(weekStartDay!),
+          if (weekEndDay != null) 'week_end_day': weekdayWireValue(weekEndDay!),
+        },
       if (frequency == TaskFrequency.monthly) ...<String, dynamic>{
         ..._rangeJson(monthlyRange, 'monthly_start_date', 'monthly_end_date'),
-        'month_days': (monthDays.toList()..sort()),
       },
       if (frequency == TaskFrequency.quarterly)
         'quarters': <String, dynamic>{
@@ -425,6 +436,8 @@ class TaskSchedule extends Equatable {
     TaskFrequency? frequency,
     int? startTimeMinutes,
     int? endTimeMinutes,
+    int? weekStartDay,
+    int? weekEndDay,
     Set<int>? weekdays,
     TaskDateRange? monthlyRange,
     Set<int>? monthDays,
@@ -439,6 +452,8 @@ class TaskSchedule extends Equatable {
         ? null
         : startTimeMinutes ?? this.startTimeMinutes,
     endTimeMinutes: clearEndTime ? null : endTimeMinutes ?? this.endTimeMinutes,
+    weekStartDay: weekStartDay ?? this.weekStartDay,
+    weekEndDay: weekEndDay ?? this.weekEndDay,
     weekdays: weekdays ?? this.weekdays,
     monthlyRange: monthlyRange ?? this.monthlyRange,
     monthDays: monthDays ?? this.monthDays,
@@ -515,12 +530,23 @@ class TaskSchedule extends Equatable {
       ? raw.whereType<num>().map((num value) => value.toInt()).toSet()
       : <int>{};
 
+  static int? _weekday(Object? raw) {
+    if (raw is! String) return null;
+    final String value = raw.trim().toLowerCase();
+    for (final int weekday in _weekdayNames.keys) {
+      if (weekdayWireValue(weekday) == value) return weekday;
+    }
+    return null;
+  }
+
   @override
   List<Object?> get props => <Object?>[
     repeat,
     frequency,
     startTimeMinutes,
     endTimeMinutes,
+    weekStartDay,
+    weekEndDay,
     weekdays,
     monthlyRange,
     monthDays,

@@ -9,6 +9,9 @@ import 'package:nimmys_crm/features/authentication/repository/login_repository.d
 import 'package:nimmys_crm/features/authentication/repository/user_information_repository.dart';
 import 'package:nimmys_crm/features/authentication/service/auth_service.dart';
 import 'package:nimmys_crm/features/authentication/service/login_service.dart';
+import 'package:nimmys_crm/features/duties/cubit/tasks_cubit.dart';
+import 'package:nimmys_crm/features/duties/repository/tasks_repository.dart';
+import 'package:nimmys_crm/features/duties/service/tasks_service.dart';
 import 'package:nimmys_crm/features/profile/cubit/company/company_profile_cubit.dart';
 import 'package:nimmys_crm/features/profile/cubit/profile/profile_cubit.dart';
 import 'package:nimmys_crm/features/profile/repository/profile_repository.dart';
@@ -58,6 +61,7 @@ Future<void> initLocator() async {
     locator.registerLazySingleton(() => ProfileService(locator<ApiService>()));
     locator.registerLazySingleton(() => StaffService(locator<ApiService>()));
     locator.registerLazySingleton(() => LeadService(locator<ApiService>()));
+    locator.registerLazySingleton(() => TasksService(locator<ApiService>()));
 
     // Repository
     locator.registerLazySingleton(
@@ -83,6 +87,9 @@ Future<void> initLocator() async {
       () => StaffRepository(locator<StaffService>()),
     );
     locator.registerLazySingleton(() => LeadRepository(locator<LeadService>()));
+    locator.registerLazySingleton(
+      () => TasksRepository(locator<TasksService>()),
+    );
 
     // View Model
     locator.registerLazySingleton(
@@ -108,7 +115,7 @@ Future<void> initLocator() async {
     locator.registerLazySingleton(
       () => CompanyProfileCubit(locator<ProfileRepository>()),
     );
-
+    locator.registerLazySingleton(() => TasksCubit(locator<TasksRepository>()));
     CustomLog.info(locator, "All instances registered.");
   } catch (e) {
     CustomLog.error(locator, "ERROR : All instances are not registered.", e);

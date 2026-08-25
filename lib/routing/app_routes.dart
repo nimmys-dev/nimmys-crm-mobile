@@ -10,6 +10,7 @@ import 'package:nimmys_crm/features/dashboard/dashboard_screen.dart';
 import 'package:nimmys_crm/features/duties/create_task_screen.dart';
 import 'package:nimmys_crm/features/duties/domain/entities/duty_item.dart';
 import 'package:nimmys_crm/features/duties/duty_list_screen.dart';
+import 'package:nimmys_crm/features/duties/task_detail_screen.dart';
 import 'package:nimmys_crm/features/leads/lead_details_screen.dart';
 import 'package:nimmys_crm/features/leads/my_leads_screen.dart';
 import 'package:nimmys_crm/features/leads/new_lead_screen.dart';
@@ -156,11 +157,7 @@ class AppRoutes {
       GoRoute(
         path: AppRouteName.duties,
         builder: (BuildContext context, GoRouterState state) {
-          return DutyListScreen(
-            initialFilter: DutyFilter.fromWire(
-              state.uri.queryParameters['filter'],
-            ),
-          );
+          return DutyListScreen();
         },
       ),
       GoRoute(
@@ -236,6 +233,13 @@ class AppRoutes {
         path: AppRouteName.companyDetails,
         builder: (BuildContext context, GoRouterState state) {
           return const CompanyProfileScreen();
+        },
+      ),
+      GoRoute(
+        path: AppRouteName.taskDetails,
+        builder: (BuildContext context, GoRouterState state) {
+          final int? id = int.tryParse(state.uri.queryParameters['id'] ?? '');
+          return TaskDetailsScreen(taskId: id ?? 1);
         },
       ),
     ],
