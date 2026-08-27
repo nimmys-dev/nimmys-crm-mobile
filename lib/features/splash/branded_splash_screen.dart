@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nimmys_crm/helpers/app_version_helper.dart';
 import '../../core/theme/app_theme.dart';
 import 'package:flutter/services.dart';
 
@@ -298,9 +299,14 @@ class SplashDivider extends StatelessWidget {
 }
 
 /// Indeterminate loading rail at the foot of the splash.
-class SplashProgressBar extends StatelessWidget {
+class SplashProgressBar extends StatefulWidget {
   const SplashProgressBar({super.key});
 
+  @override
+  State<SplashProgressBar> createState() => _SplashProgressBarState();
+}
+
+class _SplashProgressBarState extends State<SplashProgressBar> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -318,8 +324,30 @@ class SplashProgressBar extends StatelessWidget {
 }
 
 /// Version / ownership line.
-class SplashFooter extends StatelessWidget {
+class SplashFooter extends StatefulWidget {
   const SplashFooter({super.key});
+
+  @override
+  State<SplashFooter> createState() => _SplashFooterState();
+}
+
+class _SplashFooterState extends State<SplashFooter> {
+  String _version = '';
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final String version = await AppVersionService.instance.getVersion();
+
+    if (!mounted) return;
+
+    setState(() {
+      _version = version;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -336,7 +364,7 @@ class SplashFooter extends StatelessWidget {
         ),
         const SizedBox(height: 3),
         Text(
-          'v1.0.0',
+          _version,
           style: context.type.caption.copyWith(
             color: AppColors.white.withValues(alpha: 0.30),
             fontSize: 10.5,

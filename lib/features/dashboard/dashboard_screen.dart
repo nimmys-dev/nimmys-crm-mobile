@@ -255,7 +255,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 2:
         return const StaffListScreen();
       case 3:
-        return const ReportsScreen(isAppHeaderRequired: false,);
+        return const ReportsScreen(isAppHeaderRequired: false);
       default:
         return const SizedBox.shrink();
     }
@@ -281,7 +281,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           return Scaffold(
             key: _scaffoldKey,
-            drawer: const DashboardDrawer(),
+            drawer: DashboardDrawer(),
             backgroundColor: context.palette.canvas,
             body: Column(
               children: <Widget>[

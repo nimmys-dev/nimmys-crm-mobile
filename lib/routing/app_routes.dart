@@ -8,7 +8,6 @@ import 'package:nimmys_crm/features/authentication/cubit/session/session_cubit.d
 import 'package:nimmys_crm/features/authentication/login_screen.dart';
 import 'package:nimmys_crm/features/dashboard/dashboard_screen.dart';
 import 'package:nimmys_crm/features/duties/create_task_screen.dart';
-import 'package:nimmys_crm/features/duties/domain/entities/duty_item.dart';
 import 'package:nimmys_crm/features/duties/duty_list_screen.dart';
 import 'package:nimmys_crm/features/duties/task_detail_screen.dart';
 import 'package:nimmys_crm/features/leads/lead_details_screen.dart';

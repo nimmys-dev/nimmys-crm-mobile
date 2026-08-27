@@ -13,12 +13,36 @@ import 'package:nimmys_crm/features/authentication/cubit/session/session_cubit.d
 import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
 import 'package:nimmys_crm/features/profile/cubit/profile/profile_cubit.dart';
 import 'package:nimmys_crm/features/staff/cubit/staff/staff_cubit.dart';
+import 'package:nimmys_crm/helpers/app_version_helper.dart';
 import 'package:nimmys_crm/routing/app_route_name.dart';
 import 'package:nimmys_crm/shared/widgets/app_buttons.dart';
 import 'package:nimmys_crm/utils/toast_messages.dart';
 
-class DashboardDrawer extends StatelessWidget {
+class DashboardDrawer extends StatefulWidget {
   const DashboardDrawer({super.key});
+
+  @override
+  State<DashboardDrawer> createState() => _DashboardDrawerState();
+}
+
+class _DashboardDrawerState extends State<DashboardDrawer> {
+  String _version = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final String version = await AppVersionService.instance.getVersion();
+
+    if (!mounted) return;
+
+    setState(() {
+      _version = version;
+    });
+  }
 
   Future<void> _confirmAndLogout(BuildContext context) async {
     final bool? confirmed = await showDialog<bool>(
@@ -123,7 +147,7 @@ class DashboardDrawer extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Version 1.0.0',
+                      _version.isEmpty ? 'Version' : 'Version $_version',
                       style: TextStyle(
                         color: AppColors.white.withOpacity(0.7),
                         fontSize: 12,
@@ -211,9 +235,6 @@ class DashboardDrawer extends StatelessWidget {
   }
 
   // ========================================================================
-  // DRAWER ITEM
-  // ========================================================================
-
   Widget _buildDrawerItem(
     BuildContext context, {
     required IconData icon,
