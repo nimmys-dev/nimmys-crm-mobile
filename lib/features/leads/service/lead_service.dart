@@ -5,6 +5,7 @@ import 'package:nimmys_crm/data/network/api_service.dart';
 import 'package:nimmys_crm/data/network/api_urls.dart';
 import 'package:nimmys_crm/features/leads/model/call_history_list_model.dart';
 import 'package:nimmys_crm/features/leads/model/call_log_model.dart';
+import 'package:nimmys_crm/features/leads/model/closed_lead_response.dart';
 import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
@@ -297,6 +298,38 @@ class LeadService {
       }
     } catch (_) {
       return Error<CallHistoryResponseListModel>(DeserializationError());
+    }
+  }
+
+  /// PUT /api/leads/{id}/close
+  /// Closes a lead with a given status and optional lost reason.
+  Future<Result<CloseLeadResponse>> closeLead({
+    required int leadId,
+    required String status,
+    String? lostReason,
+  }) async {
+    try {
+      final String url = '${ApiUrls.leads}/$leadId/close';
+      final Map<String, dynamic> body = <String, dynamic>{
+        'status': status,
+        if (lostReason != null && lostReason.trim().isNotEmpty)
+          'lost_reason': lostReason.trim(),
+      };
+
+      final Result<dynamic> result = await _apiService.put(url, body: body);
+
+      if (result is Success<dynamic>) {
+        return await _apiService.getResponseStatus<CloseLeadResponse>(
+          result.value,
+          (json) => CloseLeadResponse.fromJson(json as Map<String, dynamic>),
+        );
+      } else if (result is Error<dynamic>) {
+        return Error<CloseLeadResponse>(result.type);
+      } else {
+        return Error<CloseLeadResponse>(GenericError());
+      }
+    } catch (_) {
+      return Error<CloseLeadResponse>(DeserializationError());
     }
   }
 }

@@ -68,6 +68,13 @@ class LeadsState extends Equatable {
 
   final UIState<CallHistoryResponseListModel>? callHistoryUIState;
 
+  // ---------------------------------------------------------------------------
+  // Close Lead
+  // ---------------------------------------------------------------------------
+
+  /// PUT /api/leads/{id}/close state.
+  final UIState<CloseLeadResponse>? closeLeadUIState;
+
   const LeadsState({
     this.leadListUIState,
     this.leadList = const <LeadItemData>[],
@@ -81,6 +88,7 @@ class LeadsState extends Equatable {
     this.quotationPdfUIState,
     this.addCallLogUIState,
     this.callHistoryUIState,
+    this.closeLeadUIState,
   });
 
   LeadsState copyWith({
@@ -96,6 +104,7 @@ class LeadsState extends Equatable {
     UIState<QuotationPdfResponse>? quotationPdfUIState,
     UIState<TeleCallDetailResponseModel>? addCallLogUIState,
     UIState<CallHistoryResponseListModel>? callHistoryUIState,
+    UIState<CloseLeadResponse>? closeLeadUIState,
   }) {
     return LeadsState(
       leadListUIState: leadListUIState ?? this.leadListUIState,
@@ -110,6 +119,7 @@ class LeadsState extends Equatable {
       quotationPdfUIState: quotationPdfUIState ?? this.quotationPdfUIState,
       addCallLogUIState: addCallLogUIState ?? this.addCallLogUIState,
       callHistoryUIState: callHistoryUIState ?? this.callHistoryUIState,
+      closeLeadUIState: closeLeadUIState ?? this.closeLeadUIState,
     );
   }
 
@@ -171,5 +181,11 @@ class LeadsState extends Equatable {
     callHistoryUIState?.status,
     callHistoryUIState?.data,
     callHistoryUIState?.errorType,
+
+    // Close Lead
+    closeLeadUIState,
+    closeLeadUIState?.status,
+    closeLeadUIState?.data,
+    closeLeadUIState?.errorType,
   ];
 }

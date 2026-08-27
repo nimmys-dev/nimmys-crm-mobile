@@ -8,6 +8,7 @@ import 'package:nimmys_crm/data/ui_state/ui_state.dart';
 import 'package:nimmys_crm/enum/status.dart';
 import 'package:nimmys_crm/features/leads/model/call_history_list_model.dart';
 import 'package:nimmys_crm/features/leads/model/call_log_model.dart';
+import 'package:nimmys_crm/features/leads/model/closed_lead_response.dart';
 import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
@@ -375,6 +376,47 @@ class LeadsCubit extends BaseCubit<LeadsState> {
   void resetCallHistoryState() {
     _setCallHistoryUIState(
       resetUIState<CallHistoryResponseListModel>(state.callHistoryUIState),
+    );
+  }
+  // ---------------------------------------------------------------------------
+  // Close Lead
+  // ---------------------------------------------------------------------------
+
+  void _setCloseLeadUIState(UIState<CloseLeadResponse>? uiState) {
+    emit(state.copyWith(closeLeadUIState: uiState));
+  }
+
+  /// Closes a lead with the given status and optional lost reason.
+  Future<void> closeLead({
+    required int leadId,
+    required String status,
+    String? lostReason,
+  }) async {
+    if (state.closeLeadUIState?.status == Status.LOADING) {
+      return;
+    }
+
+    _setCloseLeadUIState(UIState.loading());
+
+    final result = await _repository.closeLead(
+      leadId: leadId,
+      status: status,
+      lostReason: lostReason,
+    );
+
+    if (result is Success<CloseLeadResponse>) {
+      _setCloseLeadUIState(UIState.success(result.value));
+      // Refresh the lead details and the list after closing
+      unawaited(getLeadDetails(leadId));
+      unawaited(getLeads(refresh: true));
+    } else if (result is Error<CloseLeadResponse>) {
+      _setCloseLeadUIState(UIState.error(result.type));
+    }
+  }
+
+  void resetCloseLeadState() {
+    _setCloseLeadUIState(
+      resetUIState<CloseLeadResponse>(state.closeLeadUIState),
     );
   }
 

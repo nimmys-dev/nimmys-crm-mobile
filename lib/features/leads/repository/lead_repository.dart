@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/features/leads/model/call_history_list_model.dart';
 import 'package:nimmys_crm/features/leads/model/call_log_model.dart';
+import 'package:nimmys_crm/features/leads/model/closed_lead_response.dart';
 import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
@@ -137,6 +138,22 @@ class LeadRepository {
       return Error<CallHistoryResponseListModel>(
         ErrorWithMessage(message: e.toString()),
       );
+    }
+  }
+
+  Future<Result<CloseLeadResponse>> closeLead({
+    required int leadId,
+    required String status,
+    String? lostReason,
+  }) async {
+    try {
+      return await _service.closeLead(
+        leadId: leadId,
+        status: status,
+        lostReason: lostReason,
+      );
+    } catch (e) {
+      return Error<CloseLeadResponse>(ErrorWithMessage(message: e.toString()));
     }
   }
 }
