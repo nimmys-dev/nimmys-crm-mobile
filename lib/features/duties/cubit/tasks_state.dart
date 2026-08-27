@@ -12,7 +12,7 @@ class TasksState extends Equatable {
   final List<Task> tasksList;
 
   /// Pagination information.
-  final Pagination? tasksPagination;
+  final LeadPagination? tasksPagination;
 
   /// Current search query.
   final String tasksSearchQuery;
@@ -59,7 +59,7 @@ class TasksState extends Equatable {
   TasksState copyWith({
     UIState<TaskListResponse>? tasksListUIState,
     List<Task>? tasksList,
-    Pagination? tasksPagination,
+    LeadPagination? tasksPagination,
     String? tasksSearchQuery,
     UIState<TaskDetailsResponse>? taskDetailsUIState,
     UIState<dynamic>? createTaskUIState,

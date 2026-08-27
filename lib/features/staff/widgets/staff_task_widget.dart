@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:nimmys_crm/core/theme/app_colors.dart';
 import 'package:nimmys_crm/core/theme/app_dimens.dart';
@@ -6,8 +8,301 @@ import 'package:nimmys_crm/features/staff/model/staff_list_model.dart';
 import 'package:nimmys_crm/shared/widgets/app_section_card.dart';
 import 'package:nimmys_crm/shared/widgets/app_select_field.dart';
 
-/// A stateful widget that displays a paginated list of tasks with checkboxes,
-/// and provides a transfer action to move selected (or all) tasks to another staff member.
+// /// A stateful widget that displays a paginated list of tasks with checkboxes,
+// /// and provides a transfer action to move selected (or all) tasks to another staff member.
+// class StaffTasksSection extends StatefulWidget {
+//   const StaffTasksSection({
+//     super.key,
+//     required this.staffId,
+//     required this.staffList,
+//   });
+
+//   final int staffId;
+//   final List<StaffListItem> staffList;
+
+//   @override
+//   State<StaffTasksSection> createState() => _StaffTasksSectionState();
+// }
+
+// class _StaffTasksSectionState extends State<StaffTasksSection> {
+//   static const int _perPage = 10;
+//   List<Map<String, dynamic>> _tasks = [];
+//   int _page = 0;
+//   bool _hasMore = false;
+//   Set<int> _selectedTaskIds = {};
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _loadTasks(0);
+//   }
+
+//   Future<void> _loadTasks(int page) async {
+//     // Simulate API – replace with real call
+//     final totalTasks = 25;
+//     final start = page * _perPage;
+//     final end = (start + _perPage).clamp(0, totalTasks);
+//     final List<Map<String, dynamic>> newTasks = [];
+//     for (int i = start; i < end; i++) {
+//       newTasks.add({
+//         'id': i,
+//         'description': 'Task ${i + 1}',
+//         'due_date': DateTime(2026, 8, (i % 28) + 1).toIso8601String(),
+//         'assigned_by': 'Admin',
+//       });
+//     }
+//     await Future.delayed(const Duration(milliseconds: 300));
+//     if (mounted) {
+//       setState(() {
+//         _tasks = newTasks;
+//         _page = page;
+//         _hasMore = end < totalTasks;
+//         _selectedTaskIds.clear();
+//       });
+//     }
+//   }
+
+//   void _toggleTask(int id) {
+//     setState(() {
+//       if (_selectedTaskIds.contains(id)) {
+//         _selectedTaskIds.remove(id);
+//       } else {
+//         _selectedTaskIds.add(id);
+//       }
+//     });
+//   }
+
+//   void _toggleAll(bool? checked) {
+//     if (checked == true) {
+//       setState(() {
+//         _selectedTaskIds = _tasks.map((t) => t['id'] as int).toSet();
+//       });
+//     } else {
+//       setState(() {
+//         _selectedTaskIds.clear();
+//       });
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return AppSectionCard(
+//       child: Column(
+//         mainAxisSize: MainAxisSize.min,
+//         crossAxisAlignment: CrossAxisAlignment.stretch,
+//         children: [
+//           // ---- "Select All" + Transfer button row ----
+//           const AppSectionHeader(title: 'Task'),
+//           const SizedBox(height: AppSpacing.xs),
+//           Padding(
+//             padding: const EdgeInsets.symmetric(horizontal: 4),
+//             child: Row(
+//               children: [
+//                 // Left: Select All checkbox
+//                 Row(
+//                   mainAxisSize: MainAxisSize.min,
+//                   children: [
+//                     Checkbox(
+//                       value:
+//                           _tasks.isNotEmpty &&
+//                           _selectedTaskIds.length == _tasks.length,
+//                       onChanged: _toggleAll,
+//                       activeColor: AppColors.red,
+//                     ),
+//                     const Text(
+//                       'Select All',
+//                       style: TextStyle(fontWeight: FontWeight.w500),
+//                     ),
+//                   ],
+//                 ),
+//                 // Right: Modern Transfer Chip
+//                 Expanded(
+//                   child: Align(
+//                     alignment: Alignment.centerRight,
+//                     child: Material(
+//                       color: Colors.transparent,
+//                       child: InkWell(
+//                         borderRadius: BorderRadius.circular(20),
+//                         onTap: _selectedTaskIds.isEmpty
+//                             ? null
+//                             : _showTransferSheet,
+//                         child: Container(
+//                           padding: const EdgeInsets.symmetric(
+//                             horizontal: 14,
+//                             vertical: 8,
+//                           ),
+//                           decoration: BoxDecoration(
+//                             color: _selectedTaskIds.isEmpty
+//                                 ? context.palette.surfaceAlt
+//                                 : context.palette.redWash,
+//                             borderRadius: BorderRadius.circular(20),
+//                             border: Border.all(
+//                               color: _selectedTaskIds.isEmpty
+//                                   ? context.palette.line
+//                                   : context.palette.redBorder,
+//                               width: 1.2,
+//                             ),
+//                           ),
+//                           child: Row(
+//                             mainAxisSize: MainAxisSize.min,
+//                             children: [
+//                               Icon(
+//                                 Icons.share_rounded,
+//                                 size: 16,
+//                                 color: _selectedTaskIds.isEmpty
+//                                     ? context.palette.faint
+//                                     : AppColors.red,
+//                               ),
+//                               const SizedBox(width: 6),
+//                               Text(
+//                                 'Transfer',
+//                                 style: TextStyle(
+//                                   fontWeight: FontWeight.w600,
+//                                   fontSize: 13,
+//                                   color: _selectedTaskIds.isEmpty
+//                                       ? context.palette.faint
+//                                       : AppColors.red,
+//                                 ),
+//                               ),
+//                               if (_selectedTaskIds.isNotEmpty) ...[
+//                                 const SizedBox(width: 6),
+//                                 Container(
+//                                   padding: const EdgeInsets.symmetric(
+//                                     horizontal: 6,
+//                                     vertical: 1.5,
+//                                   ),
+//                                   decoration: BoxDecoration(
+//                                     color: AppColors.red,
+//                                     borderRadius: BorderRadius.circular(12),
+//                                   ),
+//                                   child: Text(
+//                                     '${_selectedTaskIds.length}',
+//                                     style: const TextStyle(
+//                                       color: Colors.white,
+//                                       fontSize: 11,
+//                                       fontWeight: FontWeight.bold,
+//                                     ),
+//                                   ),
+//                                 ),
+//                               ],
+//                             ],
+//                           ),
+//                         ),
+//                       ),
+//                     ),
+//                   ),
+//                 ),
+//               ],
+//             ),
+//           ),
+//           const Divider(height: 8),
+
+//           // ---- Task list ----
+//           if (_tasks.isEmpty)
+//             Padding(
+//               padding: const EdgeInsets.symmetric(vertical: 8),
+//               child: Text('No tasks assigned.', style: context.type.bodyMuted),
+//             )
+//           else
+//             ..._tasks.map(
+//               (task) => CheckboxListTile(
+//                 title: Text(task['description'] ?? 'Task'),
+//                 subtitle: Text(
+//                   'Due: ${_formatDate(task['due_date'])} | By: ${task['assigned_by'] ?? '—'}',
+//                 ),
+//                 value: _selectedTaskIds.contains(task['id']),
+//                 onChanged: (checked) => _toggleTask(task['id']),
+//                 controlAffinity: ListTileControlAffinity.leading,
+//                 dense: true,
+//               ),
+//             ),
+
+//           const SizedBox(height: 8),
+
+//           // ---- Pagination controls ----
+//           Row(
+//             mainAxisAlignment: MainAxisAlignment.center,
+//             children: [
+//               IconButton(
+//                 icon: const Icon(Icons.chevron_left),
+//                 onPressed: _page > 0 ? () => _loadTasks(_page - 1) : null,
+//               ),
+//               Text('Page ${_page + 1}'),
+//               IconButton(
+//                 icon: const Icon(Icons.chevron_right),
+//                 onPressed: _hasMore ? () => _loadTasks(_page + 1) : null,
+//               ),
+//             ],
+//           ),
+//           const SizedBox(height: 4),
+//         ],
+//       ),
+//     );
+//   }
+
+//   // ---------- Date formatter (e.g., "24th Aug 2026") ----------
+//   String _formatDate(String? isoString) {
+//     if (isoString == null) return 'N/A';
+//     try {
+//       final date = DateTime.parse(isoString);
+//       final day = date.day;
+//       final suffix = _ordinalSuffix(day);
+//       final month = _monthName(date.month);
+//       return '$day$suffix $month ${date.year}';
+//     } catch (_) {
+//       return isoString;
+//     }
+//   }
+
+//   String _ordinalSuffix(int day) {
+//     if (day >= 11 && day <= 13) return 'th';
+//     switch (day % 10) {
+//       case 1:
+//         return 'st';
+//       case 2:
+//         return 'nd';
+//       case 3:
+//         return 'rd';
+//       default:
+//         return 'th';
+//     }
+//   }
+
+//   String _monthName(int month) {
+//     const months = [
+//       'Jan',
+//       'Feb',
+//       'Mar',
+//       'Apr',
+//       'May',
+//       'Jun',
+//       'Jul',
+//       'Aug',
+//       'Sep',
+//       'Oct',
+//       'Nov',
+//       'Dec',
+//     ];
+//     return months[month - 1];
+//   }
+// }
+
+// // ---------- Transfer bottom sheet (uses staff list) ----------
+
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nimmys_crm/core/theme/app_colors.dart';
+import 'package:nimmys_crm/core/theme/app_dimens.dart';
+import 'package:nimmys_crm/core/theme/app_theme.dart';
+import 'package:nimmys_crm/enum/status.dart';
+import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
+import 'package:nimmys_crm/features/staff/cubit/staff/staff_cubit.dart';
+import 'package:nimmys_crm/features/staff/model/staff_list_model.dart';
+import 'package:nimmys_crm/shared/widgets/app_section_card.dart';
+import 'package:nimmys_crm/shared/widgets/app_select_field.dart';
+import 'package:nimmys_crm/shared/widgets/app_text_field.dart';
+import 'package:nimmys_crm/utils/toast_messages.dart';
+
 class StaffTasksSection extends StatefulWidget {
   const StaffTasksSection({
     super.key,
@@ -23,41 +318,32 @@ class StaffTasksSection extends StatefulWidget {
 }
 
 class _StaffTasksSectionState extends State<StaffTasksSection> {
-  static const int _perPage = 10;
-  List<Map<String, dynamic>> _tasks = [];
-  int _page = 0;
-  bool _hasMore = false;
+  final TextEditingController _searchController = TextEditingController();
   Set<int> _selectedTaskIds = {};
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
-    _loadTasks(0);
+    _loadTasks();
   }
 
-  Future<void> _loadTasks(int page) async {
-    // Simulate API – replace with real call
-    final totalTasks = 25;
-    final start = page * _perPage;
-    final end = (start + _perPage).clamp(0, totalTasks);
-    final List<Map<String, dynamic>> newTasks = [];
-    for (int i = start; i < end; i++) {
-      newTasks.add({
-        'id': i,
-        'description': 'Task ${i + 1}',
-        'due_date': DateTime(2026, 8, (i % 28) + 1).toIso8601String(),
-        'assigned_by': 'Admin',
-      });
-    }
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (mounted) {
-      setState(() {
-        _tasks = newTasks;
-        _page = page;
-        _hasMore = end < totalTasks;
-        _selectedTaskIds.clear();
-      });
-    }
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _loadTasks() {
+    context.read<StaffCubit>().getMyTasks(refresh: true);
+  }
+
+  void _onSearchChanged(String query) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      context.read<StaffCubit>().getMyTasks(search: query.trim());
+    });
   }
 
   void _toggleTask(int id) {
@@ -71,22 +357,19 @@ class _StaffTasksSectionState extends State<StaffTasksSection> {
   }
 
   void _toggleAll(bool? checked) {
-    if (checked == true) {
-      setState(() {
-        _selectedTaskIds = _tasks.map((t) => t['id'] as int).toSet();
-      });
-    } else {
-      setState(() {
+    final tasks = context.read<StaffCubit>().state.myTasksList;
+    setState(() {
+      if (checked == true) {
+        _selectedTaskIds = tasks.map((t) => t.id!).toSet();
+      } else {
         _selectedTaskIds.clear();
-      });
-    }
+      }
+    });
   }
 
   void _showTransferSheet() {
     if (_selectedTaskIds.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No tasks selected.')));
+      ToastMessages.error(message: 'No tasks selected.');
       return;
     }
     showModalBottomSheet(
@@ -96,17 +379,16 @@ class _StaffTasksSectionState extends State<StaffTasksSection> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => _TransferTasksSheet(
-        staffList: widget.staffList, // use staff list
+        staffList: widget.staffList,
         selectedCount: _selectedTaskIds.length,
-        totalCount: _tasks.length,
+        totalCount: context.read<StaffCubit>().state.myTasksList.length,
         onTransfer: (targetStaffId, transferAll) async {
-          // Simulate API call – replace with real logic
+          // TODO: Implement actual transfer API call
           await Future.delayed(const Duration(seconds: 1));
           if (mounted) {
-            _loadTasks(_page);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Tasks transferred successfully!')),
-            );
+            _loadTasks();
+            setState(() => _selectedTaskIds.clear());
+            ToastMessages.success(message: 'Tasks transferred successfully!');
           }
         },
       ),
@@ -115,161 +397,225 @@ class _StaffTasksSectionState extends State<StaffTasksSection> {
 
   @override
   Widget build(BuildContext context) {
-    return AppSectionCard(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // ---- "Select All" + Transfer button row ----
-          const AppSectionHeader(title: 'Task'),
-          const SizedBox(height: AppSpacing.xs),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Row(
-              children: [
-                // Left: Select All checkbox
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Checkbox(
-                      value:
-                          _tasks.isNotEmpty &&
-                          _selectedTaskIds.length == _tasks.length,
-                      onChanged: _toggleAll,
-                      activeColor: AppColors.red,
-                    ),
-                    const Text(
-                      'Select All',
-                      style: TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                  ],
+    return BlocConsumer<StaffCubit, StaffState>(
+      listenWhen: (prev, curr) =>
+          prev.myTasksListUIState?.status != curr.myTasksListUIState?.status,
+      listener: (context, state) {
+        if (state.myTasksListUIState?.status == Status.ERROR) {
+          ToastMessages.error(
+            message:
+                state.myTasksListUIState?.errorType?.getText(context) ??
+                'Failed to load tasks',
+          );
+        }
+      },
+      builder: (context, state) {
+        final tasks = state.myTasksList;
+        final pagination = state.myTasksPagination;
+        final isLoading =
+            state.myTasksListUIState?.status == Status.LOADING ||
+            state.myTasksListUIState?.status == null ||
+            state.myTasksListUIState?.status == Status.INITIAL;
+        final currentPage = pagination?.currentPage ?? 1;
+        final hasNext = pagination?.hasNextPage ?? false;
+
+        // Clear selection when task list changes (e.g., new search)
+        if (_selectedTaskIds.isNotEmpty &&
+            _selectedTaskIds.any((id) => !tasks.any((t) => t.id == id))) {
+          setState(() => _selectedTaskIds.clear());
+        }
+
+        return AppSectionCard(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const AppSectionHeader(title: 'Tasks'),
+              const SizedBox(height: AppSpacing.xs),
+
+              // ---- Search Bar ----
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: AppTextField(
+                  hint: 'Search tasks...',
+                  controller: _searchController,
+                  icon: Icons.search_rounded,
+                  // onChanged: _onSearchChanged,
                 ),
-                // Right: Modern Transfer Chip
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: _selectedTaskIds.isEmpty
-                            ? null
-                            : _showTransferSheet,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _selectedTaskIds.isEmpty
-                                ? context.palette.surfaceAlt
-                                : context.palette.redWash,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+
+              // ---- "Select All" + Transfer row ----
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Row(
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Checkbox(
+                          value:
+                              tasks.isNotEmpty &&
+                              _selectedTaskIds.length == tasks.length,
+                          onChanged: _toggleAll,
+                          activeColor: AppColors.red,
+                        ),
+                        const Text(
+                          'Select All',
+                          style: TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: _selectedTaskIds.isEmpty
-                                  ? context.palette.line
-                                  : context.palette.redBorder,
-                              width: 1.2,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.share_rounded,
-                                size: 16,
-                                color: _selectedTaskIds.isEmpty
-                                    ? context.palette.faint
-                                    : AppColors.red,
+                            onTap: _selectedTaskIds.isEmpty
+                                ? null
+                                : _showTransferSheet,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
                               ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Transfer',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
+                              decoration: BoxDecoration(
+                                color: _selectedTaskIds.isEmpty
+                                    ? context.palette.surfaceAlt
+                                    : context.palette.redWash,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
                                   color: _selectedTaskIds.isEmpty
-                                      ? context.palette.faint
-                                      : AppColors.red,
+                                      ? context.palette.line
+                                      : context.palette.redBorder,
+                                  width: 1.2,
                                 ),
                               ),
-                              if (_selectedTaskIds.isNotEmpty) ...[
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 1.5,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.share_rounded,
+                                    size: 16,
+                                    color: _selectedTaskIds.isEmpty
+                                        ? context.palette.faint
+                                        : AppColors.red,
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.red,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    '${_selectedTaskIds.length}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Transfer',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      color: _selectedTaskIds.isEmpty
+                                          ? context.palette.faint
+                                          : AppColors.red,
                                     ),
                                   ),
-                                ),
-                              ],
-                            ],
+                                  if (_selectedTaskIds.isNotEmpty) ...[
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 1.5,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.red,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        '${_selectedTaskIds.length}',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
+                  ],
+                ),
+              ),
+              const Divider(height: 8),
+
+              // ---- Task list ----
+              if (isLoading && tasks.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.red),
+                    ),
+                  ),
+                )
+              else if (tasks.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    'No tasks assigned.',
+                    style: context.type.bodyMuted,
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              else
+                ...tasks.map(
+                  (task) => CheckboxListTile(
+                    title: Text(task.title ?? 'Task'),
+                    subtitle: Text(
+                      'Due: ${_formatDate(task.createdAt)} | By: ${task.assignedTo ?? '—'}',
+                    ),
+                    value: _selectedTaskIds.contains(task.id),
+                    onChanged: (checked) => _toggleTask(task.id!),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    dense: true,
                   ),
                 ),
-              ],
-            ),
-          ),
-          const Divider(height: 8),
 
-          // ---- Task list ----
-          if (_tasks.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text('No tasks assigned.', style: context.type.bodyMuted),
-            )
-          else
-            ..._tasks.map(
-              (task) => CheckboxListTile(
-                title: Text(task['description'] ?? 'Task'),
-                subtitle: Text(
-                  'Due: ${_formatDate(task['due_date'])} | By: ${task['assigned_by'] ?? '—'}',
-                ),
-                value: _selectedTaskIds.contains(task['id']),
-                onChanged: (checked) => _toggleTask(task['id']),
-                controlAffinity: ListTileControlAffinity.leading,
-                dense: true,
-              ),
-            ),
+              const SizedBox(height: 8),
 
-          const SizedBox(height: 8),
-
-          // ---- Pagination controls ----
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.chevron_left),
-                onPressed: _page > 0 ? () => _loadTasks(_page - 1) : null,
+              // ---- Pagination controls ----
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left),
+                    onPressed: currentPage > 1
+                        ? () {
+                            context.read<StaffCubit>().getMyTasks(
+                              // search: state.staffTasksSearchQuery,
+                            );
+                          }
+                        : null,
+                  ),
+                  Text('Page $currentPage'),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right),
+                    onPressed: hasNext
+                        ? () {
+                            context.read<StaffCubit>().loadMoreMyTasks();
+                          }
+                        : null,
+                  ),
+                ],
               ),
-              Text('Page ${_page + 1}'),
-              IconButton(
-                icon: const Icon(Icons.chevron_right),
-                onPressed: _hasMore ? () => _loadTasks(_page + 1) : null,
-              ),
+              const SizedBox(height: 4),
             ],
           ),
-          const SizedBox(height: 4),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  // ---------- Date formatter (e.g., "24th Aug 2026") ----------
+  // ---------- Date formatter ----------
   String _formatDate(String? isoString) {
     if (isoString == null) return 'N/A';
     try {
@@ -316,9 +662,9 @@ class _StaffTasksSectionState extends State<StaffTasksSection> {
   }
 }
 
-// ---------- Transfer bottom sheet (uses staff list) ----------
+// ---------- Transfer bottom sheet (unchanged) ----------
 
-// ---------- Transfer bottom sheet (uses staff list) ----------
+// // ---------- Transfer bottom sheet (uses staff list) ----------
 class _TransferTasksSheet extends StatefulWidget {
   const _TransferTasksSheet({
     required this.staffList,

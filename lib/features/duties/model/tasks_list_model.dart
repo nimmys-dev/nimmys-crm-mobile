@@ -1,9 +1,11 @@
+import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
+
 class TaskListResponse {
   final bool? status;
   final int? statusCode;
   final String? message;
   final List<Task>? data;
-  final Pagination? pagination;
+  final LeadPagination? pagination;
 
   TaskListResponse({
     this.status,
@@ -20,11 +22,11 @@ class TaskListResponse {
       message: json['message'] as String?,
       data: json['data'] != null
           ? (json['data'] as List)
-              .map((e) => Task.fromJson(e as Map<String, dynamic>))
-              .toList()
+                .map((e) => Task.fromJson(e as Map<String, dynamic>))
+                .toList()
           : null,
       pagination: json['pagination'] != null
-          ? Pagination.fromJson(json['pagination'] as Map<String, dynamic>)
+          ? LeadPagination.fromJson(json['pagination'] as Map<String, dynamic>)
           : null,
     );
   }
@@ -127,8 +129,8 @@ class Task {
           : null,
       quarters: json['quarters'] != null
           ? (json['quarters'] as List)
-              .map((e) => Quarter.fromJson(e as Map<String, dynamic>))
-              .toList()
+                .map((e) => Quarter.fromJson(e as Map<String, dynamic>))
+                .toList()
           : null,
     );
   }
@@ -170,12 +172,7 @@ class User {
   final String? email;
   final String? role;
 
-  User({
-    this.id,
-    this.name,
-    this.email,
-    this.role,
-  });
+  User({this.id, this.name, this.email, this.role});
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
@@ -187,12 +184,7 @@ class User {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'email': email,
-      'role': role,
-    };
+    return {'id': id, 'name': name, 'email': email, 'role': role};
   }
 }
 
@@ -203,13 +195,7 @@ class Quarter {
   final String? startDate;
   final String? endDate;
 
-  Quarter({
-    this.id,
-    this.taskId,
-    this.quarter,
-    this.startDate,
-    this.endDate,
-  });
+  Quarter({this.id, this.taskId, this.quarter, this.startDate, this.endDate});
 
   factory Quarter.fromJson(Map<String, dynamic> json) {
     return Quarter(

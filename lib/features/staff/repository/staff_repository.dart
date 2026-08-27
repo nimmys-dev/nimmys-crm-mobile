@@ -1,4 +1,5 @@
 import 'package:nimmys_crm/data/model/result.dart';
+import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
 import 'package:nimmys_crm/features/staff/api_request/create_staff_api_request.dart';
 import 'package:nimmys_crm/features/staff/model/create_staffsuccess_model.dart';
 import 'package:nimmys_crm/features/staff/api_request/update_staff_api_request.dart';
@@ -84,6 +85,23 @@ class StaffRepository {
   Future<Result<DeleteStaffSuccess>> deleteStaff(int id) async {
     try {
       return await _service.deleteStaff(id);
+    } catch (e) {
+      return Error(ErrorWithMessage(message: e.toString()));
+    }
+  }
+
+  // Get My Tasks Lists
+  Future<Result<TaskListResponse>> getMyTasksList({
+    required int page,
+    required int perPage,
+    String? search,
+  }) async {
+    try {
+      return await _service.getmyTasksList(
+        page: page,
+        perPage: perPage,
+        search: search,
+      );
     } catch (e) {
       return Error(ErrorWithMessage(message: e.toString()));
     }

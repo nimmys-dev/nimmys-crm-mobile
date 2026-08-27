@@ -8,6 +8,7 @@ import 'package:nimmys_crm/enum/status.dart';
 import 'package:nimmys_crm/features/duties/model/task_details_model.dart';
 import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
 import 'package:nimmys_crm/features/duties/repository/tasks_repository.dart';
+import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
 
 part 'tasks_state.dart';
 

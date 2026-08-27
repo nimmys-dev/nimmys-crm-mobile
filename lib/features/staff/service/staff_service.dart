@@ -1,6 +1,7 @@
 import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/network/api_service.dart';
 import 'package:nimmys_crm/data/network/api_urls.dart';
+import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
 import 'package:nimmys_crm/features/staff/api_request/create_staff_api_request.dart';
 import 'package:nimmys_crm/features/staff/model/create_staffsuccess_model.dart';
 import 'package:nimmys_crm/features/staff/api_request/update_staff_api_request.dart';
@@ -194,6 +195,37 @@ class StaffService {
         return await _apiService.getResponseStatus<DeleteStaffSuccess>(
           result.value,
           (json) => DeleteStaffSuccess.fromJson(json),
+        );
+      } else if (result is Error) {
+        return Error(result.type);
+      } else {
+        return Error(GenericError());
+      }
+    } catch (e) {
+      return Error(DeserializationError());
+    }
+  }
+
+  // Get My Tasks List
+    Future<Result<TaskListResponse>> getmyTasksList({
+    required int page,
+    required int perPage,
+    String? search,
+  }) async {
+    try {
+      final url = ApiUrls.getMyTasksList;
+      final Map<String, dynamic> queryParams = <String, dynamic>{
+        "page": page,
+        "per_page": perPage,
+      };
+      if (search != null && search.trim().isNotEmpty) {
+        queryParams["search"] = search.trim();
+      }
+      final result = await _apiService.get(url, queryParams: queryParams);
+      if (result is Success) {
+        return await _apiService.getResponseStatus<TaskListResponse>(
+          result.value,
+          (json) => TaskListResponse.fromJson(json),
         );
       } else if (result is Error) {
         return Error(result.type);

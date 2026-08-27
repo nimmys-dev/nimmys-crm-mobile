@@ -5,6 +5,7 @@ import 'package:nimmys_crm/core/reset_cubit_state.dart';
 import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/ui_state/ui_state.dart';
 import 'package:nimmys_crm/enum/status.dart';
+import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
 import 'package:nimmys_crm/features/staff/api_request/create_staff_api_request.dart';
 import 'package:nimmys_crm/features/staff/api_request/update_staff_api_request.dart';
 import 'package:nimmys_crm/features/staff/model/create_staffsuccess_model.dart';
@@ -14,6 +15,9 @@ import 'package:nimmys_crm/features/staff/model/staff_list_model.dart';
 import 'package:nimmys_crm/features/staff/model/store_success_model.dart';
 import 'package:nimmys_crm/features/staff/model/user_role_model.dart';
 import 'package:nimmys_crm/features/staff/repository/staff_repository.dart';
+import 'package:nimmys_crm/features/duties/model/task_details_model.dart';
+import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
+import 'package:nimmys_crm/features/duties/repository/tasks_repository.dart';
 part 'staff_state.dart';
 
 class StaffCubit extends BaseCubit<StaffState> {
@@ -293,6 +297,87 @@ class StaffCubit extends BaseCubit<StaffState> {
       resetUIState<DeleteStaffSuccess>(state.deleteStaffUIState),
     );
   }
+  // ---------------------------------------------------------------------------
+// My Tasks List
+// ---------------------------------------------------------------------------
+
+Future<void> getMyTasks({bool refresh = false, String? search}) async {
+  if (state.myTasksListUIState?.status == Status.LOADING) return;
+
+  final String query = (search ?? state.myTasksSearchQuery).trim();
+  final bool searchChanged = query != state.myTasksSearchQuery;
+
+  if (!refresh && !searchChanged && state.myTasksList.isNotEmpty) {
+    return;
+  }
+
+  emit(state.copyWith(
+    myTasksListUIState: UIState.loading(),
+    myTasksSearchQuery: query,
+    myTasksList: searchChanged ? <Task>[] : state.myTasksList,
+  ));
+
+  final result = await _repository.getMyTasksList(
+    page: 1,
+    perPage: _pageSize, // reuse _pageSize from StaffCubit
+    search: query,
+  );
+
+  if (result is Success<TaskListResponse>) {
+    emit(state.copyWith(
+      myTasksListUIState: UIState.success(result.value),
+      myTasksList: result.value.data ?? [],
+      myTasksPagination: result.value.pagination,
+      isLoadingMoreMyTasks: false,
+    ));
+  } else if (result is Error<TaskListResponse>) {
+    emit(state.copyWith(
+      myTasksListUIState: UIState.error(result.type),
+    ));
+  }
+}
+
+Future<void> refreshMyTasks() async {
+  await getMyTasks(refresh: true);
+}
+
+Future<void> loadMoreMyTasks() async {
+  final pagination = state.myTasksPagination;
+  if (state.isLoadingMoreMyTasks ||
+      state.myTasksListUIState?.status == Status.LOADING ||
+      pagination == null ||
+      !pagination.hasNextPage) {
+    return;
+  }
+
+  emit(state.copyWith(isLoadingMoreMyTasks: true));
+
+  final result = await _repository.getMyTasksList(
+    page: pagination.nextPage,
+    perPage: _pageSize,
+    search: state.myTasksSearchQuery,
+  );
+
+  if (result is Success<TaskListResponse>) {
+    emit(state.copyWith(
+      myTasksList: [...state.myTasksList, ...?result.value.data],
+      myTasksPagination: result.value.pagination,
+      isLoadingMoreMyTasks: false,
+    ));
+  } else {
+    emit(state.copyWith(isLoadingMoreMyTasks: false));
+  }
+}
+
+void resetMyTasksState() {
+  emit(state.copyWith(
+    myTasksListUIState: null,
+    myTasksList: const <Task>[],
+    myTasksPagination: null,
+    myTasksSearchQuery: '',
+    isLoadingMoreMyTasks: false,
+  ));
+}
 
   /// Called on sign-out. Branches are scoped to the account that fetched them,
   /// so the cached list has to go with the session — otherwise the next user to
