@@ -45,9 +45,7 @@ class CloseLeadBottomSheetState extends State<CloseLeadBottomSheet> {
         padding: const EdgeInsets.all(AppSpacing.gutter),
         decoration: BoxDecoration(
           color: palette.surface,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(20),
-          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           border: Border(top: BorderSide(color: palette.line)),
         ),
         child: Form(
@@ -73,9 +71,9 @@ class CloseLeadBottomSheetState extends State<CloseLeadBottomSheet> {
               Text(
                 'Close Lead',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: palette.ink,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: palette.ink,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 4),
@@ -94,13 +92,9 @@ class CloseLeadBottomSheetState extends State<CloseLeadBottomSheet> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(
-                    child: _buildStatusOption('Won', 'won', palette),
-                  ),
+                  Expanded(child: _buildStatusOption('Won', 'won', palette)),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatusOption('Lost', 'lost', palette),
-                  ),
+                  Expanded(child: _buildStatusOption('Lost', 'lost', palette)),
                 ],
               ),
               const SizedBox(height: AppSpacing.md),
@@ -134,13 +128,18 @@ class CloseLeadBottomSheetState extends State<CloseLeadBottomSheet> {
                     child: AppPrimaryButton(
                       label: 'Close Lead',
                       onPressed: _submit,
-                      isLoading: context.watch<LeadsCubit>().state
-                              .closeLeadUIState?.status == Status.LOADING,
+                      isLoading:
+                          context
+                              .watch<LeadsCubit>()
+                              .state
+                              .closeLeadUIState
+                              ?.status ==
+                          Status.LOADING,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.md),
+              const SizedBox(height: 70),
             ],
           ),
         ),
@@ -192,7 +191,9 @@ class CloseLeadBottomSheetState extends State<CloseLeadBottomSheet> {
       return;
     }
     if (_selectedStatus == 'lost' && _reasonController.text.trim().isEmpty) {
-      ToastMessages.error(message: 'Please provide a reason for losing the lead.');
+      ToastMessages.error(
+        message: 'Please provide a reason for losing the lead.',
+      );
       return;
     }
 
