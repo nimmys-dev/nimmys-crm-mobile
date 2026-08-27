@@ -1,7 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -234,9 +233,40 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
                   leading: const AppBackButton(),
                   actions: [
                     if (lead != null)
-                      AppHeaderIconButton(
-                        icon: Icons.close_rounded,
+                      GestureDetector(
                         onTap: () => _showCloseLeadSheet(context, lead!),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.red.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: AppColors.red.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(
+                                Icons.close_rounded,
+                                color: AppColors.white,
+                                size: 18,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'Close Lead',
+                                style: TextStyle(
+                                  color: AppColors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                   ],
                 ),
