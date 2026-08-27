@@ -9,6 +9,9 @@ import 'package:nimmys_crm/features/authentication/repository/login_repository.d
 import 'package:nimmys_crm/features/authentication/repository/user_information_repository.dart';
 import 'package:nimmys_crm/features/authentication/service/auth_service.dart';
 import 'package:nimmys_crm/features/authentication/service/login_service.dart';
+import 'package:nimmys_crm/features/dashboard/cubit/dashboard_cubit.dart';
+import 'package:nimmys_crm/features/dashboard/repository/dashboard_repository.dart';
+import 'package:nimmys_crm/features/dashboard/service/dashboard_count_service.dart';
 import 'package:nimmys_crm/features/duties/cubit/tasks_cubit.dart';
 import 'package:nimmys_crm/features/duties/repository/tasks_repository.dart';
 import 'package:nimmys_crm/features/duties/service/tasks_service.dart';
@@ -62,6 +65,9 @@ Future<void> initLocator() async {
     locator.registerLazySingleton(() => StaffService(locator<ApiService>()));
     locator.registerLazySingleton(() => LeadService(locator<ApiService>()));
     locator.registerLazySingleton(() => TasksService(locator<ApiService>()));
+    locator.registerLazySingleton(
+      () => DashboardCountService(locator<ApiService>()),
+    );
 
     // Repository
     locator.registerLazySingleton(
@@ -90,6 +96,9 @@ Future<void> initLocator() async {
     locator.registerLazySingleton(
       () => TasksRepository(locator<TasksService>()),
     );
+    locator.registerLazySingleton(
+      () => DashboardRepository(locator<DashboardCountService>()),
+    );
 
     // View Model
     locator.registerLazySingleton(
@@ -114,6 +123,9 @@ Future<void> initLocator() async {
     locator.registerLazySingleton(() => LeadsCubit(locator<LeadRepository>()));
     locator.registerLazySingleton(
       () => CompanyProfileCubit(locator<ProfileRepository>()),
+    );
+    locator.registerLazySingleton(
+      () => DashboardCubit(locator<DashboardRepository>()),
     );
     locator.registerLazySingleton(() => TasksCubit(locator<TasksRepository>()));
     CustomLog.info(locator, "All instances registered.");
