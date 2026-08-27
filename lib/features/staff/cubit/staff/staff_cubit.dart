@@ -10,6 +10,7 @@ import 'package:nimmys_crm/features/staff/api_request/create_staff_api_request.d
 import 'package:nimmys_crm/features/staff/api_request/update_staff_api_request.dart';
 import 'package:nimmys_crm/features/staff/model/create_staffsuccess_model.dart';
 import 'package:nimmys_crm/features/staff/model/delete_staff_model.dart';
+import 'package:nimmys_crm/features/staff/model/reassign_task_model.dart';
 import 'package:nimmys_crm/features/staff/model/staff_details_model.dart';
 import 'package:nimmys_crm/features/staff/model/staff_list_model.dart';
 import 'package:nimmys_crm/features/staff/model/store_success_model.dart';
@@ -298,86 +299,128 @@ class StaffCubit extends BaseCubit<StaffState> {
     );
   }
   // ---------------------------------------------------------------------------
-// My Tasks List
-// ---------------------------------------------------------------------------
+  // My Tasks List
+  // ---------------------------------------------------------------------------
 
-Future<void> getMyTasks({bool refresh = false, String? search}) async {
-  if (state.myTasksListUIState?.status == Status.LOADING) return;
+  Future<void> getMyTasks({bool refresh = false, String? search}) async {
+    if (state.myTasksListUIState?.status == Status.LOADING) return;
 
-  final String query = (search ?? state.myTasksSearchQuery).trim();
-  final bool searchChanged = query != state.myTasksSearchQuery;
+    final String query = (search ?? state.myTasksSearchQuery).trim();
+    final bool searchChanged = query != state.myTasksSearchQuery;
 
-  if (!refresh && !searchChanged && state.myTasksList.isNotEmpty) {
-    return;
+    if (!refresh && !searchChanged && state.myTasksList.isNotEmpty) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        myTasksListUIState: UIState.loading(),
+        myTasksSearchQuery: query,
+        myTasksList: searchChanged ? <Task>[] : state.myTasksList,
+      ),
+    );
+
+    final result = await _repository.getMyTasksList(
+      page: 1,
+      perPage: _pageSize, // reuse _pageSize from StaffCubit
+      search: query,
+    );
+
+    if (result is Success<TaskListResponse>) {
+      emit(
+        state.copyWith(
+          myTasksListUIState: UIState.success(result.value),
+          myTasksList: result.value.data ?? [],
+          myTasksPagination: result.value.pagination,
+          isLoadingMoreMyTasks: false,
+        ),
+      );
+    } else if (result is Error<TaskListResponse>) {
+      emit(state.copyWith(myTasksListUIState: UIState.error(result.type)));
+    }
   }
 
-  emit(state.copyWith(
-    myTasksListUIState: UIState.loading(),
-    myTasksSearchQuery: query,
-    myTasksList: searchChanged ? <Task>[] : state.myTasksList,
-  ));
-
-  final result = await _repository.getMyTasksList(
-    page: 1,
-    perPage: _pageSize, // reuse _pageSize from StaffCubit
-    search: query,
-  );
-
-  if (result is Success<TaskListResponse>) {
-    emit(state.copyWith(
-      myTasksListUIState: UIState.success(result.value),
-      myTasksList: result.value.data ?? [],
-      myTasksPagination: result.value.pagination,
-      isLoadingMoreMyTasks: false,
-    ));
-  } else if (result is Error<TaskListResponse>) {
-    emit(state.copyWith(
-      myTasksListUIState: UIState.error(result.type),
-    ));
-  }
-}
-
-Future<void> refreshMyTasks() async {
-  await getMyTasks(refresh: true);
-}
-
-Future<void> loadMoreMyTasks() async {
-  final pagination = state.myTasksPagination;
-  if (state.isLoadingMoreMyTasks ||
-      state.myTasksListUIState?.status == Status.LOADING ||
-      pagination == null ||
-      !pagination.hasNextPage) {
-    return;
+  Future<void> refreshMyTasks() async {
+    await getMyTasks(refresh: true);
   }
 
-  emit(state.copyWith(isLoadingMoreMyTasks: true));
+  Future<void> loadMoreMyTasks() async {
+    final pagination = state.myTasksPagination;
+    if (state.isLoadingMoreMyTasks ||
+        state.myTasksListUIState?.status == Status.LOADING ||
+        pagination == null ||
+        !pagination.hasNextPage) {
+      return;
+    }
 
-  final result = await _repository.getMyTasksList(
-    page: pagination.nextPage,
-    perPage: _pageSize,
-    search: state.myTasksSearchQuery,
-  );
+    emit(state.copyWith(isLoadingMoreMyTasks: true));
 
-  if (result is Success<TaskListResponse>) {
-    emit(state.copyWith(
-      myTasksList: [...state.myTasksList, ...?result.value.data],
-      myTasksPagination: result.value.pagination,
-      isLoadingMoreMyTasks: false,
-    ));
-  } else {
-    emit(state.copyWith(isLoadingMoreMyTasks: false));
+    final result = await _repository.getMyTasksList(
+      page: pagination.nextPage,
+      perPage: _pageSize,
+      search: state.myTasksSearchQuery,
+    );
+
+    if (result is Success<TaskListResponse>) {
+      emit(
+        state.copyWith(
+          myTasksList: [...state.myTasksList, ...?result.value.data],
+          myTasksPagination: result.value.pagination,
+          isLoadingMoreMyTasks: false,
+        ),
+      );
+    } else {
+      emit(state.copyWith(isLoadingMoreMyTasks: false));
+    }
   }
-}
 
-void resetMyTasksState() {
-  emit(state.copyWith(
-    myTasksListUIState: null,
-    myTasksList: const <Task>[],
-    myTasksPagination: null,
-    myTasksSearchQuery: '',
-    isLoadingMoreMyTasks: false,
-  ));
-}
+  void resetMyTasksState() {
+    emit(
+      state.copyWith(
+        myTasksListUIState: null,
+        myTasksList: const <Task>[],
+        myTasksPagination: null,
+        myTasksSearchQuery: '',
+        isLoadingMoreMyTasks: false,
+      ),
+    );
+  }
+  // ---------------------------------------------------------------------------
+  // Reassign Tasks
+  // ---------------------------------------------------------------------------
+
+  void _setReassignTasksUIState(UIState<ReassignTaskResponse>? uiState) {
+    emit(state.copyWith(reassignTasksUIState: uiState));
+  }
+
+  /// Reassigns a list of tasks to another staff member.
+  Future<void> reassignTasks({
+    required List<int> taskIds,
+    required int assignedTo,
+  }) async {
+    if (state.reassignTasksUIState?.status == Status.LOADING) return;
+
+    _setReassignTasksUIState(UIState.loading());
+
+    final result = await _repository.reassignTasks(
+      taskIds: taskIds,
+      assignedTo: assignedTo,
+    );
+
+    if (result is Success<ReassignTaskResponse>) {
+      _setReassignTasksUIState(UIState.success(result.value));
+      // Refresh the my tasks list after reassignment
+      await getMyTasks(refresh: true);
+    } else if (result is Error<ReassignTaskResponse>) {
+      _setReassignTasksUIState(UIState.error(result.type));
+    }
+  }
+
+  void resetReassignTasksState() {
+    _setReassignTasksUIState(
+      resetUIState<ReassignTaskResponse>(state.reassignTasksUIState),
+    );
+  }
 
   /// Called on sign-out. Branches are scoped to the account that fetched them,
   /// so the cached list has to go with the session — otherwise the next user to

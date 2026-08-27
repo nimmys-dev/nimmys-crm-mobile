@@ -303,6 +303,20 @@ import 'package:nimmys_crm/shared/widgets/app_select_field.dart';
 import 'package:nimmys_crm/shared/widgets/app_text_field.dart';
 import 'package:nimmys_crm/utils/toast_messages.dart';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nimmys_crm/core/theme/app_colors.dart';
+import 'package:nimmys_crm/core/theme/app_dimens.dart';
+import 'package:nimmys_crm/core/theme/app_theme.dart';
+import 'package:nimmys_crm/enum/status.dart';
+import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
+import 'package:nimmys_crm/features/staff/cubit/staff/staff_cubit.dart';
+import 'package:nimmys_crm/features/staff/model/staff_list_model.dart';
+import 'package:nimmys_crm/shared/widgets/app_section_card.dart';
+import 'package:nimmys_crm/shared/widgets/app_select_field.dart';
+import 'package:nimmys_crm/shared/widgets/app_text_field.dart';
+import 'package:nimmys_crm/utils/toast_messages.dart';
+
 class StaffTasksSection extends StatefulWidget {
   const StaffTasksSection({
     super.key,
@@ -383,12 +397,22 @@ class _StaffTasksSectionState extends State<StaffTasksSection> {
         selectedCount: _selectedTaskIds.length,
         totalCount: context.read<StaffCubit>().state.myTasksList.length,
         onTransfer: (targetStaffId, transferAll) async {
-          // TODO: Implement actual transfer API call
-          await Future.delayed(const Duration(seconds: 1));
+          // --- REAL API CALL ---
+          final cubit = context.read<StaffCubit>();
+          final taskIds = transferAll
+              ? cubit.state.myTasksList.map((t) => t.id!).toList()
+              : _selectedTaskIds.toList();
+
+          await cubit.reassignTasks(
+            taskIds: taskIds,
+            assignedTo: targetStaffId,
+          );
+
+          // Check result via cubit listener or manually check state after a delay.
+          // For simplicity, we'll refresh and clear selection, and let the cubit listener handle errors.
           if (mounted) {
             _loadTasks();
             setState(() => _selectedTaskIds.clear());
-            ToastMessages.success(message: 'Tasks transferred successfully!');
           }
         },
       ),
@@ -399,14 +423,34 @@ class _StaffTasksSectionState extends State<StaffTasksSection> {
   Widget build(BuildContext context) {
     return BlocConsumer<StaffCubit, StaffState>(
       listenWhen: (prev, curr) =>
-          prev.myTasksListUIState?.status != curr.myTasksListUIState?.status,
+          prev.myTasksListUIState?.status != curr.myTasksListUIState?.status ||
+          prev.reassignTasksUIState?.status !=
+              curr.reassignTasksUIState?.status,
       listener: (context, state) {
+        // Handle staff tasks error
         if (state.myTasksListUIState?.status == Status.ERROR) {
           ToastMessages.error(
             message:
                 state.myTasksListUIState?.errorType?.getText(context) ??
                 'Failed to load tasks',
           );
+        }
+        // Handle reassign result
+        if (state.reassignTasksUIState?.status == Status.SUCCESS) {
+          ToastMessages.success(
+            message:
+                state.reassignTasksUIState?.data?.message ??
+                'Tasks reassigned successfully!',
+          );
+          context.read<StaffCubit>().resetReassignTasksState();
+          _loadTasks(); // refresh list
+        } else if (state.reassignTasksUIState?.status == Status.ERROR) {
+          ToastMessages.error(
+            message:
+                state.reassignTasksUIState?.errorType?.getText(context) ??
+                'Failed to reassign tasks.',
+          );
+          context.read<StaffCubit>().resetReassignTasksState();
         }
       },
       builder: (context, state) {
@@ -440,7 +484,6 @@ class _StaffTasksSectionState extends State<StaffTasksSection> {
                   hint: 'Search tasks...',
                   controller: _searchController,
                   icon: Icons.search_rounded,
-                  // onChanged: _onSearchChanged,
                 ),
               ),
               const SizedBox(height: AppSpacing.xs),
@@ -571,7 +614,7 @@ class _StaffTasksSectionState extends State<StaffTasksSection> {
                   (task) => CheckboxListTile(
                     title: Text(task.title ?? 'Task'),
                     subtitle: Text(
-                      'Due: ${_formatDate(task.createdAt)} | By: ${task.assignedTo ?? '—'}',
+                      'Due: ${_formatDate(task.createdAt ?? task.createdAt)} | By: ${task.createdAt ?? '—'}',
                     ),
                     value: _selectedTaskIds.contains(task.id),
                     onChanged: (checked) => _toggleTask(task.id!),
@@ -590,9 +633,7 @@ class _StaffTasksSectionState extends State<StaffTasksSection> {
                     icon: const Icon(Icons.chevron_left),
                     onPressed: currentPage > 1
                         ? () {
-                            context.read<StaffCubit>().getMyTasks(
-                              // search: state.staffTasksSearchQuery,
-                            );
+                            context.read<StaffCubit>().getMyTasks();
                           }
                         : null,
                   ),
@@ -662,9 +703,7 @@ class _StaffTasksSectionState extends State<StaffTasksSection> {
   }
 }
 
-// ---------- Transfer bottom sheet (unchanged) ----------
-
-// // ---------- Transfer bottom sheet (uses staff list) ----------
+// ---------- Transfer bottom sheet (uses staff list) ----------
 class _TransferTasksSheet extends StatefulWidget {
   const _TransferTasksSheet({
     required this.staffList,

@@ -21,7 +21,7 @@ class StaffState extends Equatable {
   /// Every row loaded so far, page 1 first.
   final List<StaffListItem> staffList;
   final StaffPagination? staffPagination;
-  final String staffSearchQuery;   
+  final String staffSearchQuery;
 
   /// True only while a follow-on page is in flight, so the footer spinner is
   /// separate from the full-screen loading state.
@@ -34,11 +34,14 @@ class StaffState extends Equatable {
   /// its own spinner — [deleteStaffUIState] alone cannot say *which* row.
   final int? deletingStaffId;
   // ---- My Tasks List ----
-final UIState<TaskListResponse>? myTasksListUIState;
-final List<Task> myTasksList;
-final LeadPagination? myTasksPagination;
-final String myTasksSearchQuery;
-final bool isLoadingMoreMyTasks;
+  final UIState<TaskListResponse>? myTasksListUIState;
+  final List<Task> myTasksList;
+  final LeadPagination? myTasksPagination;
+  final String myTasksSearchQuery;
+  final bool isLoadingMoreMyTasks;
+
+  // ---- Reassign Tasks ----
+  final UIState<ReassignTaskResponse>? reassignTasksUIState;
 
   const StaffState({
     this.branchesUIState,
@@ -53,11 +56,12 @@ final bool isLoadingMoreMyTasks;
     this.isLoadingMoreStaff = false,
     this.deleteStaffUIState,
     this.deletingStaffId,
-     this.myTasksListUIState,
-  this.myTasksList = const <Task>[],
-  this.myTasksPagination,
-  this.myTasksSearchQuery = '',
-  this.isLoadingMoreMyTasks = false,
+    this.myTasksListUIState,
+    this.myTasksList = const <Task>[],
+    this.myTasksPagination,
+    this.myTasksSearchQuery = '',
+    this.isLoadingMoreMyTasks = false,
+    this.reassignTasksUIState,
   });
 
   StaffState copyWith({
@@ -77,11 +81,12 @@ final bool isLoadingMoreMyTasks;
     // every other field here — this is the explicit "actually clear it" flag,
     // the same `clearX` shape `TaskSchedule.copyWith` already uses.
     bool clearDeletingStaffId = false,
-     UIState<TaskListResponse>? myTasksListUIState,
-  List<Task>? myTasksList,
-  LeadPagination? myTasksPagination,
-  String? myTasksSearchQuery,
-  bool? isLoadingMoreMyTasks,
+    UIState<TaskListResponse>? myTasksListUIState,
+    List<Task>? myTasksList,
+    LeadPagination? myTasksPagination,
+    String? myTasksSearchQuery,
+    bool? isLoadingMoreMyTasks,
+    UIState<ReassignTaskResponse>? reassignTasksUIState,
   }) {
     return StaffState(
       branchesUIState: branchesUIState ?? this.branchesUIState,
@@ -98,11 +103,12 @@ final bool isLoadingMoreMyTasks;
       deletingStaffId: clearDeletingStaffId
           ? null
           : (deletingStaffId ?? this.deletingStaffId),
-           myTasksListUIState: myTasksListUIState ?? this.myTasksListUIState,
-    myTasksList: myTasksList ?? this.myTasksList,
-    myTasksPagination: myTasksPagination ?? this.myTasksPagination,
-    myTasksSearchQuery: myTasksSearchQuery ?? this.myTasksSearchQuery,
-    isLoadingMoreMyTasks: isLoadingMoreMyTasks ?? this.isLoadingMoreMyTasks,
+      myTasksListUIState: myTasksListUIState ?? this.myTasksListUIState,
+      myTasksList: myTasksList ?? this.myTasksList,
+      myTasksPagination: myTasksPagination ?? this.myTasksPagination,
+      myTasksSearchQuery: myTasksSearchQuery ?? this.myTasksSearchQuery,
+      isLoadingMoreMyTasks: isLoadingMoreMyTasks ?? this.isLoadingMoreMyTasks,
+      reassignTasksUIState: reassignTasksUIState ?? this.reassignTasksUIState,
     );
   }
 
@@ -141,13 +147,18 @@ final bool isLoadingMoreMyTasks;
     deleteStaffUIState?.data,
     deleteStaffUIState?.errorType,
     deletingStaffId,
-      myTasksListUIState,
-  myTasksListUIState?.status,
-  myTasksListUIState?.data,
-  myTasksListUIState?.errorType,
-  myTasksList,
-  myTasksPagination,
-  myTasksSearchQuery,
-  isLoadingMoreMyTasks,
+    myTasksListUIState,
+    myTasksListUIState?.status,
+    myTasksListUIState?.data,
+    myTasksListUIState?.errorType,
+    myTasksList,
+    myTasksPagination,
+    myTasksSearchQuery,
+    isLoadingMoreMyTasks,
+
+    reassignTasksUIState,
+    reassignTasksUIState?.status,
+    reassignTasksUIState?.data,
+    reassignTasksUIState?.errorType,
   ];
 }

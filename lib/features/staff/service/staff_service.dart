@@ -6,6 +6,7 @@ import 'package:nimmys_crm/features/staff/api_request/create_staff_api_request.d
 import 'package:nimmys_crm/features/staff/model/create_staffsuccess_model.dart';
 import 'package:nimmys_crm/features/staff/api_request/update_staff_api_request.dart';
 import 'package:nimmys_crm/features/staff/model/delete_staff_model.dart';
+import 'package:nimmys_crm/features/staff/model/reassign_task_model.dart';
 import 'package:nimmys_crm/features/staff/model/staff_details_model.dart';
 import 'package:nimmys_crm/features/staff/model/staff_list_model.dart';
 import 'package:nimmys_crm/features/staff/model/store_success_model.dart';
@@ -207,7 +208,7 @@ class StaffService {
   }
 
   // Get My Tasks List
-    Future<Result<TaskListResponse>> getmyTasksList({
+  Future<Result<TaskListResponse>> getmyTasksList({
     required int page,
     required int perPage,
     String? search,
@@ -234,6 +235,37 @@ class StaffService {
       }
     } catch (e) {
       return Error(DeserializationError());
+    }
+  }
+
+  // Reassign Tasks Service
+  //
+  // POST /api/reassign-task
+  // Takes a list of task IDs and a target staff ID.
+  Future<Result<ReassignTaskResponse>> reassignTasks({
+    required List<int> taskIds,
+    required int assignedTo,
+  }) async {
+    try {
+      final url = ApiUrls.reassignTask;
+      final Map<String, dynamic> body = <String, dynamic>{
+        'task_ids': taskIds,
+        'assigned_to': assignedTo,
+      };
+      final result = await _apiService.post(url, body: body);
+
+      if (result is Success<dynamic>) {
+        return await _apiService.getResponseStatus<ReassignTaskResponse>(
+          result.value,
+          (json) => ReassignTaskResponse.fromJson(json as Map<String, dynamic>),
+        );
+      } else if (result is Error<dynamic>) {
+        return Error<ReassignTaskResponse>(result.type);
+      } else {
+        return Error<ReassignTaskResponse>(GenericError());
+      }
+    } catch (e) {
+      return Error<ReassignTaskResponse>(DeserializationError());
     }
   }
 }
