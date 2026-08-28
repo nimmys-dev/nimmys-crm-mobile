@@ -251,25 +251,6 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                 const SizedBox(height: AppSpacing.md),
                 Row(
                   children: <Widget>[
-                    // Complete button
-                    if (widget.task.status?.toLowerCase() != 'completed') ...[
-                      Expanded(
-                        child: AppPrimaryButton(
-                          label: 'Complete',
-                          icon: Icons.check_circle_outline_rounded,
-                          onPressed: () =>
-                              _showCompleteDialog(context, widget.task.id!),
-                          isLoading:
-                              context
-                                  .watch<TasksCubit>()
-                                  .state
-                                  .completeTaskUIState
-                                  ?.status ==
-                              Status.LOADING,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                    ],
                     Expanded(
                       child: AppPrimaryButton(
                         label: 'Edit',
@@ -297,11 +278,28 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                       child: AppPrimaryButton(
                         label: 'Delete',
                         icon: Icons.delete_outline_rounded,
-                        onPressed: () {
-                          // Implement delete confirmation (optional)
-                        },
+                        onPressed: () =>
+                            _showDeleteDialog(context, widget.task.id!),
                       ),
-                    ),
+                    ), // Complete button
+                    const SizedBox(width: AppSpacing.sm),
+                    if (widget.task.status?.toLowerCase() != 'completed') ...[
+                      Expanded(
+                        child: AppPrimaryButton(
+                          label: 'Complete',
+                          icon: Icons.check_circle_outline_rounded,
+                          onPressed: () =>
+                              _showCompleteDialog(context, widget.task.id!),
+                          isLoading:
+                              context
+                                  .watch<TasksCubit>()
+                                  .state
+                                  .completeTaskUIState
+                                  ?.status ==
+                              Status.LOADING,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 SizedBox(height: 80),
@@ -310,6 +308,76 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context, int taskId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Task'),
+        content: const Text(
+          'Are you sure you want to delete this task? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          BlocConsumer<TasksCubit, TasksState>(
+            listenWhen: (prev, curr) =>
+                prev.deleteTaskUIState?.status !=
+                curr.deleteTaskUIState?.status,
+            listener: (context, state) {
+              final uiState = state.deleteTaskUIState;
+              if (uiState?.status == Status.SUCCESS) {
+                ToastMessages.success(message: 'Task deleted successfully!');
+                context.read<TasksCubit>().resetDeleteTaskState();
+                // Navigate back and refresh the list
+                Navigator.pop(ctx); // close dialog
+                Navigator.pop(context); // go back to previous screen
+                // Refresh the list after navigation
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  context.read<TasksCubit>().getTasks(refresh: true);
+                });
+              } else if (uiState?.status == Status.ERROR) {
+                ToastMessages.error(
+                  message:
+                      uiState?.errorType?.getText(context) ??
+                      'Failed to delete task.',
+                );
+                context.read<TasksCubit>().resetDeleteTaskState();
+                Navigator.pop(ctx);
+              }
+            },
+            builder: (context, state) {
+              final isLoading =
+                  state.deleteTaskUIState?.status == Status.LOADING;
+              return ElevatedButton(
+                onPressed: isLoading
+                    ? null
+                    : () {
+                        context.read<TasksCubit>().deleteTask(taskId);
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Delete'),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }

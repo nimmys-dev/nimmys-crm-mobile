@@ -225,22 +225,23 @@ class TasksCubit extends BaseCubit<TasksState> {
     emit(state.copyWith(deleteTaskUIState: uiState));
   }
 
-  // Future<void> deleteTask(int id) async {
-  //   if (state.deleteTaskUIState?.status == Status.LOADING) {
-  //     return;
-  //   }
+  Future<void> deleteTask(int id) async {
+    if (state.deleteTaskUIState?.status == Status.LOADING) {
+      return;
+    }
 
-  //   _setDeleteTaskUIState(UIState.loading());
+    _setDeleteTaskUIState(UIState.loading());
 
-  //   final Result<dynamic> result = await _repository.deleteTask(id);
+    final Result<dynamic> result = await _repository.deleteTask(id);
 
-  //   if (result is Success<dynamic>) {
-  //     _setDeleteTaskUIState(UIState.success(result.value));
-  //     unawaited(getTasks(refresh: true));
-  //   } else if (result is Error<dynamic>) {
-  //     _setDeleteTaskUIState(UIState.error(result.type));
-  //   }
-  // }
+    if (result is Success<dynamic>) {
+      _setDeleteTaskUIState(UIState.success(result.value));
+      // Refresh the task list after deletion
+      unawaited(getTasks(refresh: true));
+    } else if (result is Error<dynamic>) {
+      _setDeleteTaskUIState(UIState.error(result.type));
+    }
+  }
 
   void resetDeleteTaskState() {
     _setDeleteTaskUIState(resetUIState<dynamic>(state.deleteTaskUIState));

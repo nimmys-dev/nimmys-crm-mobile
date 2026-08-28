@@ -76,7 +76,7 @@ class AppPrimaryButton extends StatelessWidget {
                         Flexible(
                           child: Text(
                             label,
-                            style: context.type.button,
+                            style: context.type.button.copyWith(fontSize: 11),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),

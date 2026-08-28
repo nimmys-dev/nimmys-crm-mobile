@@ -77,4 +77,12 @@ class TasksRepository {
       );
     }
   }
+
+  Future<Result<dynamic>> deleteTask(int id) async {
+    try {
+      return await _service.deleteTask(id);
+    } catch (e) {
+      return Error<dynamic>(ErrorWithMessage(message: e.toString()));
+    }
+  }
 }

@@ -165,24 +165,24 @@ class TasksService {
   }
 
   // /// DELETE /api/tasks/{id}. Deletes a task.
-  // Future<Result<dynamic>> deleteTask(int id) async {
-  //   try {
-  //     final Result<dynamic> result = await _apiService.delete(
-  //       ApiUrls.deleteTask(id),
-  //     );
-  //     if (result is Success<dynamic> &&
-  //         result.value is Map &&
-  //         result.value['status'] == false) {
-  //       final Object? message = result.value['message'];
-  //       return Error(
-  //         ErrorWithMessage(
-  //           message: message is String ? message : 'Could not delete task.',
-  //         ),
-  //       );
-  //     }
-  //     return result;
-  //   } catch (_) {
-  //     return Error(GenericError());
-  //   }
-  // }
+  Future<Result<dynamic>> deleteTask(int id) async {
+    try {
+      final Result<dynamic> result = await _apiService.delete(
+        ApiUrls.deleteTask(id),
+      );
+      if (result is Success<dynamic> &&
+          result.value is Map &&
+          result.value['status'] == false) {
+        final Object? message = result.value['message'];
+        return Error(
+          ErrorWithMessage(
+            message: message is String ? message : 'Could not delete task.',
+          ),
+        );
+      }
+      return result;
+    } catch (_) {
+      return Error(GenericError());
+    }
+  }
 }

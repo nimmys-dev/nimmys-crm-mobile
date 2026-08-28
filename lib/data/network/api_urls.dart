@@ -46,5 +46,5 @@ class ApiUrls {
   static String taskTypes = "$_baseUrl/task-types";
   static String viewTask(int id) => "$_baseUrl/tasks/$id";
   static String updateTask(int id) => "$_baseUrl/update-task/$id";
-  static String deleteTask(int id) => "$_baseUrl/tasks/$id"; // if needed
+  static String deleteTask(int id) => "$_baseUrl/delete-task/$id"; // if needed
 }
