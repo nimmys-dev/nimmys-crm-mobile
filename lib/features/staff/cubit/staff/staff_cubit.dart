@@ -302,10 +302,14 @@ class StaffCubit extends BaseCubit<StaffState> {
   // My Tasks List
   // ---------------------------------------------------------------------------
 
+
   Future<void> getMyTasks({bool refresh = false, String? search}) async {
-    if (state.myTasksListUIState?.status == Status.LOADING) return;
+    if (state.myTasksListUIState?.status == Status.LOADING) {
+      return;
+    }
 
     final String query = (search ?? state.myTasksSearchQuery).trim();
+
     final bool searchChanged = query != state.myTasksSearchQuery;
 
     if (!refresh && !searchChanged && state.myTasksList.isNotEmpty) {
@@ -320,9 +324,9 @@ class StaffCubit extends BaseCubit<StaffState> {
       ),
     );
 
-    final result = await _repository.getMyTasksList(
+    final Result<TaskListResponse> result = await _repository.getMyTasksList(
       page: 1,
-      perPage: _pageSize, // reuse _pageSize from StaffCubit
+      perPage: _pageSize,
       search: query,
     );
 
@@ -330,22 +334,97 @@ class StaffCubit extends BaseCubit<StaffState> {
       emit(
         state.copyWith(
           myTasksListUIState: UIState.success(result.value),
-          myTasksList: result.value.data ?? [],
+          myTasksList: result.value.data ?? <Task>[],
           myTasksPagination: result.value.pagination,
           isLoadingMoreMyTasks: false,
+          myTasksSearchQuery: query,
         ),
       );
     } else if (result is Error<TaskListResponse>) {
-      emit(state.copyWith(myTasksListUIState: UIState.error(result.type)));
+      emit(
+        state.copyWith(
+          myTasksListUIState: UIState.error(result.type),
+          isLoadingMoreMyTasks: false,
+        ),
+      );
     }
   }
 
   Future<void> refreshMyTasks() async {
-    await getMyTasks(refresh: true);
+    await getMyTasks(refresh: true, search: state.myTasksSearchQuery);
   }
 
+  /// -------------------------------------------------------------------------
+  /// Manual pagination.
+  ///
+  /// This is DIFFERENT from loadMoreMyTasks().
+  ///
+  /// loadMoreMyTasks()
+  ///   -> used by Select All
+  ///   -> appends pages
+  ///
+  /// goToMyTasksPage()
+  ///   -> used by left/right arrows
+  ///   -> replaces the visible list with the requested page
+  /// -------------------------------------------------------------------------
+  Future<void> goToMyTasksPage(int page) async {
+    final pagination = state.myTasksPagination;
+
+    if (pagination == null) {
+      return;
+    }
+
+    final int currentPage = pagination.currentPage ?? 1;
+    final int lastPage = pagination.lastPage ?? 1;
+
+    if (page < 1 || page > lastPage || page == currentPage) {
+      return;
+    }
+
+    if (state.myTasksListUIState?.status == Status.LOADING) {
+      return;
+    }
+
+    emit(state.copyWith(myTasksListUIState: UIState.loading()));
+
+    final Result<TaskListResponse> result = await _repository.getMyTasksList(
+      page: page,
+      perPage: _pageSize,
+      search: state.myTasksSearchQuery,
+    );
+
+    if (result is Success<TaskListResponse>) {
+      emit(
+        state.copyWith(
+          myTasksListUIState: UIState.success(result.value),
+
+          // IMPORTANT:
+          // Manual page navigation replaces the list.
+          // It does NOT append.
+          myTasksList: result.value.data ?? <Task>[],
+
+          myTasksPagination: result.value.pagination,
+
+          isLoadingMoreMyTasks: false,
+        ),
+      );
+    } else if (result is Error<TaskListResponse>) {
+      emit(
+        state.copyWith(
+          myTasksListUIState: UIState.error(result.type),
+          isLoadingMoreMyTasks: false,
+        ),
+      );
+    }
+  }
+
+  /// Used ONLY by Select All.
+  ///
+  /// This intentionally appends pages because Select All needs
+  /// the complete task collection.
   Future<void> loadMoreMyTasks() async {
     final pagination = state.myTasksPagination;
+
     if (state.isLoadingMoreMyTasks ||
         state.myTasksListUIState?.status == Status.LOADING ||
         pagination == null ||
@@ -355,16 +434,20 @@ class StaffCubit extends BaseCubit<StaffState> {
 
     emit(state.copyWith(isLoadingMoreMyTasks: true));
 
-    final result = await _repository.getMyTasksList(
+    final Result<TaskListResponse> result = await _repository.getMyTasksList(
       page: pagination.nextPage,
       perPage: _pageSize,
       search: state.myTasksSearchQuery,
     );
 
     if (result is Success<TaskListResponse>) {
+      final List<Task> nextPageTasks = result.value.data ?? <Task>[];
+
       emit(
         state.copyWith(
-          myTasksList: [...state.myTasksList, ...?result.value.data],
+          // Keep this as APPEND.
+          // Select All depends on having all pages in state.
+          myTasksList: [...state.myTasksList, ...nextPageTasks],
           myTasksPagination: result.value.pagination,
           isLoadingMoreMyTasks: false,
         ),
