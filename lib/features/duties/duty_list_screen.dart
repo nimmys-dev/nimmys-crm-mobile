@@ -79,6 +79,25 @@ class _DutyListScreenState extends State<DutyListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final cubit = context.read<TasksCubit>();
+      final state = cubit.state;
+      final pagination = state.tasksPagination;
+      if (pagination != null &&
+          pagination.currentPage != null &&
+          pagination.lastPage != null &&
+          pagination.currentPage! < pagination.lastPage! &&
+          state.tasksListUIState?.status != Status.LOADING) {
+        // Check if scroll is near bottom
+        if (_scrollController.hasClients) {
+          final maxScroll = _scrollController.position.maxScrollExtent;
+          final pixels = _scrollController.position.pixels;
+          if (pixels >= maxScroll - 200) {
+            cubit.goToTasksPage(pagination.currentPage! + 1);
+          }
+        }
+      }
+    });
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
         statusBarColor: Colors.transparent,

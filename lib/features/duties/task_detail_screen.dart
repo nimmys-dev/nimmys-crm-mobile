@@ -161,6 +161,9 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                 context.read<TasksCubit>().resetCompleteTaskState();
                 // Refresh task details
                 context.read<TasksCubit>().getTaskDetails(taskId);
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  context.read<TasksCubit>().getTasks();
+                });
                 Navigator.pop(ctx); // close dialog
               } else if (uiState?.status == Status.ERROR) {
                 ToastMessages.error(
@@ -169,6 +172,9 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                       'Failed to complete task.',
                 );
                 context.read<TasksCubit>().resetCompleteTaskState();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  context.read<TasksCubit>().getTasks();
+                });
                 // Keep dialog open on error
               }
             },
