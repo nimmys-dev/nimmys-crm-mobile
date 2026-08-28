@@ -285,20 +285,40 @@ class DutyListCount extends StatelessWidget {
   }
 }
 
-class DutyListTile extends StatelessWidget {
+class DutyListTile extends StatefulWidget {
   const DutyListTile({super.key, required this.task});
 
   final Task task;
 
   @override
+  State<DutyListTile> createState() => _DutyListTileState();
+}
+
+class _DutyListTileState extends State<DutyListTile> {
+  Color _getStatusColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'completed':
+        return Colors.green;
+      case 'pending':
+        return Colors.orange;
+      case 'overdue':
+        return AppColors.red; // or Colors.red
+      case 'ongoing':
+        return Colors.blue;
+      default:
+        return context.palette.ink; // fallback
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final assignee = task.assignedUser?.name ?? 'Unassigned';
-    final status = task.status ?? 'unknown';
+    final assignee = widget.task.assignedUser?.name ?? 'Unassigned';
+    final status = widget.task.status ?? 'unknown';
 
     return InkWell(
       onTap: () {
-        if (task.id != null) {
-          context.push(AppRouteName.taskDetailsFor(task.id ?? 8));
+        if (widget.task.id != null) {
+          context.push(AppRouteName.taskDetailsFor(widget.task.id ?? 8));
         } else {
           context.push(AppRouteName.taskDetails);
         }
@@ -316,7 +336,8 @@ class DutyListTile extends StatelessWidget {
                     ? Icons.check_circle_outline_rounded
                     : Icons.fact_check_outlined,
                 size: 38,
-                tone: AppIconChipTone.ink,
+                backgroundColor: _getStatusColor(status).withOpacity(0.15),
+                iconColor: _getStatusColor(status),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
@@ -325,14 +346,14 @@ class DutyListTile extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Text(
-                      task.title ?? 'Untitled',
+                      widget.task.title ?? 'Untitled',
                       style: context.type.cardTitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      task.description ?? '',
+                      widget.task.description ?? '',
                       style: context.type.caption,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -343,13 +364,17 @@ class DutyListTile extends StatelessWidget {
                       runSpacing: 6,
                       children: <Widget>[
                         AppTag(
+                          label: widget.task.status ?? 'Unknown',
+                          tagColor: _getStatusColor(widget.task.status),
+                        ),
+                        AppTag(
                           label: assignee,
                           icon: Icons.person_outline_rounded,
                           isAccent: false,
                         ),
-                        if (task.taskType != null)
+                        if (widget.task.taskType != null)
                           AppTag(
-                            label: task.taskType!.toUpperCase(),
+                            label: widget.task.taskType!.toUpperCase(),
                             icon: Icons.repeat_rounded,
                             isAccent: false,
                           ),

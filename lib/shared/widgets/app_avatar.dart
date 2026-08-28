@@ -103,7 +103,6 @@ class AppInitialBubble extends StatelessWidget {
     );
   }
 }
-
 /// Small rounded status/meta tag.
 class AppTag extends StatelessWidget {
   const AppTag({
@@ -111,18 +110,28 @@ class AppTag extends StatelessWidget {
     required this.label,
     this.icon,
     this.isAccent = true,
+    this.tagColor, // <-- NEW
   });
 
   final String label;
   final IconData? icon;
   final bool isAccent;
+  final Color? tagColor; // <-- NEW
 
   @override
   Widget build(BuildContext context) {
-    final Color fill = isAccent
-        ? context.palette.redWash
-        : context.palette.inkWash;
-    final Color tint = isAccent ? AppColors.red : context.palette.ink;
+    Color fill;
+    Color tint;
+
+    if (tagColor != null) {
+      // Use custom color with opacity for background
+      fill = tagColor!.withOpacity(0.12);
+      tint = tagColor!;
+    } else {
+      // Fallback to existing logic
+      fill = isAccent ? context.palette.redWash : context.palette.inkWash;
+      tint = isAccent ? AppColors.red : context.palette.ink;
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

@@ -112,45 +112,59 @@ class AppSectionHeader extends StatelessWidget {
 }
 
 /// Rounded square that holds an icon, tinted red or ink.
+/// Rounded square that holds an icon, tinted red or ink.
 class AppIconChip extends StatelessWidget {
   const AppIconChip({
     super.key,
     required this.icon,
     this.size = 40,
     this.tone = AppIconChipTone.red,
+    this.backgroundColor, // NEW
+    this.iconColor, // NEW
   });
 
   final IconData icon;
   final double size;
   final AppIconChipTone tone;
+  final Color? backgroundColor;
+  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
     final AppPalette palette = context.palette;
-    final bool isRed = tone == AppIconChipTone.red;
-    final bool isSolid = tone == AppIconChipTone.solid;
+
+    // Determine colors: if custom provided, use them; else fallback to tone logic.
+    Color bgColor;
+    Color fgColor;
+
+    if (backgroundColor != null) {
+      bgColor = backgroundColor!;
+      fgColor = iconColor ?? Colors.white; // default white for custom bg
+    } else {
+      final bool isRed = tone == AppIconChipTone.red;
+      final bool isSolid = tone == AppIconChipTone.solid;
+      bgColor = isSolid
+          ? Colors.transparent
+          : (isRed ? palette.redWash : palette.inkWash);
+      fgColor = isSolid
+          ? AppColors.white
+          : (isRed ? AppColors.red : palette.ink);
+    }
 
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        gradient: isSolid ? AppColors.actionGradient : null,
-        color: isSolid
+        // Use gradient only if solid and no custom background
+        gradient: (tone == AppIconChipTone.solid && backgroundColor == null)
+            ? AppColors.actionGradient
+            : null,
+        color: (tone == AppIconChipTone.solid && backgroundColor == null)
             ? null
-            : isRed
-            ? palette.redWash
-            : palette.inkWash,
+            : bgColor,
         borderRadius: BorderRadius.circular(size * 0.32),
       ),
-      child: Icon(
-        icon,
-        size: size * 0.5,
-        color: isSolid
-            ? AppColors.white
-            : isRed
-            ? AppColors.red
-            : palette.ink,
-      ),
+      child: Icon(icon, size: size * 0.5, color: iconColor ?? fgColor),
     );
   }
 }

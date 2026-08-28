@@ -42,35 +42,38 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: context.palette.canvas,
-      body: BlocBuilder<TasksCubit, TasksState>(
-        builder: (context, state) {
-          final uiState = state.taskDetailsUIState;
+    return SafeArea(
+      top: false,
+      child: Scaffold(
+        backgroundColor: context.palette.canvas,
+        body: BlocBuilder<TasksCubit, TasksState>(
+          builder: (context, state) {
+            final uiState = state.taskDetailsUIState;
 
-          if (uiState?.status == Status.LOADING) {
-            return const TaskDetailsLoadingView();
-          }
+            if (uiState?.status == Status.LOADING) {
+              return const TaskDetailsLoadingView();
+            }
 
-          if (uiState?.status == Status.ERROR || uiState?.data == null) {
-            return _ErrorView(
-              onRetry: () =>
-                  context.read<TasksCubit>().getTaskDetails(widget.taskId),
-            );
-          }
+            if (uiState?.status == Status.ERROR || uiState?.data == null) {
+              return _ErrorView(
+                onRetry: () =>
+                    context.read<TasksCubit>().getTaskDetails(widget.taskId),
+              );
+            }
 
-          final TaskDetailsResponse response = uiState!.data!;
-          final TaskDetail? taskDetail = response.data;
+            final TaskDetailsResponse response = uiState!.data!;
+            final TaskDetail? taskDetail = response.data;
 
-          if (taskDetail == null) {
-            return _ErrorView(
-              onRetry: () =>
-                  context.read<TasksCubit>().getTaskDetails(widget.taskId),
-            );
-          }
+            if (taskDetail == null) {
+              return _ErrorView(
+                onRetry: () =>
+                    context.read<TasksCubit>().getTaskDetails(widget.taskId),
+              );
+            }
 
-          return _TaskDetailsContent(task: taskDetail);
-        },
+            return _TaskDetailsContent(task: taskDetail);
+          },
+        ),
       ),
     );
   }
