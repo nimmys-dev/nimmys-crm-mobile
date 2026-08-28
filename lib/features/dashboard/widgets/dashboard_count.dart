@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nimmys_crm/core/auth/app_permission.dart';
@@ -28,7 +27,6 @@ class DashboardContent extends StatefulWidget {
 class _DashboardContentState extends State<DashboardContent> {
   @override
   void initState() {
-    // TODO: implement initState
     context.read<DashboardCubit>().getDashboardCount();
     super.initState();
   }
@@ -60,67 +58,74 @@ class _DashboardContentState extends State<DashboardContent> {
         final totalLeads = widget.role.can(AppPermission.viewAllLeads)
             ? counts?.data?.approvalPending?.toString() ?? '0'
             : null;
+        Future<void> refreshDashboard() async {
+          await context.read<DashboardCubit>().getDashboardCount();
+        }
 
-        return ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const SizedBox(height: 50),
-            Transform.translate(
-              offset: const Offset(0, -22),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.gutter,
-                ),
-                child: Column(
-                  children: [
-                    if (isLoading)
-                      const Padding(
-                        padding: EdgeInsets.all(16),
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.red,
+        return RefreshIndicator(
+          onRefresh: refreshDashboard,
+          color: AppColors.red,
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              const SizedBox(height: 50),
+              Transform.translate(
+                offset: const Offset(0, -22),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.gutter,
+                  ),
+                  child: Column(
+                    children: [
+                      if (isLoading)
+                        const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.red,
+                            ),
                           ),
-                        ),
-                      )
-                    else ...[
-                      DashboardDutySection(items: dutyStats),
-                      DashboardLeadsSection(items: leadStats),
-                      AppSectionCard(
-                        child: DashboardTotalsCard(
-                          yourLeads: yourLeads,
-                          totalLeads: totalLeads,
-                          onTap: () => context.push(
-                            '${AppRouteName.leads}?isAppHeaderRequired=true',
-                          ),
-                        ),
-                      ),
-                      if (widget.role.hasFullDashboard)
+                        )
+                      else ...[
+                        DashboardDutySection(items: dutyStats),
+                        DashboardLeadsSection(items: leadStats),
                         AppSectionCard(
-                          child: Column(
-                            children: [
-                              AppSectionHeader(
-                                title: 'Report',
-                                actionLabel: 'View All',
-                                onAction: () => context.push(
-                                  '${AppRouteName.reports}?isAppHeaderRequired=true',
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.sm),
-                              DashboardReportCard(
-                                onTap: () => context.push(
-                                  '${AppRouteName.reports}?isAppHeaderRequired=true',
-                                ),
-                              ),
-                            ],
+                          child: DashboardTotalsCard(
+                            yourLeads: yourLeads,
+                            totalLeads: totalLeads,
+                            onTap: () => context.push(
+                              '${AppRouteName.leads}?isAppHeaderRequired=true',
+                            ),
                           ),
                         ),
-                      const SizedBox(height: AppSpacing.xs),
+                        if (widget.role.hasFullDashboard)
+                          AppSectionCard(
+                            child: Column(
+                              children: [
+                                AppSectionHeader(
+                                  title: 'Report',
+                                  actionLabel: 'View All',
+                                  onAction: () => context.push(
+                                    '${AppRouteName.reports}?isAppHeaderRequired=true',
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                DashboardReportCard(
+                                  onTap: () => context.push(
+                                    '${AppRouteName.reports}?isAppHeaderRequired=true',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(height: AppSpacing.xs),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );

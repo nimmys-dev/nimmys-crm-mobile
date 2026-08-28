@@ -193,59 +193,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // ---- Tab content builders ----
-  // Widget _buildDashboardContent(BuildContext context, UserRole role) {
-  //   // This is the original dashboard content (the ListView)
-  //   return ListView(
-  //     padding: EdgeInsets.zero,
-  //     children: <Widget>[
-  //       SizedBox(height: 50),
-  //       Transform.translate(
-  //         offset: const Offset(0, -22),
-  //         child: Padding(
-  //           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gutter),
-  //           child: Column(
-  //             children: <Widget>[
-  //               DashboardDutySection(items: _dutyStatsFor(role)),
-  //               DashboardLeadsSection(items: _leads),
-  //               AppSectionCard(
-  //                 child: DashboardTotalsCard(
-  //                   yourLeads: '40',
-  //                   totalLeads: role.can(AppPermission.viewAllLeads)
-  //                       ? '126'
-  //                       : null,
-  //                   onTap: () => context.push(
-  //                     '${AppRouteName.leads}?isAppHeaderRequired=true',
-  //                   ),
-  //                 ),
-  //               ),
-  //               if (role.hasFullDashboard)
-  //                 AppSectionCard(
-  //                   child: Column(
-  //                     children: <Widget>[
-  //                       AppSectionHeader(
-  //                         title: 'Report',
-  //                         actionLabel: 'View All',
-  //                         onAction: () => context.push(
-  //                           '${AppRouteName.reports}?isAppHeaderRequired=true',
-  //                         ),
-  //                       ),
-  //                       const SizedBox(height: AppSpacing.sm),
-  //                       DashboardReportCard(
-  //                         onTap: () => context.push(
-  //                           '${AppRouteName.reports}?isAppHeaderRequired=true',
-  //                         ),
-  //                       ),
-  //                     ],
-  //                   ),
-  //                 ),
-  //               const SizedBox(height: AppSpacing.xs),
-  //             ],
-  //           ),
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
 
   Widget _buildTabContent(int index, UserRole role) {
     switch (index) {

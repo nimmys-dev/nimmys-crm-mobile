@@ -7,7 +7,6 @@ import 'package:nimmys_crm/features/duties/model/task_details_model.dart';
 import 'package:nimmys_crm/features/duties/widgets/task_details_shimmer.dart';
 import 'package:nimmys_crm/helpers/date_helper.dart';
 import 'package:nimmys_crm/utils/toast_messages.dart';
-import 'package:shimmer/shimmer.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
@@ -124,6 +123,10 @@ class _TaskDetailsContent extends StatefulWidget {
 }
 
 class _TaskDetailsContentState extends State<_TaskDetailsContent> {
+  Future<void> _refresh() async {
+    await context.read<TasksCubit>().getTaskDetails(widget.task.id!);
+  }
+
   void _showCompleteDialog(BuildContext context, int taskId) {
     final TextEditingController remarksController = TextEditingController();
     showDialog(
@@ -161,8 +164,9 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                 context.read<TasksCubit>().resetCompleteTaskState();
                 // Refresh task details
                 context.read<TasksCubit>().getTaskDetails(taskId);
-                WidgetsBinding.instance.addPostFrameCallback((_) {
+                WidgetsBinding.instance.addPostFrameCallback((_) async {
                   context.read<TasksCubit>().getTasks();
+                  await _refresh();
                 });
                 Navigator.pop(ctx); // close dialog
               } else if (uiState?.status == Status.ERROR) {
@@ -172,8 +176,9 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                       'Failed to complete task.',
                 );
                 context.read<TasksCubit>().resetCompleteTaskState();
-                WidgetsBinding.instance.addPostFrameCallback((_) {
+                WidgetsBinding.instance.addPostFrameCallback((_) async {
                   context.read<TasksCubit>().getTasks();
+                  await _refresh();
                 });
                 // Keep dialog open on error
               }
@@ -223,81 +228,85 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
           leading: const AppBackButton(),
         ),
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.only(
-              left: AppSpacing.gutter,
-              right: AppSpacing.gutter,
-              top: AppSpacing.md,
-              bottom: AppSpacing.xl,
-            ),
-            children: <Widget>[
-              StatusCard(task: widget.task),
-              const SizedBox(height: AppSpacing.sm),
-              AssignmentCard(task: widget.task),
-              const SizedBox(height: AppSpacing.sm),
-              ScheduleCard(task: widget.task),
-              if (widget.task.description?.isNotEmpty ?? false) ...<Widget>[
+          child: RefreshIndicator(
+            onRefresh: _refresh,
+            child: ListView(
+              padding: const EdgeInsets.only(
+                left: AppSpacing.gutter,
+                right: AppSpacing.gutter,
+                top: AppSpacing.md,
+                bottom: AppSpacing.xl,
+              ),
+              children: <Widget>[
+                StatusCard(task: widget.task),
                 const SizedBox(height: AppSpacing.sm),
-                DescriptionCard(task: widget.task),
-              ],
-              // ---- Action Buttons ----
-              const SizedBox(height: AppSpacing.md),
-              Row(
-                children: <Widget>[
-                  // Complete button
-                  if (widget.task.status?.toLowerCase() != 'completed') ...[
+                AssignmentCard(task: widget.task),
+                const SizedBox(height: AppSpacing.sm),
+                ScheduleCard(task: widget.task),
+                if (widget.task.description?.isNotEmpty ?? false) ...<Widget>[
+                  const SizedBox(height: AppSpacing.sm),
+                  DescriptionCard(task: widget.task),
+                ],
+                // ---- Action Buttons ----
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: <Widget>[
+                    // Complete button
+                    if (widget.task.status?.toLowerCase() != 'completed') ...[
+                      Expanded(
+                        child: AppPrimaryButton(
+                          label: 'Complete',
+                          icon: Icons.check_circle_outline_rounded,
+                          onPressed: () =>
+                              _showCompleteDialog(context, widget.task.id!),
+                          isLoading:
+                              context
+                                  .watch<TasksCubit>()
+                                  .state
+                                  .completeTaskUIState
+                                  ?.status ==
+                              Status.LOADING,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                    ],
                     Expanded(
                       child: AppPrimaryButton(
-                        label: 'Complete',
-                        icon: Icons.check_circle_outline_rounded,
-                        onPressed: () =>
-                            _showCompleteDialog(context, widget.task.id!),
-                        isLoading:
-                            context
-                                .watch<TasksCubit>()
-                                .state
-                                .completeTaskUIState
-                                ?.status ==
-                            Status.LOADING,
+                        label: 'Edit',
+                        icon: Icons.edit_outlined,
+                        onPressed: widget.task.id == null
+                            ? null
+                            : () async {
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => CreateTaskScreen(
+                                      taskToEdit: widget.task,
+                                    ),
+                                  ),
+                                );
+                                if (context.mounted) {
+                                  context.read<TasksCubit>().getTaskDetails(
+                                    widget.task.id!,
+                                  );
+                                }
+                              },
                       ),
                     ),
                     const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: AppPrimaryButton(
+                        label: 'Delete',
+                        icon: Icons.delete_outline_rounded,
+                        onPressed: () {
+                          // Implement delete confirmation (optional)
+                        },
+                      ),
+                    ),
                   ],
-                  Expanded(
-                    child: AppPrimaryButton(
-                      label: 'Edit',
-                      icon: Icons.edit_outlined,
-                      onPressed: widget.task.id == null
-                          ? null
-                          : () async {
-                              await Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) =>
-                                      CreateTaskScreen(taskToEdit: widget.task),
-                                ),
-                              );
-                              if (context.mounted) {
-                                context.read<TasksCubit>().getTaskDetails(
-                                  widget.task.id!,
-                                );
-                              }
-                            },
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: AppPrimaryButton(
-                      label: 'Delete',
-                      icon: Icons.delete_outline_rounded,
-                      onPressed: () {
-                        // Implement delete confirmation (optional)
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 80),
-            ],
+                ),
+                SizedBox(height: 80),
+              ],
+            ),
           ),
         ),
       ],
