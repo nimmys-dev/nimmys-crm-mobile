@@ -6,6 +6,7 @@ import 'package:nimmys_crm/features/duties/create_task_screen.dart';
 import 'package:nimmys_crm/features/duties/model/task_details_model.dart';
 import 'package:nimmys_crm/features/duties/widgets/task_details_shimmer.dart';
 import 'package:nimmys_crm/helpers/date_helper.dart';
+import 'package:nimmys_crm/utils/toast_messages.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
@@ -110,10 +111,98 @@ class _ErrorView extends StatelessWidget {
 // Main Content
 // ---------------------------------------------------------------------------
 
-class _TaskDetailsContent extends StatelessWidget {
+class _TaskDetailsContent extends StatefulWidget {
   const _TaskDetailsContent({required this.task});
 
   final TaskDetail task;
+
+  @override
+  State<_TaskDetailsContent> createState() => _TaskDetailsContentState();
+}
+
+class _TaskDetailsContentState extends State<_TaskDetailsContent> {
+  void _showCompleteDialog(BuildContext context, int taskId) {
+    final TextEditingController remarksController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Mark as Complete'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Are you sure you want to mark this task as completed?'),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: remarksController,
+              decoration: const InputDecoration(
+                hintText: 'Remarks',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          BlocConsumer<TasksCubit, TasksState>(
+            listenWhen: (prev, curr) =>
+                prev.completeTaskUIState?.status !=
+                curr.completeTaskUIState?.status,
+            listener: (context, state) {
+              final uiState = state.completeTaskUIState;
+              if (uiState?.status == Status.SUCCESS) {
+                ToastMessages.success(message: 'Task marked as completed!');
+                context.read<TasksCubit>().resetCompleteTaskState();
+                // Refresh task details
+                context.read<TasksCubit>().getTaskDetails(taskId);
+                Navigator.pop(ctx); // close dialog
+              } else if (uiState?.status == Status.ERROR) {
+                ToastMessages.error(
+                  message:
+                      uiState?.errorType?.getText(context) ??
+                      'Failed to complete task.',
+                );
+                context.read<TasksCubit>().resetCompleteTaskState();
+                // Keep dialog open on error
+              }
+            },
+            builder: (context, state) {
+              final isLoading =
+                  state.completeTaskUIState?.status == Status.LOADING;
+              return ElevatedButton(
+                onPressed: isLoading
+                    ? null
+                    : () {
+                        final remarks = remarksController.text.trim();
+                        context.read<TasksCubit>().completeTask(
+                          taskId,
+                          remarks: remarks.isEmpty ? null : remarks,
+                        );
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Confirm'),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -133,34 +222,54 @@ class _TaskDetailsContent extends StatelessWidget {
               bottom: AppSpacing.xl,
             ),
             children: <Widget>[
-              StatusCard(task: task),
+              StatusCard(task: widget.task),
               const SizedBox(height: AppSpacing.sm),
-              AssignmentCard(task: task),
+              AssignmentCard(task: widget.task),
               const SizedBox(height: AppSpacing.sm),
-              ScheduleCard(task: task),
-              if (task.description?.isNotEmpty ?? false) ...<Widget>[
+              ScheduleCard(task: widget.task),
+              if (widget.task.description?.isNotEmpty ?? false) ...<Widget>[
                 const SizedBox(height: AppSpacing.sm),
-                DescriptionCard(task: task),
+                DescriptionCard(task: widget.task),
               ],
+              // ---- Action Buttons ----
               const SizedBox(height: AppSpacing.md),
               Row(
                 children: <Widget>[
+                  // Complete button
+                  if (widget.task.status?.toLowerCase() != 'completed') ...[
+                    Expanded(
+                      child: AppPrimaryButton(
+                        label: 'Complete',
+                        icon: Icons.check_circle_outline_rounded,
+                        onPressed: () =>
+                            _showCompleteDialog(context, widget.task.id!),
+                        isLoading:
+                            context
+                                .watch<TasksCubit>()
+                                .state
+                                .completeTaskUIState
+                                ?.status ==
+                            Status.LOADING,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                  ],
                   Expanded(
                     child: AppPrimaryButton(
                       label: 'Edit',
                       icon: Icons.edit_outlined,
-                      onPressed: task.id == null
+                      onPressed: widget.task.id == null
                           ? null
                           : () async {
                               await Navigator.of(context).push(
                                 MaterialPageRoute<void>(
                                   builder: (_) =>
-                                      CreateTaskScreen(taskToEdit: task),
+                                      CreateTaskScreen(taskToEdit: widget.task),
                                 ),
                               );
                               if (context.mounted) {
                                 context.read<TasksCubit>().getTaskDetails(
-                                  task.id!,
+                                  widget.task.id!,
                                 );
                               }
                             },
@@ -172,7 +281,7 @@ class _TaskDetailsContent extends StatelessWidget {
                       label: 'Delete',
                       icon: Icons.delete_outline_rounded,
                       onPressed: () {
-                        // Implement delete confirmation
+                        // Implement delete confirmation (optional)
                       },
                     ),
                   ),

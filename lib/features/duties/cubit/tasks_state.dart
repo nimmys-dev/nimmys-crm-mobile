@@ -45,6 +45,9 @@ class TasksState extends Equatable {
   /// DELETE /api/tasks/{id} state.
   final UIState<dynamic>? deleteTaskUIState;
 
+  /// POST /api/approval-task/{id} state.
+  final UIState<TaskCompleteResponse>? completeTaskUIState;
+
   const TasksState({
     this.tasksListUIState,
     this.tasksList = const <Task>[],
@@ -54,6 +57,7 @@ class TasksState extends Equatable {
     this.createTaskUIState,
     this.updateTaskUIState,
     this.deleteTaskUIState,
+    this.completeTaskUIState,
   });
 
   TasksState copyWith({
@@ -65,6 +69,7 @@ class TasksState extends Equatable {
     UIState<dynamic>? createTaskUIState,
     UIState<TaskDetailsResponse>? updateTaskUIState,
     UIState<dynamic>? deleteTaskUIState,
+    UIState<TaskCompleteResponse>? completeTaskUIState,
   }) {
     return TasksState(
       tasksListUIState: tasksListUIState ?? this.tasksListUIState,
@@ -75,6 +80,7 @@ class TasksState extends Equatable {
       createTaskUIState: createTaskUIState ?? this.createTaskUIState,
       updateTaskUIState: updateTaskUIState ?? this.updateTaskUIState,
       deleteTaskUIState: deleteTaskUIState ?? this.deleteTaskUIState,
+      completeTaskUIState: completeTaskUIState ?? this.completeTaskUIState,
     );
   }
 
@@ -112,5 +118,11 @@ class TasksState extends Equatable {
     deleteTaskUIState?.status,
     deleteTaskUIState?.data,
     deleteTaskUIState?.errorType,
+
+    // Mark Task as completed
+    completeTaskUIState,
+    completeTaskUIState?.status,
+    completeTaskUIState?.data,
+    completeTaskUIState?.errorType,
   ];
 }

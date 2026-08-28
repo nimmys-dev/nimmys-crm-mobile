@@ -5,6 +5,7 @@ import 'package:nimmys_crm/core/reset_cubit_state.dart';
 import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/ui_state/ui_state.dart';
 import 'package:nimmys_crm/enum/status.dart';
+import 'package:nimmys_crm/features/duties/model/task_completed_model.dart';
 import 'package:nimmys_crm/features/duties/model/task_details_model.dart';
 import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
 import 'package:nimmys_crm/features/duties/repository/tasks_repository.dart';
@@ -182,6 +183,40 @@ class TasksCubit extends BaseCubit<TasksState> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Complete Task
+  // ---------------------------------------------------------------------------
+
+  void _setCompleteTaskUIState(UIState<TaskCompleteResponse>? uiState) {
+    emit(state.copyWith(completeTaskUIState: uiState));
+  }
+
+  /// Marks a task as completed.
+  Future<void> completeTask(int id, {String? remarks}) async {
+    if (state.completeTaskUIState?.status == Status.LOADING) return;
+
+    _setCompleteTaskUIState(UIState.loading());
+
+    final result = await _repository.completeTask(id, remarks: remarks);
+
+    if (result is Success<TaskCompleteResponse>) {
+      _setCompleteTaskUIState(UIState.success(result.value));
+      // Refresh the task list after completion
+      unawaited(getTasks(refresh: true));
+      // Optionally refresh task details if the current details screen is showing this task
+      if (state.taskDetailsUIState?.data?.data?.id == id) {
+        unawaited(getTaskDetails(id));
+      }
+    } else if (result is Error<TaskCompleteResponse>) {
+      _setCompleteTaskUIState(UIState.error(result.type));
+    }
+  }
+
+  void resetCompleteTaskState() {
+    _setCompleteTaskUIState(
+      resetUIState<TaskCompleteResponse>(state.completeTaskUIState),
+    );
+  }
   // ---------------------------------------------------------------------------
   // Delete Task
   // ---------------------------------------------------------------------------

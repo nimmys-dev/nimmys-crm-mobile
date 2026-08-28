@@ -39,6 +39,7 @@ class ApiUrls {
   static String leadCalls(int leadId) => "$_baseUrl/leads/$leadId/calls";
   static String getcallHistory(int leadId) =>
       "$_baseUrl/lead-call-history/$leadId/calls";
+  static String approvalTask(int id) => "$_baseUrl/approval-task/$id";
 
   // Tasks
   static String tasks = "$_baseUrl/tasks";

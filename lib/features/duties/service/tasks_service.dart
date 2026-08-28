@@ -1,6 +1,7 @@
 import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/network/api_service.dart';
 import 'package:nimmys_crm/data/network/api_urls.dart';
+import 'package:nimmys_crm/features/duties/model/task_completed_model.dart';
 import 'package:nimmys_crm/features/duties/model/task_details_model.dart';
 import 'package:nimmys_crm/features/duties/model/task_type_model.dart';
 import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
@@ -131,6 +132,35 @@ class TasksService {
       return Error<TaskDetailsResponse>(GenericError());
     } catch (_) {
       return Error<TaskDetailsResponse>(DeserializationError());
+    }
+  }
+
+  /// POST /api/approval-task/{id}
+  /// Marks a task as completed with optional remarks.
+  Future<Result<TaskCompleteResponse>> completeTask(
+    int id, {
+    String? remarks,
+  }) async {
+    try {
+      final String url = ApiUrls.approvalTask(
+        id,
+      ); // we need to add this constant
+      final Map<String, dynamic> body = {};
+      if (remarks != null && remarks.trim().isNotEmpty) {
+        body['remarks'] = remarks.trim();
+      }
+      final Result<dynamic> result = await _apiService.post(url, body: body);
+      if (result is Success<dynamic>) {
+        return await _apiService.getResponseStatus<TaskCompleteResponse>(
+          result.value,
+          (json) => TaskCompleteResponse.fromJson(json as Map<String, dynamic>),
+        );
+      } else if (result is Error<dynamic>) {
+        return Error<TaskCompleteResponse>(result.type);
+      }
+      return Error<TaskCompleteResponse>(GenericError());
+    } catch (_) {
+      return Error<TaskCompleteResponse>(DeserializationError());
     }
   }
 
