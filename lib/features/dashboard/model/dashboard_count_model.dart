@@ -4,12 +4,7 @@ class DashboardCount {
   final String? message;
   final DashboardCountData? data;
 
-  DashboardCount({
-    this.status,
-    this.statusCode,
-    this.message,
-    this.data,
-  });
+  DashboardCount({this.status, this.statusCode, this.message, this.data});
 
   factory DashboardCount.fromJson(Map<String, dynamic> json) {
     return DashboardCount(
@@ -17,9 +12,7 @@ class DashboardCount {
       statusCode: json['status_code'] as int?,
       message: json['message'] as String?,
       data: json['data'] != null
-          ? DashboardCountData.fromJson(
-              json['data'] as Map<String, dynamic>,
-            )
+          ? DashboardCountData.fromJson(json['data'] as Map<String, dynamic>)
           : null,
     );
   }
@@ -52,7 +45,7 @@ class DashboardCountData {
       todayDuty: json['today_duty'] as int?,
       overdueDuty: json['overdue_duty'] as int?,
       upcomingDuty: json['upcoming_duty'] as int?,
-      approvalPending: json['approval_pending'] as int?,
+      approvalPending: json['approvalPending'] as int?,
     );
   }
 
@@ -61,7 +54,7 @@ class DashboardCountData {
       'today_duty': todayDuty,
       'overdue_duty': overdueDuty,
       'upcoming_duty': upcomingDuty,
-      'approval_pending': approvalPending,
+      'approvalPending': approvalPending,
     };
   }
 }

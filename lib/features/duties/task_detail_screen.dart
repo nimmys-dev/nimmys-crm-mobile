@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nimmys_crm/enum/status.dart';
+import 'package:nimmys_crm/features/dashboard/cubit/dashboard_cubit.dart';
 import 'package:nimmys_crm/features/duties/cubit/tasks_cubit.dart';
 import 'package:nimmys_crm/features/duties/create_task_screen.dart';
 import 'package:nimmys_crm/features/duties/model/task_details_model.dart';
@@ -162,6 +163,7 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
               if (uiState?.status == Status.SUCCESS) {
                 ToastMessages.success(message: 'Task marked as completed!');
                 context.read<TasksCubit>().resetCompleteTaskState();
+                context.read<DashboardCubit>().getDashboardCount();
                 // Refresh task details
                 context.read<TasksCubit>().getTaskDetails(taskId);
                 WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -335,6 +337,7 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
               if (uiState?.status == Status.SUCCESS) {
                 ToastMessages.success(message: 'Task deleted successfully!');
                 context.read<TasksCubit>().resetDeleteTaskState();
+                context.read<DashboardCubit>().getDashboardCount();
                 // Navigate back and refresh the list
                 Navigator.pop(ctx); // close dialog
                 Navigator.pop(context); // go back to previous screen

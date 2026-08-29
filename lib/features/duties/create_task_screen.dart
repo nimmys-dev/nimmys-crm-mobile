@@ -6,6 +6,7 @@ import 'package:nimmys_crm/core/theme/app_colors.dart';
 import 'package:nimmys_crm/core/theme/app_dimens.dart';
 import 'package:nimmys_crm/core/theme/app_theme.dart';
 import 'package:nimmys_crm/enum/status.dart';
+import 'package:nimmys_crm/features/dashboard/cubit/dashboard_cubit.dart';
 import 'package:nimmys_crm/features/duties/cubit/tasks_cubit.dart';
 import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
 import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
@@ -286,10 +287,12 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                 final updateState = state.updateTaskUIState;
                 if (!_isEditing && createState?.status == Status.SUCCESS) {
                   context.read<TasksCubit>().resetCreateTaskState();
+                  context.read<DashboardCubit>().getDashboardCount();
                   context.go(AppRouteName.duties);
                 } else if (_isEditing &&
                     updateState?.status == Status.SUCCESS) {
                   context.read<TasksCubit>().resetUpdateTaskState();
+                  context.read<DashboardCubit>().getDashboardCount();
                   context.go(AppRouteName.duties);
                 } else {
                   final requestStatus = _isEditing
