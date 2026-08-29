@@ -1,69 +1,28 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nimmys_crm/core/theme/app_colors.dart';
+import 'package:nimmys_crm/core/theme/app_dimens.dart';
+import 'package:nimmys_crm/core/theme/app_theme.dart';
+import 'package:nimmys_crm/enum/status.dart';
+import 'package:nimmys_crm/features/duties/cubit/tasks_cubit.dart';
+import 'package:nimmys_crm/features/duties/model/get_all_pending_task_model.dart';
+import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
+import 'package:nimmys_crm/shared/widgets/app_avatar.dart';
+import 'package:nimmys_crm/shared/widgets/app_buttons.dart';
+import 'package:nimmys_crm/shared/widgets/app_gradient_header.dart';
+import 'package:nimmys_crm/shared/widgets/app_section_card.dart';
+import 'package:nimmys_crm/shared/widgets/app_segmented_tabs.dart';
+import 'package:nimmys_crm/shared/widgets/app_search_field.dart';
+import 'package:nimmys_crm/shared/widgets/app_select_field.dart';
+import 'package:nimmys_crm/utils/toast_messages.dart';
 
-import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_dimens.dart';
-import '../../core/theme/app_theme.dart';
-import '../../shared/widgets/app_avatar.dart';
-import '../../shared/widgets/app_buttons.dart';
-import '../../shared/widgets/app_gradient_header.dart';
-import '../../shared/widgets/app_section_card.dart';
-import '../../shared/widgets/app_segmented_tabs.dart';
-import '../../shared/widgets/app_select_field.dart';
-import '../../utils/toast_messages.dart';
+/// Filter status for approval tabs.
+enum ApprovalFilter { pending, approved, rejected }
 
-/// Where an approval request sits.
-enum ApprovalStatus {
-  pending('Pending'),
-  approved('Approved'),
-  rejected('Rejected');
-
-  const ApprovalStatus(this.label);
-
-  final String label;
-
-  static List<String> get labels =>
-      ApprovalStatus.values.map((ApprovalStatus s) => s.label).toList();
-}
-
-/// One duty submitted for a manager's sign-off.
-class ApprovalRequest {
-  const ApprovalRequest({
-    required this.id,
-    required this.title,
-    required this.detail,
-    required this.requestedBy,
-    required this.requestedAt,
-    this.status = ApprovalStatus.pending,
-  });
-
-  final String id;
-  final String title;
-  final String detail;
-  final String requestedBy;
-  final DateTime requestedAt;
-  final ApprovalStatus status;
-
-  ApprovalRequest copyWith({ApprovalStatus? status}) => ApprovalRequest(
-    id: id,
-    title: title,
-    detail: detail,
-    requestedBy: requestedBy,
-    requestedAt: requestedAt,
-    status: status ?? this.status,
-  );
-}
-
-/// Approvals — duties waiting on a manager's decision.
-///
-/// The destination behind the dashboard's "Approval Pending" counter, which
-/// only admin and manager see; the route carries the same `viewApprovals`
-/// permission so the two cannot disagree.
-///
-/// DATA — sample rows. This project has no approvals endpoint (`ApiUrls` covers
-/// auth, profile and staff only), and the counter this screen opens from is
-/// hard-coded for the same reason. Approve/reject update local state so the
-/// flow is reviewable; wire them to the API when one exists.
+/// Approvals screen – shows tasks pending approval.
 class ApprovalsScreen extends StatefulWidget {
   const ApprovalsScreen({super.key});
 
@@ -72,163 +31,277 @@ class ApprovalsScreen extends StatefulWidget {
 }
 
 class _ApprovalsScreenState extends State<ApprovalsScreen> {
-  late List<ApprovalRequest> _requests = <ApprovalRequest>[
-    ApprovalRequest(
-      id: '1',
-      title: 'Leave request — 2 days',
-      detail: 'Personal leave covering the Ettumanoor counter shift.',
-      requestedBy: 'Sijo',
-      requestedAt: _daysAgo(0),
-    ),
-    ApprovalRequest(
-      id: '2',
-      title: 'Discount approval — Sigma 85mm',
-      detail: '8% off list for a repeat customer closing today.',
-      requestedBy: 'Abin Babu',
-      requestedAt: _daysAgo(0),
-    ),
-    ApprovalRequest(
-      id: '3',
-      title: 'Stock transfer to Hill Palace',
-      detail: 'Move three Sony bodies to cover the weekend demand.',
-      requestedBy: 'Mathew Thomas',
-      requestedAt: _daysAgo(1),
-    ),
-    ApprovalRequest(
-      id: '4',
-      title: 'Overtime — stock audit',
-      detail: 'Four hours beyond the closing shift.',
-      requestedBy: 'Thomas John',
-      requestedAt: _daysAgo(3),
-      status: ApprovalStatus.approved,
-    ),
-    ApprovalRequest(
-      id: '5',
-      title: 'Advance against salary',
-      detail: 'Requested outside the monthly window.',
-      requestedBy: 'Sijo',
-      requestedAt: _daysAgo(6),
-      status: ApprovalStatus.rejected,
-    ),
-  ];
+  int _tabIndex = 0;
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
 
-  static DateTime _daysAgo(int days) {
-    final DateTime now = DateTime.now();
-    return DateTime(now.year, now.month, now.day - days, 9, 30);
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TasksCubit>().getApprovalPendingTasks();
+    });
   }
 
-  int _tabIndex = 0;
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
 
-  ApprovalStatus get _filter => ApprovalStatus.values[_tabIndex];
+  ApprovalFilter get _filter => ApprovalFilter.values[_tabIndex];
 
-  List<ApprovalRequest> get _visible => _requests
-      .where((ApprovalRequest request) => request.status == _filter)
-      .toList();
-
-  void _decide(ApprovalRequest request, ApprovalStatus decision) {
-    setState(() {
-      _requests = _requests
-          .map(
-            (ApprovalRequest item) =>
-                item.id == request.id ? item.copyWith(status: decision) : item,
-          )
-          .toList();
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      context.read<TasksCubit>().getApprovalPendingTasks(
+            search: value.trim(),
+          );
     });
-    if (decision == ApprovalStatus.approved) {
-      ToastMessages.success(message: '${request.title} approved');
-    } else {
-      ToastMessages.alert(message: '${request.title} rejected');
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<ApprovalRequest> requests = _visible;
-    final int pendingCount = _requests
-        .where((ApprovalRequest r) => r.status == ApprovalStatus.pending)
-        .length;
-
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
         statusBarColor: Colors.transparent,
       ),
       child: Scaffold(
         backgroundColor: context.palette.canvas,
-        body: Column(
-          children: <Widget>[
-            const AppGradientHeader(
-              title: 'Approvals',
-              eyebrow: 'TEAM',
-              leading: AppBackButton(),
-              actions: <Widget>[AppAvatar(initials: 'AB')],
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.gutter,
-                AppSpacing.md,
-                AppSpacing.gutter,
-                AppSpacing.sm,
-              ),
-              child: AppSegmentedTabs(
-                options: ApprovalStatus.labels,
-                selectedIndex: _tabIndex,
-                onChanged: (int index) => setState(() => _tabIndex = index),
-              ),
-            ),
-            Expanded(
-              child: requests.isEmpty
-                  ? ApprovalsEmptyState(status: _filter)
-                  : ListView.builder(
-                      padding: const EdgeInsets.only(
-                        left: AppSpacing.gutter,
-                        right: AppSpacing.gutter,
-                        bottom: AppSpacing.xl,
-                      ),
-                      itemCount: requests.length + 1,
-                      itemBuilder: (BuildContext context, int index) {
-                        if (index == 0) {
-                          return ApprovalsCount(
-                            count: requests.length,
-                            pending: pendingCount,
-                            status: _filter,
-                          );
-                        }
-                        final ApprovalRequest request = requests[index - 1];
-                        return ApprovalTile(
-                          request: request,
-                          onApprove: () =>
-                              _decide(request, ApprovalStatus.approved),
-                          onReject: () =>
-                              _decide(request, ApprovalStatus.rejected),
-                        );
-                      },
-                    ),
-            ),
-          ],
+        body: BlocConsumer<TasksCubit, TasksState>(
+          listenWhen: (prev, curr) =>
+              prev.approveTaskUIState?.status !=
+                  curr.approveTaskUIState?.status ||
+              prev.approvalPendingTasksUIState?.status !=
+                  curr.approvalPendingTasksUIState?.status,
+          listener: (context, state) {
+            // Handle approve action result
+            if (state.approveTaskUIState?.status == Status.SUCCESS) {
+              ToastMessages.success(
+                message: state.approveTaskUIState?.data?.message ??
+                    'Task approved successfully!',
+              );
+              context.read<TasksCubit>().resetApproveTaskState();
+              // Refresh the list
+              context.read<TasksCubit>().getApprovalPendingTasks(
+                    search: state.approvalPendingTasksSearchQuery,
+                  );
+            } else if (state.approveTaskUIState?.status == Status.ERROR) {
+              ToastMessages.error(
+                message: state.approveTaskUIState?.errorType?.getText(
+                      context,
+                    ) ??
+                    'Failed to approve task.',
+              );
+              context.read<TasksCubit>().resetApproveTaskState();
+            }
+
+            // Handle list loading error
+            if (state.approvalPendingTasksUIState?.status == Status.ERROR) {
+              ToastMessages.error(
+                message: state.approvalPendingTasksUIState?.errorType
+                        ?.getText(context) ??
+                    'Failed to load approval tasks.',
+              );
+            }
+          },
+          builder: (context, state) {
+            final isLoading = state.approvalPendingTasksUIState?.status ==
+                    Status.LOADING ||
+                state.approvalPendingTasksUIState?.status == null ||
+                state.approvalPendingTasksUIState?.status == Status.INITIAL;
+            final tasks = state.approvalPendingTasksList;
+            final pagination = state.approvalPendingTasksPagination;
+            final isLoadingMore = state.isLoadingMoreApprovalTasks;
+
+            // Filter tasks based on selected tab
+            final filteredTasks = tasks.where((task) {
+              final status = task.status?.toLowerCase() ?? '';
+              switch (_filter) {
+                case ApprovalFilter.pending:
+                  return status != 'approved';
+                case ApprovalFilter.approved:
+                  return status == 'approved';
+                case ApprovalFilter.rejected:
+                  return status == 'rejected';
+              }
+            }).toList();
+
+            final totalPending = tasks
+                .where(
+                  (t) =>
+                      t.status?.toLowerCase() == 'pending' ||
+                      t.status?.toLowerCase() == 'ongoing',
+                )
+                .length;
+
+            return Column(
+              children: <Widget>[
+                const AppGradientHeader(
+                  title: 'Approvals',
+                  eyebrow: 'TEAM',
+                  leading: AppBackButton(),
+                  actions: <Widget>[AppAvatar(initials: 'AB')],
+                ),
+                // ---- Search Bar ----
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.gutter,
+                    AppSpacing.md,
+                    AppSpacing.gutter,
+                    AppSpacing.sm,
+                  ),
+                  child: AppSearchField(
+                    hint: 'Search approvals…',
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                  ),
+                ),
+                // ---- Tabs ----
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.gutter,
+                  ),
+                  child: AppSegmentedTabs(
+                    options: const ['Pending', 'Approved', 'Rejected'],
+                    selectedIndex: _tabIndex,
+                    onChanged: (int index) =>
+                        setState(() => _tabIndex = index),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                // ---- Content ----
+                Expanded(
+                  child: isLoading && tasks.isEmpty
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.red,
+                            ),
+                          ),
+                        )
+                      : filteredTasks.isEmpty
+                          ? ApprovalsEmptyState(filter: _filter)
+                          : Column(
+                              children: [
+                                Expanded(
+                                  child: ListView.builder(
+                                    padding: const EdgeInsets.only(
+                                      left: AppSpacing.gutter,
+                                      right: AppSpacing.gutter,
+                                      bottom: AppSpacing.xs,
+                                    ),
+                                    itemCount: filteredTasks.length + 1,
+                                    itemBuilder:
+                                        (BuildContext context, int index) {
+                                      if (index == 0) {
+                                        return ApprovalsCount(
+                                          count: filteredTasks.length,
+                                          pending: totalPending,
+                                          filter: _filter,
+                                        );
+                                      }
+                                      final task = filteredTasks[index - 1];
+                                      return ApprovalTile(
+                                        task: task,
+                                        onApprove: () {
+                                          context
+                                              .read<TasksCubit>()
+                                              .approveTask(task.id!);
+                                        },
+                                        onReject: () {
+                                          ToastMessages.alert(
+                                            message:
+                                                'Reject functionality coming soon.',
+                                          );
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ),
+                                // ---- Pagination Bar ----
+                                if (pagination != null &&
+                                    (pagination.lastPage ?? 0) > 1)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                      horizontal: AppSpacing.gutter,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.chevron_left),
+                                          onPressed:
+                                              (pagination.hasPreviousPage &&
+                                                      !isLoadingMore)
+                                                  ? () => context
+                                                      .read<TasksCubit>()
+                                                      .goToApprovalPendingTasksPage(
+                                                        pagination
+                                                            .currentPage! -
+                                                            1,
+                                                      )
+                                                  : null,
+                                        ),
+                                        Text(
+                                          'Page ${pagination.currentPage} of ${pagination.lastPage}',
+                                          style: context.type.body,
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.chevron_right),
+                                          onPressed:
+                                              (pagination.hasNextPage &&
+                                                      !isLoadingMore)
+                                                  ? () => context
+                                                      .read<TasksCubit>()
+                                                      .goToApprovalPendingTasksPage(
+                                                        pagination
+                                                            .currentPage! +
+                                                            1,
+                                                      )
+                                                  : null,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 }
 
-/// Count strip above the rows.
+// ---------------------------------------------------------------------
+// Helper widgets (unchanged, but we keep them for completeness)
+// ---------------------------------------------------------------------
+
 class ApprovalsCount extends StatelessWidget {
   const ApprovalsCount({
     super.key,
     required this.count,
     required this.pending,
-    required this.status,
+    required this.filter,
   });
 
   final int count;
   final int pending;
-  final ApprovalStatus status;
+  final ApprovalFilter filter;
 
   @override
   Widget build(BuildContext context) {
-    final String label = status == ApprovalStatus.pending
-        ? '$count awaiting your decision'
-        : '$count ${status.label.toLowerCase()} · $pending still pending';
+    final String label = switch (filter) {
+      ApprovalFilter.pending => '$count awaiting your decision',
+      ApprovalFilter.approved => '$count approved requests',
+      ApprovalFilter.rejected => '$count rejected requests',
+    };
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.xs, left: 2),
@@ -247,22 +320,21 @@ class ApprovalsCount extends StatelessWidget {
   }
 }
 
-/// One request, with its decision buttons while it is still pending.
 class ApprovalTile extends StatelessWidget {
   const ApprovalTile({
     super.key,
-    required this.request,
+    required this.task,
     this.onApprove,
     this.onReject,
   });
 
-  final ApprovalRequest request;
+  final Task task; // Using Task for now; adjust to ApprovalTaskItem if needed
   final VoidCallback? onApprove;
   final VoidCallback? onReject;
 
   @override
   Widget build(BuildContext context) {
-    final bool isPending = request.status == ApprovalStatus.pending;
+    final isPending = task.status?.toLowerCase() != 'approved';
 
     return AppSectionCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.xs),
@@ -275,11 +347,12 @@ class ApprovalTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               AppIconChip(
-                icon: switch (request.status) {
-                  ApprovalStatus.pending => Icons.hourglass_top_rounded,
-                  ApprovalStatus.approved => Icons.check_circle_outline_rounded,
-                  ApprovalStatus.rejected => Icons.cancel_outlined,
-                },
+                icon: isPending
+                    ? Icons.hourglass_top_rounded
+                    : task.status?.toLowerCase() == 'approved' ||
+                            task.status?.toLowerCase() == 'completed'
+                        ? Icons.check_circle_outline_rounded
+                        : Icons.cancel_outlined,
                 size: 38,
                 tone: isPending ? AppIconChipTone.red : AppIconChipTone.ink,
               ),
@@ -290,14 +363,14 @@ class ApprovalTile extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Text(
-                      request.title,
+                      task.title ?? 'Untitled',
                       style: context.type.cardTitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      request.detail,
+                      task.description ?? '',
                       style: context.type.caption,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -308,19 +381,24 @@ class ApprovalTile extends StatelessWidget {
                       runSpacing: 6,
                       children: <Widget>[
                         AppTag(
-                          label: request.requestedBy,
+                          label: task.assignedUser?.name ?? 'Unassigned',
                           icon: Icons.person_outline_rounded,
                           isAccent: false,
                         ),
                         AppTag(
-                          label: AppDateField.format(request.requestedAt),
+                          label: task.createdAt != null
+                              ? AppDateField.format(
+                                  DateTime.parse(task.createdAt!),
+                                )
+                              : '—',
                           icon: Icons.schedule_rounded,
                           isAccent: false,
                         ),
                         if (!isPending)
                           AppTag(
-                            label: request.status.label.toUpperCase(),
-                            icon: request.status == ApprovalStatus.approved
+                            label: task.status?.toUpperCase() ?? 'UNKNOWN',
+                            icon: task.status?.toLowerCase() == 'approved' ||
+                                    task.status?.toLowerCase() == 'completed'
                                 ? Icons.check_rounded
                                 : Icons.close_rounded,
                           ),
@@ -331,7 +409,7 @@ class ApprovalTile extends StatelessWidget {
               ),
             ],
           ),
-          if (isPending) ...<Widget>[
+          if (isPending) ...[
             const SizedBox(height: AppSpacing.sm),
             Row(
               children: <Widget>[
@@ -360,30 +438,29 @@ class ApprovalTile extends StatelessWidget {
   }
 }
 
-/// Nothing in this tab — an empty pending queue is good news, worded that way.
 class ApprovalsEmptyState extends StatelessWidget {
-  const ApprovalsEmptyState({super.key, required this.status});
+  const ApprovalsEmptyState({super.key, required this.filter});
 
-  final ApprovalStatus status;
+  final ApprovalFilter filter;
 
   @override
   Widget build(BuildContext context) {
-    final (IconData icon, String title, String message) = switch (status) {
-      ApprovalStatus.pending => (
-        Icons.verified_outlined,
-        'Nothing to approve',
-        'Every request has been dealt with. Nice work.',
-      ),
-      ApprovalStatus.approved => (
-        Icons.check_circle_outline_rounded,
-        'No approved requests',
-        'Requests you approve will be listed here.',
-      ),
-      ApprovalStatus.rejected => (
-        Icons.cancel_outlined,
-        'No rejected requests',
-        'Requests you turn down will be listed here.',
-      ),
+    final (IconData icon, String title, String message) = switch (filter) {
+      ApprovalFilter.pending => (
+          Icons.verified_outlined,
+          'Nothing to approve',
+          'Every request has been dealt with. Nice work.',
+        ),
+      ApprovalFilter.approved => (
+          Icons.check_circle_outline_rounded,
+          'No approved requests',
+          'Requests you approve will be listed here.',
+        ),
+      ApprovalFilter.rejected => (
+          Icons.cancel_outlined,
+          'No rejected requests',
+          'Requests you turn down will be listed here.',
+        ),
     };
 
     return Center(

@@ -35,6 +35,7 @@ class AppColors {
   static const Color blue = Color(0xFF1565C0);
   static const Color orange = Color(0xFFE65100);
   static const Color purple = Color(0xFF6A1B9A);
+  static const Color darkGreen = Color.fromARGB(255, 3, 171, 23);
 
   // ---------------------------------------------------------------- Gradients
   /// Primary call-to-action fill. Identical in both themes.

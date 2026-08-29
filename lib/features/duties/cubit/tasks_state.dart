@@ -45,8 +45,42 @@ class TasksState extends Equatable {
   /// DELETE /api/tasks/{id} state.
   final UIState<dynamic>? deleteTaskUIState;
 
+  // ---------------------------------------------------------------------------
+  // Complete Task
+  // ---------------------------------------------------------------------------
+
   /// POST /api/approval-task/{id} state.
   final UIState<TaskCompleteResponse>? completeTaskUIState;
+
+  // ---------------------------------------------------------------------------
+  // Approval Pending Tasks
+  // ---------------------------------------------------------------------------
+
+  /// GET /api/approval-pending-tasks state.
+  final UIState<ApprovalTaskResponse>? approvalPendingTasksUIState;
+
+  /// List of approval pending tasks (type: ApprovalTaskItem).
+  final List<Task> approvalPendingTasksList;
+
+  /// Pagination information for approval tasks.
+  final LeadPagination? approvalPendingTasksPagination;
+
+  /// Current search query for approval tasks.
+  final String approvalPendingTasksSearchQuery;
+
+  /// True while fetching a follow-on page.
+  final bool isLoadingMoreApprovalTasks;
+
+  // ---------------------------------------------------------------------------
+  // Approve Task
+  // ---------------------------------------------------------------------------
+
+  /// POST /api/approve-task/{id} state.
+  final UIState<TaskCompleteResponse>? approveTaskUIState;
+
+  // ---------------------------------------------------------------------------
+  // Constructor
+  // ---------------------------------------------------------------------------
 
   const TasksState({
     this.tasksListUIState,
@@ -58,7 +92,17 @@ class TasksState extends Equatable {
     this.updateTaskUIState,
     this.deleteTaskUIState,
     this.completeTaskUIState,
+    this.approvalPendingTasksUIState,
+    this.approvalPendingTasksList = const <Task>[],
+    this.approvalPendingTasksPagination,
+    this.approvalPendingTasksSearchQuery = '',
+    this.isLoadingMoreApprovalTasks = false,
+    this.approveTaskUIState,
   });
+
+  // ---------------------------------------------------------------------------
+  // copyWith
+  // ---------------------------------------------------------------------------
 
   TasksState copyWith({
     UIState<TaskListResponse>? tasksListUIState,
@@ -70,6 +114,12 @@ class TasksState extends Equatable {
     UIState<TaskDetailsResponse>? updateTaskUIState,
     UIState<dynamic>? deleteTaskUIState,
     UIState<TaskCompleteResponse>? completeTaskUIState,
+    UIState<ApprovalTaskResponse>? approvalPendingTasksUIState,
+    List<Task>? approvalPendingTasksList,
+    LeadPagination? approvalPendingTasksPagination,
+    String? approvalPendingTasksSearchQuery,
+    bool? isLoadingMoreApprovalTasks,
+    UIState<TaskCompleteResponse>? approveTaskUIState,
   }) {
     return TasksState(
       tasksListUIState: tasksListUIState ?? this.tasksListUIState,
@@ -81,8 +131,23 @@ class TasksState extends Equatable {
       updateTaskUIState: updateTaskUIState ?? this.updateTaskUIState,
       deleteTaskUIState: deleteTaskUIState ?? this.deleteTaskUIState,
       completeTaskUIState: completeTaskUIState ?? this.completeTaskUIState,
+      approvalPendingTasksUIState:
+          approvalPendingTasksUIState ?? this.approvalPendingTasksUIState,
+      approvalPendingTasksList:
+          approvalPendingTasksList ?? this.approvalPendingTasksList,
+      approvalPendingTasksPagination:
+          approvalPendingTasksPagination ?? this.approvalPendingTasksPagination,
+      approvalPendingTasksSearchQuery:
+          approvalPendingTasksSearchQuery ?? this.approvalPendingTasksSearchQuery,
+      isLoadingMoreApprovalTasks:
+          isLoadingMoreApprovalTasks ?? this.isLoadingMoreApprovalTasks,
+      approveTaskUIState: approveTaskUIState ?? this.approveTaskUIState,
     );
   }
+
+  // ---------------------------------------------------------------------------
+  // Equatable props
+  // ---------------------------------------------------------------------------
 
   @override
   List<Object?> get props => [
@@ -119,10 +184,26 @@ class TasksState extends Equatable {
     deleteTaskUIState?.data,
     deleteTaskUIState?.errorType,
 
-    // Mark Task as completed
+    // Complete task
     completeTaskUIState,
     completeTaskUIState?.status,
     completeTaskUIState?.data,
     completeTaskUIState?.errorType,
+
+    // Approval tasks
+    approvalPendingTasksUIState,
+    approvalPendingTasksUIState?.status,
+    approvalPendingTasksUIState?.data,
+    approvalPendingTasksUIState?.errorType,
+    approvalPendingTasksList,
+    approvalPendingTasksPagination,
+    approvalPendingTasksSearchQuery,
+    isLoadingMoreApprovalTasks,
+
+    // Approve task
+    approveTaskUIState,
+    approveTaskUIState?.status,
+    approveTaskUIState?.data,
+    approveTaskUIState?.errorType,
   ];
 }

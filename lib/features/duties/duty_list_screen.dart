@@ -316,6 +316,8 @@ class DutyListTile extends StatefulWidget {
 class _DutyListTileState extends State<DutyListTile> {
   Color _getStatusColor(String? status) {
     switch (status?.toLowerCase()) {
+      case 'upcoming':
+        return AppColors.purple;
       case 'completed':
         return Colors.green;
       case 'pending':
@@ -324,6 +326,8 @@ class _DutyListTileState extends State<DutyListTile> {
         return AppColors.red; // or Colors.red
       case 'ongoing':
         return Colors.blue;
+      case 'approved':
+        return const Color.fromARGB(255, 0, 158, 11);
       default:
         return context.palette.ink; // fallback
     }

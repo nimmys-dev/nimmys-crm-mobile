@@ -282,8 +282,10 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                             _showDeleteDialog(context, widget.task.id!),
                       ),
                     ), // Complete button
-                    const SizedBox(width: AppSpacing.sm),
-                    if (widget.task.status?.toLowerCase() != 'completed') ...[
+
+                    if (widget.task.status?.toLowerCase() != 'completed' &&
+                        widget.task.status?.toLowerCase() != 'approved') ...[
+                      const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: AppPrimaryButton(
                           label: 'Complete',
@@ -398,8 +400,10 @@ class StatusCard extends StatelessWidget {
     final Color statusColor = switch (status.toLowerCase()) {
       'completed' => AppColors.green,
       'ongoing' => AppColors.blue,
+      'overdue' => Colors.red,
       'pending' => AppColors.orange,
       'upcoming' => AppColors.purple,
+      'approved' => AppColors.darkGreen,
       _ => AppColors.muted,
     };
 

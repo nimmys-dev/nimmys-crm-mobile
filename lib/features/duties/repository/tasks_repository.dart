@@ -1,4 +1,5 @@
 import 'package:nimmys_crm/data/model/result.dart';
+import 'package:nimmys_crm/features/duties/model/get_all_pending_task_model.dart';
 import 'package:nimmys_crm/features/duties/model/task_completed_model.dart';
 import 'package:nimmys_crm/features/duties/model/task_details_model.dart';
 import 'package:nimmys_crm/features/duties/model/task_type_model.dart';
@@ -83,6 +84,34 @@ class TasksRepository {
       return await _service.deleteTask(id);
     } catch (e) {
       return Error<dynamic>(ErrorWithMessage(message: e.toString()));
+    }
+  }
+
+  Future<Result<ApprovalTaskResponse>> getAllApprovalPendingTasks({
+    int page = 1,
+    int perPage = 10,
+    String? search,
+  }) async {
+    try {
+      return await _service.getAppApprovalPendingTasks(
+        page: page,
+        perPage: perPage,
+        search: search,
+      );
+    } catch (e) {
+      return Error<ApprovalTaskResponse>(
+        ErrorWithMessage(message: e.toString()),
+      );
+    }
+  }
+
+  Future<Result<TaskCompleteResponse>> markTasksAsApproved(int id) async {
+    try {
+      return await _service.markTasksAsApproved(id);
+    } catch (e) {
+      return Error<TaskCompleteResponse>(
+        ErrorWithMessage(message: e.toString()),
+      );
     }
   }
 }

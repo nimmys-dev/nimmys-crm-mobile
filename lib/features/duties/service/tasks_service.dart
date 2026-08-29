@@ -1,6 +1,9 @@
+import 'dart:core';
+
 import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/network/api_service.dart';
 import 'package:nimmys_crm/data/network/api_urls.dart';
+import 'package:nimmys_crm/features/duties/model/get_all_pending_task_model.dart';
 import 'package:nimmys_crm/features/duties/model/task_completed_model.dart';
 import 'package:nimmys_crm/features/duties/model/task_details_model.dart';
 import 'package:nimmys_crm/features/duties/model/task_type_model.dart';
@@ -142,7 +145,7 @@ class TasksService {
     String? remarks,
   }) async {
     try {
-      final String url = ApiUrls.approvalTask(
+      final String url = ApiUrls.completeTask(
         id,
       ); // we need to add this constant
       final Map<String, dynamic> body = {};
@@ -183,6 +186,70 @@ class TasksService {
       return result;
     } catch (_) {
       return Error(GenericError());
+    }
+  }
+
+  /// GET /api/tasks?per_page=10&page=1
+  Future<Result<ApprovalTaskResponse>> getAppApprovalPendingTasks({
+    int page = 1,
+    int perPage = 10,
+    String? search,
+  }) async {
+    try {
+      final String url = ApiUrls.getAllApprovalPendingList;
+      final Map<String, dynamic> queryParams = <String, dynamic>{
+        "page": page,
+        "per_page": perPage,
+        if (search != null && search.trim().isNotEmpty) "search": search.trim(),
+      };
+
+      final Result<dynamic> result = await _apiService.get(
+        url,
+        queryParams: queryParams,
+      );
+
+      if (result is Success<dynamic>) {
+        final parsed = await _apiService
+            .getResponseStatus<ApprovalTaskResponse>(result.value, (
+              dynamic json,
+            ) {
+              return ApprovalTaskResponse.fromJson(
+                json as Map<String, dynamic>,
+              );
+            });
+
+        return parsed;
+      } else if (result is Error<dynamic>) {
+        return Error<ApprovalTaskResponse>(result.type);
+      } else {
+        return Error<ApprovalTaskResponse>(GenericError());
+      }
+    } catch (e) {
+      return Error<ApprovalTaskResponse>(DeserializationError());
+    }
+  }
+  // Mark Tasks as Approved
+
+  /// POST /api/approval-task/{id}
+  /// Marks a task as completed with optional remarks.
+  Future<Result<TaskCompleteResponse>> markTasksAsApproved(int id) async {
+    try {
+      final String url = ApiUrls.markTasksAsCompleted(
+        id,
+      ); // we need to add this constant
+
+      final Result<dynamic> result = await _apiService.post(url);
+      if (result is Success<dynamic>) {
+        return await _apiService.getResponseStatus<TaskCompleteResponse>(
+          result.value,
+          (json) => TaskCompleteResponse.fromJson(json as Map<String, dynamic>),
+        );
+      } else if (result is Error<dynamic>) {
+        return Error<TaskCompleteResponse>(result.type);
+      }
+      return Error<TaskCompleteResponse>(GenericError());
+    } catch (_) {
+      return Error<TaskCompleteResponse>(DeserializationError());
     }
   }
 }
