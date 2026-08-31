@@ -321,6 +321,54 @@ class TasksCubit extends BaseCubit<TasksState> {
     }
   }
 
+  /// Loads the next page of approval pending tasks and appends to the list.
+  Future<void> loadMoreApprovalTasks() async {
+    final pagination = state.approvalPendingTasksPagination;
+    if (state.isLoadingMoreApprovalTasks ||
+        state.approvalPendingTasksUIState?.status == Status.LOADING ||
+        pagination == null ||
+        !pagination.hasNextPage) {
+      return;
+    }
+
+    emit(state.copyWith(isLoadingMoreApprovalTasks: true));
+
+    final result = await _repository.getAllApprovalPendingTasks(
+      page: pagination.nextPage,
+      perPage: 10,
+      search: state.approvalPendingTasksSearchQuery,
+    );
+
+    if (result is Success<ApprovalTaskResponse>) {
+      final newTasks = result.value.data?.data ?? <Task>[];
+      final updatedList = [...state.approvalPendingTasksList, ...newTasks];
+      emit(
+        state.copyWith(
+          approvalPendingTasksUIState: UIState.success(result.value),
+          approvalPendingTasksList: updatedList,
+          approvalPendingTasksPagination: result.value.data != null
+              ? LeadPagination(
+                  currentPage: result.value.data!.currentPage,
+                  lastPage: result.value.data!.lastPage,
+                  perPage: result.value.data!.perPage,
+                  total: result.value.data!.total,
+                  from: result.value.data!.from,
+                  to: result.value.data!.to,
+                )
+              : null,
+          isLoadingMoreApprovalTasks: false,
+        ),
+      );
+    } else if (result is Error<ApprovalTaskResponse>) {
+      emit(
+        state.copyWith(
+          approvalPendingTasksUIState: UIState.error(result.type),
+          isLoadingMoreApprovalTasks: false,
+        ),
+      );
+    }
+  }
+
   /// Navigate to a specific page.
   Future<void> goToApprovalPendingTasksPage(int page) async {
     if (page < 1 ||

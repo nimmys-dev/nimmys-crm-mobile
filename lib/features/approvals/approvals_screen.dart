@@ -28,11 +28,13 @@ class ApprovalsScreen extends StatefulWidget {
 
 class _ApprovalsScreenState extends State<ApprovalsScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TasksCubit>().getApprovalPendingTasks();
     });
@@ -41,6 +43,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     _debounce?.cancel();
     super.dispose();
   }
@@ -57,6 +60,23 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
       refresh: true,
       search: _searchController.text.trim(),
     );
+  }
+
+  void _onScroll() {
+    final cubit = context.read<TasksCubit>();
+    final state = cubit.state;
+    if (state.isLoadingMoreApprovalTasks ||
+        state.approvalPendingTasksUIState?.status == Status.LOADING) {
+      return;
+    }
+    final pagination = state.approvalPendingTasksPagination;
+    if (pagination == null || !pagination.hasNextPage) return;
+
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final pixels = _scrollController.position.pixels;
+    if (pixels >= maxScroll - 300) {
+      cubit.loadMoreApprovalTasks();
+    }
   }
 
   @override
@@ -76,7 +96,6 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                 prev.approvalPendingTasksUIState?.status !=
                     curr.approvalPendingTasksUIState?.status,
             listener: (context, state) {
-              // Handle approve action result
               if (state.approveTaskUIState?.status == Status.SUCCESS) {
                 ToastMessages.success(
                   message:
@@ -84,7 +103,6 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                       'Task approved successfully!',
                 );
                 context.read<TasksCubit>().resetApproveTaskState();
-                // Refresh the list with current search
                 context.read<TasksCubit>().getApprovalPendingTasks(
                   refresh: true,
                   search: state.approvalPendingTasksSearchQuery,
@@ -98,8 +116,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                 );
                 context.read<TasksCubit>().resetApproveTaskState();
               }
-        
-              // Handle list loading error
+
               if (state.approvalPendingTasksUIState?.status == Status.ERROR) {
                 ToastMessages.error(
                   message:
@@ -117,12 +134,15 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                   state.approvalPendingTasksUIState?.status == Status.INITIAL;
               final tasks = state.approvalPendingTasksList;
               final pagination = state.approvalPendingTasksPagination;
+              final hasMore = pagination?.hasNextPage ?? false;
               final isLoadingMore = state.isLoadingMoreApprovalTasks;
-        
+
               final child = isLoading && tasks.isEmpty
                   ? const Center(
                       child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.red),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.red,
+                        ),
                       ),
                     )
                   : tasks.isEmpty
@@ -134,20 +154,29 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                           padding: const EdgeInsets.symmetric(
                             horizontal: AppSpacing.gutter,
                           ),
-                          child: _CountHeader(count: tasks.length),
+                          child: _CountHeader(
+                            count: tasks.length,
+                            total: pagination?.total ?? tasks.length,
+                          ),
                         ),
                         Expanded(
                           child: RefreshIndicator(
                             onRefresh: _refresh,
                             color: AppColors.red,
                             child: ListView.builder(
+                              controller: _scrollController,
+                              physics: const AlwaysScrollableScrollPhysics(),
                               padding: const EdgeInsets.only(
                                 left: AppSpacing.gutter,
                                 right: AppSpacing.gutter,
                                 bottom: AppSpacing.xs,
                               ),
-                              itemCount: tasks.length,
+                              itemCount: tasks.length + 1, // +1 for footer
                               itemBuilder: (context, index) {
+                                if (index == tasks.length) {
+                                  // Footer
+                                  return _buildFooter(hasMore, isLoadingMore);
+                                }
                                 final task = tasks[index];
                                 return ApprovalTile(
                                   task: task,
@@ -167,49 +196,9 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                             ),
                           ),
                         ),
-                        // ---- Pagination Bar ----
-                        if (pagination != null && (pagination.lastPage ?? 0) > 1)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 8,
-                              horizontal: AppSpacing.gutter,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.chevron_left),
-                                  onPressed:
-                                      (pagination.hasPreviousPage &&
-                                          !isLoadingMore)
-                                      ? () => context
-                                            .read<TasksCubit>()
-                                            .goToApprovalPendingTasksPage(
-                                              pagination.currentPage! - 1,
-                                            )
-                                      : null,
-                                ),
-                                Text(
-                                  'Page ${pagination.currentPage} of ${pagination.lastPage}',
-                                  style: context.type.body,
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.chevron_right),
-                                  onPressed:
-                                      (pagination.hasNextPage && !isLoadingMore)
-                                      ? () => context
-                                            .read<TasksCubit>()
-                                            .goToApprovalPendingTasksPage(
-                                              pagination.currentPage! + 1,
-                                            )
-                                      : null,
-                                ),
-                              ],
-                            ),
-                          ),
                       ],
                     );
-        
+
               return Column(
                 children: <Widget>[
                   const AppGradientHeader(
@@ -218,7 +207,6 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                     leading: AppBackButton(),
                     actions: <Widget>[AppAvatar(initials: 'AB')],
                   ),
-                  // ---- Search Bar ----
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.gutter,
@@ -232,7 +220,6 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                       onChanged: _onSearchChanged,
                     ),
                   ),
-                  // ---- Content ----
                   Expanded(child: child),
                 ],
               );
@@ -242,16 +229,43 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
       ),
     );
   }
+
+  Widget _buildFooter(bool hasMore, bool isLoadingMore) {
+    if (!hasMore && !isLoadingMore) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: Text(
+            'No more tasks',
+            style: TextStyle(fontSize: 12, color: context.palette.muted),
+          ),
+        ),
+      );
+    }
+    if (isLoadingMore) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.red),
+          ),
+        ),
+      );
+    }
+    return const SizedBox.shrink();
+  }
 }
 
 // ---------------------------------------------------------------------
-// Helper widgets
+// Helper widgets (unchanged)
 // ---------------------------------------------------------------------
 
 class _CountHeader extends StatelessWidget {
-  const _CountHeader({required this.count});
+  const _CountHeader({required this.count, required this.total});
 
   final int count;
+  final int total;
 
   @override
   Widget build(BuildContext context) {
@@ -266,7 +280,7 @@ class _CountHeader extends StatelessWidget {
           ),
           const SizedBox(width: 5),
           Text(
-            '$count approval request${count == 1 ? '' : 's'}',
+            'Showing $count of $total approval request${total == 1 ? '' : 's'}',
             style: context.type.caption,
           ),
         ],

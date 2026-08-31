@@ -125,11 +125,14 @@ class _TaskDetailsContent extends StatefulWidget {
 
 class _TaskDetailsContentState extends State<_TaskDetailsContent> {
   Future<void> _refresh() async {
+    if (!mounted) return;
     await context.read<TasksCubit>().getTaskDetails(widget.task.id!);
   }
 
   void _showCompleteDialog(BuildContext context, int taskId) {
     final TextEditingController remarksController = TextEditingController();
+    final BuildContext screenContext = context;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -159,17 +162,24 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                 prev.completeTaskUIState?.status !=
                 curr.completeTaskUIState?.status,
             listener: (context, state) {
+              // ✅ Check if the screen still exists
+              if (!screenContext.mounted) return;
+
               final uiState = state.completeTaskUIState;
               if (uiState?.status == Status.SUCCESS) {
                 ToastMessages.success(message: 'Task marked as completed!');
-                context.read<TasksCubit>().resetCompleteTaskState();
-                context.read<DashboardCubit>().getDashboardCount();
-                // Refresh task details
-                context.read<TasksCubit>().getTaskDetails(taskId);
-                WidgetsBinding.instance.addPostFrameCallback((_) async {
-                  context.read<TasksCubit>().getTasks();
-                  await _refresh();
+
+                screenContext.read<TasksCubit>().resetCompleteTaskState();
+                screenContext.read<DashboardCubit>().getDashboardCount();
+                screenContext.read<TasksCubit>().getTaskDetails(taskId);
+
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (screenContext.mounted) {
+                    screenContext.read<TasksCubit>().getTasks();
+                    // No need to call getTaskDetails again – already called above
+                  }
                 });
+
                 Navigator.pop(ctx); // close dialog
               } else if (uiState?.status == Status.ERROR) {
                 ToastMessages.error(
@@ -177,11 +187,7 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                       uiState?.errorType?.getText(context) ??
                       'Failed to complete task.',
                 );
-                context.read<TasksCubit>().resetCompleteTaskState();
-                WidgetsBinding.instance.addPostFrameCallback((_) async {
-                  context.read<TasksCubit>().getTasks();
-                  await _refresh();
-                });
+                screenContext.read<TasksCubit>().resetCompleteTaskState();
                 // Keep dialog open on error
               }
             },
@@ -193,7 +199,7 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                     ? null
                     : () {
                         final remarks = remarksController.text.trim();
-                        context.read<TasksCubit>().completeTask(
+                        screenContext.read<TasksCubit>().completeTask(
                           taskId,
                           remarks: remarks.isEmpty ? null : remarks,
                         );
@@ -316,6 +322,8 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
   }
 
   void _showDeleteDialog(BuildContext context, int taskId) {
+    final BuildContext screenContext = context;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -333,17 +341,24 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                 prev.deleteTaskUIState?.status !=
                 curr.deleteTaskUIState?.status,
             listener: (context, state) {
+              // ✅ Check if the screen still exists
+              if (!screenContext.mounted) return;
+
               final uiState = state.deleteTaskUIState;
               if (uiState?.status == Status.SUCCESS) {
                 ToastMessages.success(message: 'Task deleted successfully!');
-                context.read<TasksCubit>().resetDeleteTaskState();
-                context.read<DashboardCubit>().getDashboardCount();
-                // Navigate back and refresh the list
-                Navigator.pop(ctx); // close dialog
-                Navigator.pop(context); // go back to previous screen
-                // Refresh the list after navigation
+
+                screenContext.read<TasksCubit>().resetDeleteTaskState();
+                screenContext.read<DashboardCubit>().getDashboardCount();
+
+                // Close dialog and pop the details screen
+                Navigator.pop(ctx);
+                Navigator.pop(screenContext); // go back to duties list
+
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                  context.read<TasksCubit>().getTasks(refresh: true);
+                  if (screenContext.mounted) {
+                    screenContext.read<TasksCubit>().getTasks(refresh: true);
+                  }
                 });
               } else if (uiState?.status == Status.ERROR) {
                 ToastMessages.error(
@@ -351,8 +366,8 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                       uiState?.errorType?.getText(context) ??
                       'Failed to delete task.',
                 );
-                context.read<TasksCubit>().resetDeleteTaskState();
-                Navigator.pop(ctx);
+                screenContext.read<TasksCubit>().resetDeleteTaskState();
+                Navigator.pop(ctx); // close dialog on error
               }
             },
             builder: (context, state) {
@@ -362,7 +377,7 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                 onPressed: isLoading
                     ? null
                     : () {
-                        context.read<TasksCubit>().deleteTask(taskId);
+                        screenContext.read<TasksCubit>().deleteTask(taskId);
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.red,
