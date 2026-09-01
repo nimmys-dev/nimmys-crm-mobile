@@ -120,6 +120,7 @@ class TasksRepository {
     int page = 1,
     int perPage = 10,
     String? search,
+    String? status,
   }) async {
     try {
       return await _service.getTasksByStaffId(
@@ -127,6 +128,7 @@ class TasksRepository {
         perPage: perPage,
         search: search,
         staffId : staffId,
+        status: status,
       );
     } catch (e) {
       return Error<TaskListResponse>(ErrorWithMessage(message: e.toString()));

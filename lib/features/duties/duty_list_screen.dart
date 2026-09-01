@@ -17,7 +17,8 @@ import '../../shared/widgets/app_search_field.dart';
 import '../../shared/widgets/app_section_card.dart';
 
 class DutyListScreen extends StatefulWidget {
-  const DutyListScreen({super.key});
+  final String? taskStatus;
+  const DutyListScreen({super.key, required this.taskStatus});
 
   @override
   State<DutyListScreen> createState() => _DutyListScreenState();
@@ -39,6 +40,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
         context.read<TasksCubit>().getTasksByStaffId(
           staffId: _staffId!,
           refresh: true,
+          status: widget.taskStatus,
         );
       }
     });
@@ -74,6 +76,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
       staffId: _staffId!,
       refresh: true,
       search: _searchController.text.trim(),
+      status: widget.taskStatus,
     );
   }
 
@@ -83,6 +86,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
     context.read<TasksCubit>().getTasksByStaffId(
       staffId: _staffId!,
       search: value.trim(),
+      status: widget.taskStatus,
     );
   }
 

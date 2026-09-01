@@ -261,6 +261,7 @@ class TasksService {
     int page = 1,
     int perPage = 10,
     String? search,
+    String? status,
   }) async {
     try {
       final String url = ApiUrls.getTasksByStaffId;
@@ -268,6 +269,7 @@ class TasksService {
         "page": page,
         "per_page": perPage,
         if (search != null && search.trim().isNotEmpty) "search": search.trim(),
+        if (status != null && status.trim().isNotEmpty) "status": status.trim(),
         "user_id": ?staffId,
       };
       final Result<dynamic> result = await _apiService.get(

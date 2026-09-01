@@ -477,6 +477,7 @@ class TasksCubit extends BaseCubit<TasksState> {
     required int page,
     String? search,
     bool replace = true,
+    String? status,
   }) async {
     if (state.tasksByStaffIdUIState?.status == Status.LOADING) return;
 
@@ -510,6 +511,7 @@ class TasksCubit extends BaseCubit<TasksState> {
       page: page,
       perPage: _pageSize,
       search: query,
+      status: status,
     );
 
     if (result is Success<TaskListResponse>) {
@@ -540,7 +542,9 @@ class TasksCubit extends BaseCubit<TasksState> {
     required int staffId,
     bool refresh = false,
     String? search,
+    String? status,
   }) async {
+    print('-------------------- ${status}');
     // If same staff and search, and not refreshing, skip if data exists.
     if (!refresh &&
         state.currentStaffIdForTasks == staffId &&
@@ -553,6 +557,7 @@ class TasksCubit extends BaseCubit<TasksState> {
       page: 1,
       search: search,
       replace: true,
+      status: status,
     );
   }
 
