@@ -585,7 +585,7 @@ class TasksCubit extends BaseCubit<TasksState> {
   }
 
   /// Load the next page (appends to the list).
-  Future<void> loadMoreTasksByStaffId(int staffId) async {
+  Future<void> loadMoreTasksByStaffId(int staffId, String? status) async {
     final pagination = state.tasksByStaffIdPagination;
     if (state.isLoadingMoreTasksByStaffId ||
         state.tasksByStaffIdUIState?.status == Status.LOADING ||
@@ -597,6 +597,7 @@ class TasksCubit extends BaseCubit<TasksState> {
       staffId: staffId,
       page: pagination.nextPage,
       search: state.tasksByStaffIdSearchQuery,
+      status: status,
       replace: false,
     );
   }

@@ -144,7 +144,7 @@ class _DashboardContentState extends State<DashboardContent> {
         value: today,
         icon: Icons.fact_check_outlined,
         tone: StatTone.red,
-        route: AppRouteName.dutiesFiltered('today'),
+        route: AppRouteName.dutiesFiltered('ongoing'),
       ),
       StatItem(
         label: 'Overdue Duty',

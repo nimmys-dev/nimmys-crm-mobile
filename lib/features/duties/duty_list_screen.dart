@@ -66,7 +66,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
     final maxScroll = _scrollController.position.maxScrollExtent;
     final pixels = _scrollController.position.pixels;
     if (pixels >= maxScroll - 200 && _staffId != null) {
-      cubit.loadMoreTasksByStaffId(_staffId!);
+      cubit.loadMoreTasksByStaffId(_staffId!, widget.taskStatus);
     }
   }
 
