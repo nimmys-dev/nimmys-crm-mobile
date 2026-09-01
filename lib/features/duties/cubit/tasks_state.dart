@@ -78,6 +78,13 @@ class TasksState extends Equatable {
   /// POST /api/approve-task/{id} state.
   final UIState<TaskCompleteResponse>? approveTaskUIState;
 
+  final UIState<TaskListResponse>? tasksByStaffIdUIState;
+  final List<Task> tasksByStaffIdList;
+  final LeadPagination? tasksByStaffIdPagination;
+  final String tasksByStaffIdSearchQuery;
+  final bool isLoadingMoreTasksByStaffId;
+  final int? currentStaffIdForTasks;
+
   // ---------------------------------------------------------------------------
   // Constructor
   // ---------------------------------------------------------------------------
@@ -98,6 +105,12 @@ class TasksState extends Equatable {
     this.approvalPendingTasksSearchQuery = '',
     this.isLoadingMoreApprovalTasks = false,
     this.approveTaskUIState,
+    this.tasksByStaffIdUIState,
+    this.tasksByStaffIdList = const <Task>[],
+    this.tasksByStaffIdPagination,
+    this.tasksByStaffIdSearchQuery = '',
+    this.isLoadingMoreTasksByStaffId = false,
+    this.currentStaffIdForTasks,
   });
 
   // ---------------------------------------------------------------------------
@@ -120,6 +133,12 @@ class TasksState extends Equatable {
     String? approvalPendingTasksSearchQuery,
     bool? isLoadingMoreApprovalTasks,
     UIState<TaskCompleteResponse>? approveTaskUIState,
+    UIState<TaskListResponse>? tasksByStaffIdUIState,
+    List<Task>? tasksByStaffIdList,
+    LeadPagination? tasksByStaffIdPagination,
+    String? tasksByStaffIdSearchQuery,
+    bool? isLoadingMoreTasksByStaffId,
+    int? currentStaffIdForTasks,
   }) {
     return TasksState(
       tasksListUIState: tasksListUIState ?? this.tasksListUIState,
@@ -138,10 +157,22 @@ class TasksState extends Equatable {
       approvalPendingTasksPagination:
           approvalPendingTasksPagination ?? this.approvalPendingTasksPagination,
       approvalPendingTasksSearchQuery:
-          approvalPendingTasksSearchQuery ?? this.approvalPendingTasksSearchQuery,
+          approvalPendingTasksSearchQuery ??
+          this.approvalPendingTasksSearchQuery,
       isLoadingMoreApprovalTasks:
           isLoadingMoreApprovalTasks ?? this.isLoadingMoreApprovalTasks,
       approveTaskUIState: approveTaskUIState ?? this.approveTaskUIState,
+      tasksByStaffIdUIState:
+          tasksByStaffIdUIState ?? this.tasksByStaffIdUIState,
+      tasksByStaffIdList: tasksByStaffIdList ?? this.tasksByStaffIdList,
+      tasksByStaffIdPagination:
+          tasksByStaffIdPagination ?? this.tasksByStaffIdPagination,
+      tasksByStaffIdSearchQuery:
+          tasksByStaffIdSearchQuery ?? this.tasksByStaffIdSearchQuery,
+      isLoadingMoreTasksByStaffId:
+          isLoadingMoreTasksByStaffId ?? this.isLoadingMoreTasksByStaffId,
+      currentStaffIdForTasks:
+          currentStaffIdForTasks ?? this.currentStaffIdForTasks,
     );
   }
 
@@ -205,5 +236,16 @@ class TasksState extends Equatable {
     approveTaskUIState?.status,
     approveTaskUIState?.data,
     approveTaskUIState?.errorType,
+
+    // Tasks List By Staff Id
+    tasksByStaffIdUIState,
+    tasksByStaffIdUIState?.status,
+    tasksByStaffIdUIState?.data,
+    tasksByStaffIdUIState?.errorType,
+    tasksByStaffIdList,
+    tasksByStaffIdPagination,
+    tasksByStaffIdSearchQuery,
+    isLoadingMoreTasksByStaffId,
+    currentStaffIdForTasks,
   ];
 }

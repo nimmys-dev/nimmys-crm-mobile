@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nimmys_crm/core/preferences/app_preferences.dart';
 import 'package:nimmys_crm/enum/status.dart';
 import 'package:nimmys_crm/features/duties/cubit/tasks_cubit.dart';
 import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
@@ -26,13 +27,20 @@ class _DutyListScreenState extends State<DutyListScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   String _query = '';
+  int? _staffId;
 
   @override
   void initState() {
     super.initState();
+    _staffId = AppPreferences.instance.userId;
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TasksCubit>().getTasks();
+      if (_staffId != null) {
+        context.read<TasksCubit>().getTasksByStaffId(
+          staffId: _staffId!,
+          refresh: true,
+        );
+      }
     });
   }
 
@@ -44,28 +52,43 @@ class _DutyListScreenState extends State<DutyListScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      final cubit = context.read<TasksCubit>();
-      final pagination = cubit.state.tasksPagination;
-      if (pagination != null &&
-          pagination.currentPage != null &&
-          pagination.lastPage != null &&
-          pagination.currentPage! < pagination.lastPage!) {
-        cubit.goToTasksPage(pagination.currentPage! + 1);
-      }
+    final cubit = context.read<TasksCubit>();
+    final state = cubit.state;
+    if (state.isLoadingMoreTasksByStaffId ||
+        state.tasksByStaffIdUIState?.status == Status.LOADING) {
+      return;
+    }
+    final pagination = state.tasksByStaffIdPagination;
+    if (pagination == null || !pagination.hasNextPage) return;
+
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final pixels = _scrollController.position.pixels;
+    if (pixels >= maxScroll - 200 && _staffId != null) {
+      cubit.loadMoreTasksByStaffId(_staffId!);
     }
   }
 
-  Future<void> _refreshTasks() =>
-      context.read<TasksCubit>().getTasks(refresh: true);
+  Future<void> _refreshTasks() async {
+    if (_staffId == null) return;
+    await context.read<TasksCubit>().getTasksByStaffId(
+      staffId: _staffId!,
+      refresh: true,
+      search: _searchController.text.trim(),
+    );
+  }
 
-  /// Filter tasks by search query (title, description, assignee name)
+  void _onSearchChanged(String value) {
+    _query = value;
+    if (_staffId == null) return;
+    context.read<TasksCubit>().getTasksByStaffId(
+      staffId: _staffId!,
+      search: value.trim(),
+    );
+  }
+
   List<Task> _visibleDuties(List<Task> allTasks) {
     final needle = _query.trim().toLowerCase();
-    if (needle.isEmpty) {
-      return allTasks;
-    }
+    if (needle.isEmpty) return allTasks;
 
     return allTasks.where((task) {
       final title = task.title?.toLowerCase() ?? '';
@@ -79,25 +102,6 @@ class _DutyListScreenState extends State<DutyListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final cubit = context.read<TasksCubit>();
-      final state = cubit.state;
-      final pagination = state.tasksPagination;
-      if (pagination != null &&
-          pagination.currentPage != null &&
-          pagination.lastPage != null &&
-          pagination.currentPage! < pagination.lastPage! &&
-          state.tasksListUIState?.status != Status.LOADING) {
-        // Check if scroll is near bottom
-        if (_scrollController.hasClients) {
-          final maxScroll = _scrollController.position.maxScrollExtent;
-          final pixels = _scrollController.position.pixels;
-          if (pixels >= maxScroll - 200) {
-            cubit.goToTasksPage(pagination.currentPage! + 1);
-          }
-        }
-      }
-    });
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
         statusBarColor: Colors.transparent,
@@ -107,11 +111,17 @@ class _DutyListScreenState extends State<DutyListScreen> {
           backgroundColor: context.palette.canvas,
           body: BlocBuilder<TasksCubit, TasksState>(
             builder: (context, state) {
-              final allTasks = state.tasksList;
+              final allTasks = state.tasksByStaffIdList;
               final isLoading =
-                  state.tasksListUIState?.status == Status.LOADING;
-              final hasError = state.tasksListUIState?.status == Status.ERROR;
-              final error = state.tasksListUIState?.errorType;
+                  state.tasksByStaffIdUIState?.status == Status.LOADING;
+              final hasError =
+                  state.tasksByStaffIdUIState?.status == Status.ERROR;
+              final error = state.tasksByStaffIdUIState?.errorType;
+              final total =
+                  state.tasksByStaffIdPagination?.total ?? allTasks.length;
+              final hasMore =
+                  state.tasksByStaffIdPagination?.hasNextPage ?? false;
+              final isLoadingMore = state.isLoadingMoreTasksByStaffId;
 
               return Column(
                 children: <Widget>[
@@ -131,8 +141,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
                     child: AppSearchField(
                       hint: 'Search duties, people…',
                       controller: _searchController,
-                      onChanged: (String value) =>
-                          context.read<TasksCubit>().getTasks(search: value),
+                      onChanged: _onSearchChanged,
                     ),
                   ),
                   Expanded(
@@ -142,7 +151,9 @@ class _DutyListScreenState extends State<DutyListScreen> {
                       hasError: hasError,
                       error: error,
                       allTasks: allTasks,
-                      totalTaskCount: state.tasksPagination?.total ?? 0,
+                      totalTaskCount: total,
+                      hasMore: hasMore,
+                      isLoadingMore: isLoadingMore,
                     ),
                   ),
                 ],
@@ -163,7 +174,9 @@ class _DutyListScreenState extends State<DutyListScreen> {
     required bool hasError,
     required Object? error,
     required List<Task> allTasks,
-    required totalTaskCount,
+    required int totalTaskCount,
+    required bool hasMore,
+    required bool isLoadingMore,
   }) {
     if (isLoading && allTasks.isEmpty) {
       return RefreshIndicator(
@@ -204,17 +217,17 @@ class _DutyListScreenState extends State<DutyListScreen> {
           right: AppSpacing.gutter,
           bottom: AppSpacing.xl,
         ),
-        itemCount: tasks.length + (isLoading ? 1 : 0) + 1,
+        itemCount: tasks.length + 1, // +1 for footer
         itemBuilder: (BuildContext context, int index) {
           if (index == 0) {
-            return DutyListCount(count: totalTaskCount, total: allTasks.length);
+            return DutyListCount(count: tasks.length, total: totalTaskCount);
           }
           if (index <= tasks.length) {
             final task = tasks[index - 1];
             return InkWell(
               onTap: () {
                 if (task.id != null) {
-                  context.push(AppRouteName.taskDetailsFor(task.id ?? 8));
+                  context.push(AppRouteName.taskDetailsFor(task.id!));
                 } else {
                   context.push(AppRouteName.taskDetails);
                 }
@@ -222,21 +235,46 @@ class _DutyListScreenState extends State<DutyListScreen> {
               child: DutyListTile(task: task),
             );
           }
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-          );
+          // Footer: loading or end message
+          return _buildFooter(hasMore, isLoadingMore);
         },
       ),
     );
   }
+
+  Widget _buildFooter(bool hasMore, bool isLoadingMore) {
+    if (isLoadingMore) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.red),
+          ),
+        ),
+      );
+    }
+    if (!hasMore) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Center(
+          child: Text(
+            'No more tasks',
+            style: TextStyle(fontSize: 12, color: context.palette.muted),
+          ),
+        ),
+      );
+    }
+    return const SizedBox.shrink();
+  }
 }
 
-/// A scrollable shell keeps pull-to-refresh available for empty, loading and
-/// error states, where a regular [Center] cannot receive an overscroll drag.
+// ---------------------------------------------------------------------------
+// Supporting widgets (unchanged)
+// ---------------------------------------------------------------------------
+
 class _AlwaysScrollableBody extends StatelessWidget {
   const _AlwaysScrollableBody({required this.child});
-
   final Widget child;
 
   @override
@@ -248,13 +286,8 @@ class _AlwaysScrollableBody extends StatelessWidget {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Helper widgets
-// ---------------------------------------------------------------------------
-
 class _ErrorRetry extends StatelessWidget {
   const _ErrorRetry({required this.onRetry});
-
   final VoidCallback onRetry;
 
   @override
@@ -281,7 +314,6 @@ class _ErrorRetry extends StatelessWidget {
 
 class DutyListCount extends StatelessWidget {
   const DutyListCount({super.key, required this.count, required this.total});
-
   final int count;
   final int total;
 
@@ -297,7 +329,7 @@ class DutyListCount extends StatelessWidget {
             color: context.palette.muted,
           ),
           const SizedBox(width: 5),
-          Text('${count.toString()} Tasks', style: context.type.caption),
+          Text('$count of $total Tasks', style: context.type.caption),
         ],
       ),
     );
@@ -306,7 +338,6 @@ class DutyListCount extends StatelessWidget {
 
 class DutyListTile extends StatefulWidget {
   const DutyListTile({super.key, required this.task});
-
   final Task task;
 
   @override
@@ -323,13 +354,13 @@ class _DutyListTileState extends State<DutyListTile> {
       case 'pending':
         return Colors.orange;
       case 'overdue':
-        return AppColors.red; // or Colors.red
+        return AppColors.red;
       case 'ongoing':
         return Colors.blue;
       case 'approved':
         return const Color.fromARGB(255, 0, 158, 11);
       default:
-        return context.palette.ink; // fallback
+        return context.palette.ink;
     }
   }
 
@@ -341,7 +372,7 @@ class _DutyListTileState extends State<DutyListTile> {
     return InkWell(
       onTap: () {
         if (widget.task.id != null) {
-          context.push(AppRouteName.taskDetailsFor(widget.task.id ?? 8));
+          context.push(AppRouteName.taskDetailsFor(widget.task.id!));
         } else {
           context.push(AppRouteName.taskDetails);
         }
@@ -416,7 +447,6 @@ class _DutyListTileState extends State<DutyListTile> {
 
 class DutyEmptyState extends StatelessWidget {
   const DutyEmptyState({super.key, required this.hasQuery});
-
   final bool hasQuery;
 
   @override
@@ -471,7 +501,6 @@ class DutyEmptyState extends StatelessWidget {
 
 class DutyListFab extends StatelessWidget {
   const DutyListFab({super.key, this.onPressed});
-
   final VoidCallback? onPressed;
 
   @override

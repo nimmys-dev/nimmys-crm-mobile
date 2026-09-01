@@ -252,4 +252,41 @@ class TasksService {
       return Error<TaskCompleteResponse>(DeserializationError());
     }
   }
+
+  // Get Tasks by staff id
+
+  /// GET /api/tasks-assigned?per_page=10&page=1
+  Future<Result<TaskListResponse>> getTasksByStaffId({
+    int? staffId,
+    int page = 1,
+    int perPage = 10,
+    String? search,
+  }) async {
+    try {
+      final String url = ApiUrls.getTasksByStaffId;
+      final Map<String, dynamic> queryParams = <String, dynamic>{
+        "page": page,
+        "per_page": perPage,
+        if (search != null && search.trim().isNotEmpty) "search": search.trim(),
+        "user_id": ?staffId,
+      };
+      final Result<dynamic> result = await _apiService.get(
+        url,
+        queryParams: queryParams,
+      );
+      if (result is Success<dynamic>) {
+        return await _apiService.getResponseStatus<TaskListResponse>(
+          result.value,
+          (dynamic json) =>
+              TaskListResponse.fromJson(json as Map<String, dynamic>),
+        );
+      } else if (result is Error<dynamic>) {
+        return Error<TaskListResponse>(result.type);
+      } else {
+        return Error<TaskListResponse>(GenericError());
+      }
+    } catch (_) {
+      return Error<TaskListResponse>(DeserializationError());
+    }
+  }
 }

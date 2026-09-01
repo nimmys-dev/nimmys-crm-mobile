@@ -466,6 +466,149 @@ class TasksCubit extends BaseCubit<TasksState> {
       resetUIState<TaskCompleteResponse>(state.approveTaskUIState),
     );
   }
+
+  // ---------------------------------------------------------------------------
+  // Tasks By Staff ID
+  // ---------------------------------------------------------------------------
+
+  /// Fetch a specific page of tasks for a staff member.
+  Future<void> fetchTasksByStaffIdPage({
+    required int staffId,
+    required int page,
+    String? search,
+    bool replace = true,
+  }) async {
+    if (state.tasksByStaffIdUIState?.status == Status.LOADING) return;
+
+    final query = (search ?? state.tasksByStaffIdSearchQuery).trim();
+    final searchChanged = query != state.tasksByStaffIdSearchQuery;
+    final staffChanged = staffId != state.currentStaffIdForTasks;
+
+    // Skip if same staff, same search, and we already have data.
+    if (!replace &&
+        !searchChanged &&
+        !staffChanged &&
+        state.tasksByStaffIdList.isNotEmpty &&
+        page == (state.tasksByStaffIdPagination?.currentPage ?? 1)) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        tasksByStaffIdUIState: UIState.loading(),
+        tasksByStaffIdSearchQuery: query,
+        currentStaffIdForTasks: staffId,
+        tasksByStaffIdList: (replace || staffChanged || searchChanged)
+            ? []
+            : state.tasksByStaffIdList,
+        isLoadingMoreTasksByStaffId: false,
+      ),
+    );
+
+    final result = await _repository.getTasksByStaffId(
+      staffId: staffId,
+      page: page,
+      perPage: _pageSize,
+      search: query,
+    );
+
+    if (result is Success<TaskListResponse>) {
+      final newItems = result.value.data ?? [];
+      final updatedList = (replace || staffChanged || searchChanged)
+          ? newItems
+          : [...state.tasksByStaffIdList, ...newItems];
+      emit(
+        state.copyWith(
+          tasksByStaffIdUIState: UIState.success(result.value),
+          tasksByStaffIdList: updatedList,
+          tasksByStaffIdPagination: result.value.pagination,
+          isLoadingMoreTasksByStaffId: false,
+        ),
+      );
+    } else if (result is Error<TaskListResponse>) {
+      emit(
+        state.copyWith(
+          tasksByStaffIdUIState: UIState.error(result.type),
+          isLoadingMoreTasksByStaffId: false,
+        ),
+      );
+    }
+  }
+
+  /// Fetch the first page of tasks assigned to a specific staff member.
+  Future<void> getTasksByStaffId({
+    required int staffId,
+    bool refresh = false,
+    String? search,
+  }) async {
+    // If same staff and search, and not refreshing, skip if data exists.
+    if (!refresh &&
+        state.currentStaffIdForTasks == staffId &&
+        state.tasksByStaffIdSearchQuery == (search ?? '').trim() &&
+        state.tasksByStaffIdList.isNotEmpty) {
+      return;
+    }
+    await fetchTasksByStaffIdPage(
+      staffId: staffId,
+      page: 1,
+      search: search,
+      replace: true,
+    );
+  }
+
+  /// Refresh the current page of tasks for a staff member.
+  Future<void> refreshTasksByStaffId(int staffId) async {
+    await getTasksByStaffId(staffId: staffId, refresh: true);
+  }
+
+  /// Navigate to a specific page (replaces the list).
+  Future<void> goToTasksByStaffIdPage({
+    required int staffId,
+    required int page,
+  }) async {
+    if (page < 1 ||
+        page == state.tasksByStaffIdPagination?.currentPage ||
+        state.isLoadingMoreTasksByStaffId) {
+      return;
+    }
+    await fetchTasksByStaffIdPage(
+      staffId: staffId,
+      page: page,
+      search: state.tasksByStaffIdSearchQuery,
+      replace: true,
+    );
+  }
+
+  /// Load the next page (appends to the list).
+  Future<void> loadMoreTasksByStaffId(int staffId) async {
+    final pagination = state.tasksByStaffIdPagination;
+    if (state.isLoadingMoreTasksByStaffId ||
+        state.tasksByStaffIdUIState?.status == Status.LOADING ||
+        pagination == null ||
+        !pagination.hasNextPage) {
+      return;
+    }
+    await fetchTasksByStaffIdPage(
+      staffId: staffId,
+      page: pagination.nextPage,
+      search: state.tasksByStaffIdSearchQuery,
+      replace: false,
+    );
+  }
+
+  /// Clear the tasks‑by‑staff state.
+  void resetTasksByStaffIdState() {
+    emit(
+      state.copyWith(
+        tasksByStaffIdUIState: null,
+        tasksByStaffIdList: const <Task>[],
+        tasksByStaffIdPagination: null,
+        tasksByStaffIdSearchQuery: '',
+        currentStaffIdForTasks: null,
+        isLoadingMoreTasksByStaffId: false,
+      ),
+    );
+  }
   // ---------------------------------------------------------------------------
   // Reset Entire State
   // ---------------------------------------------------------------------------

@@ -114,4 +114,22 @@ class TasksRepository {
       );
     }
   }
+
+  Future<Result<TaskListResponse>> getTasksByStaffId({
+    int staffId = 1,
+    int page = 1,
+    int perPage = 10,
+    String? search,
+  }) async {
+    try {
+      return await _service.getTasksByStaffId(
+        page: page,
+        perPage: perPage,
+        search: search,
+        staffId : staffId,
+      );
+    } catch (e) {
+      return Error<TaskListResponse>(ErrorWithMessage(message: e.toString()));
+    }
+  }
 }

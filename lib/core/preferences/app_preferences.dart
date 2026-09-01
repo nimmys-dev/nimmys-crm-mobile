@@ -79,4 +79,6 @@ class AppPreferences {
   Future<void> setUserId(int value) => _prefs.setInt(_keyUserId, value);
 
   Future<void> clearUserId() => _prefs.remove(_keyUserId);
+
+  Future<int?> getUserIdAsync() async => _prefs.getInt(_keyUserId);
 }
