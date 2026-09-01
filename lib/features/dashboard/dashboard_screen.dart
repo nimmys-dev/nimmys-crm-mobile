@@ -285,9 +285,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 /// "MY DUTIES" card holding the four duty counters in one row.
-///
-/// Every tile carrying a [StatItem.route] is tappable and opens the duty list
-/// on the matching tab.
 class DashboardDutySection extends StatelessWidget {
   const DashboardDutySection({super.key, required this.items});
 
@@ -301,7 +298,7 @@ class DashboardDutySection extends StatelessWidget {
           AppSectionHeader(
             title: 'My Duties',
             actionLabel: 'View All',
-            onAction: () => context.push(AppRouteName.dutiesFiltered('today')),
+            onAction: () => context.push(AppRouteName.duties),
           ),
           const SizedBox(height: AppSpacing.sm),
           Row(
