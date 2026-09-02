@@ -5,12 +5,7 @@ class LeadDetailsSuccess {
   final String? message;
   final LeadDetailsData? data;
 
-  LeadDetailsSuccess({
-    this.status,
-    this.statusCode,
-    this.message,
-    this.data,
-  });
+  LeadDetailsSuccess({this.status, this.statusCode, this.message, this.data});
 
   factory LeadDetailsSuccess.fromJson(Map<String, dynamic> json) {
     return LeadDetailsSuccess(
@@ -24,11 +19,11 @@ class LeadDetailsSuccess {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        "status": status,
-        "status_code": statusCode,
-        "message": message,
-        if (data != null) "data": data!.toJson(),
-      };
+    "status": status,
+    "status_code": statusCode,
+    "message": message,
+    if (data != null) "data": data!.toJson(),
+  };
 }
 
 /// Detailed data for a single lead, including an optional quotation.
@@ -41,6 +36,7 @@ class LeadDetailsData {
   final String? assignedTo;
   final String? createdBy;
   final String? description;
+  final String? status;
   final Quotation? quotation; // <-- NEW
 
   LeadDetailsData({
@@ -52,6 +48,7 @@ class LeadDetailsData {
     this.assignedTo,
     this.createdBy,
     this.description,
+    this.status,
     this.quotation,
   });
 
@@ -65,6 +62,7 @@ class LeadDetailsData {
       assignedTo: json["assigned_to"] as String?,
       createdBy: json["created_by"] as String?,
       description: json["description"] as String?,
+      status: json["status"] as String?,
       quotation: json["quotation"] == null
           ? null
           : Quotation.fromJson(json["quotation"] as Map<String, dynamic>),
@@ -72,16 +70,17 @@ class LeadDetailsData {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        "id": id,
-        if (reference != null) "reference": reference,
-        if (name != null) "name": name,
-        if (phone != null) "phone": phone,
-        if (source != null) "source": source,
-        if (assignedTo != null) "assigned_to": assignedTo,
-        if (createdBy != null) "created_by": createdBy,
-        if (description != null) "description": description,
-        if (quotation != null) "quotation": quotation!.toJson(),
-      };
+    "id": id,
+    if (reference != null) "reference": reference,
+    if (name != null) "name": name,
+    if (phone != null) "phone": phone,
+    if (source != null) "source": source,
+    if (assignedTo != null) "assigned_to": assignedTo,
+    if (createdBy != null) "created_by": createdBy,
+    if (description != null) "description": description,
+    if (status != null) "status": status,
+    if (quotation != null) "quotation": quotation!.toJson(),
+  };
 
   static int? _asInt(dynamic value) {
     if (value is int) return value;
@@ -162,18 +161,18 @@ class Quotation {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        "id": id,
-        if (reference != null) "reference": reference,
-        if (customerName != null) "customer_name": customerName,
-        if (customerAddress != null) "customer_address": customerAddress,
-        if (issueDate != null) "issue_date": issueDate,
-        if (terms != null) "terms": terms,
-        if (subtotal != null) "subtotal": subtotal,
-        if (discountPercent != null) "discount_percent": discountPercent,
-        if (taxPercent != null) "tax_percent": taxPercent,
-        if (total != null) "total": total,
-        if (items != null) "items": items!.map((e) => e.toJson()).toList(),
-      };
+    "id": id,
+    if (reference != null) "reference": reference,
+    if (customerName != null) "customer_name": customerName,
+    if (customerAddress != null) "customer_address": customerAddress,
+    if (issueDate != null) "issue_date": issueDate,
+    if (terms != null) "terms": terms,
+    if (subtotal != null) "subtotal": subtotal,
+    if (discountPercent != null) "discount_percent": discountPercent,
+    if (taxPercent != null) "tax_percent": taxPercent,
+    if (total != null) "total": total,
+    if (items != null) "items": items!.map((e) => e.toJson()).toList(),
+  };
 
   static int? _asInt(dynamic value) {
     if (value is int) return value;
@@ -221,16 +220,16 @@ class QuotationItem {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        "id": id,
-        if (description != null) "description": description,
-        if (quantity != null) "quantity": quantity,
-        if (rate != null) "rate": rate,
-        if (basicRate != null) "basic_rate": basicRate,
-        if (taxPercent != null) "tax_percent": taxPercent,
-        if (taxAmount != null) "tax_amount": taxAmount,
-        if (amount != null) "amount": amount,
-        if (sortOrder != null) "sort_order": sortOrder,
-      };
+    "id": id,
+    if (description != null) "description": description,
+    if (quantity != null) "quantity": quantity,
+    if (rate != null) "rate": rate,
+    if (basicRate != null) "basic_rate": basicRate,
+    if (taxPercent != null) "tax_percent": taxPercent,
+    if (taxAmount != null) "tax_amount": taxAmount,
+    if (amount != null) "amount": amount,
+    if (sortOrder != null) "sort_order": sortOrder,
+  };
 
   static int? _asInt(dynamic value) {
     if (value is int) return value;

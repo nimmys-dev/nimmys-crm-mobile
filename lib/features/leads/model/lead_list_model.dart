@@ -55,6 +55,7 @@ class LeadItemData {
     this.createdBy,
     this.description,
     this.has_quotation,
+    this.status,
   });
 
   final int? id;
@@ -66,6 +67,7 @@ class LeadItemData {
   final String? createdBy;
   final String? description;
   final bool? has_quotation;
+  final String? status;
 
   factory LeadItemData.fromJson(Map<String, dynamic> json) {
     return LeadItemData(
@@ -77,7 +79,8 @@ class LeadItemData {
       assignedTo: json["assigned_to"] as String?,
       createdBy: json["created_by"] as String?,
       description: json["description"] as String?,
-      has_quotation: json["has_quotation"] as bool?
+      has_quotation: json["has_quotation"] as bool?,
+      status : json["status"] as String?
     );
   }
 
@@ -91,6 +94,7 @@ class LeadItemData {
     if (createdBy != null) "created_by": createdBy,
     if (description != null) "description": description,
     if (has_quotation != null) "has_quotation": has_quotation,
+     if (status != null) "status": status,
   };
 
   static int? _asInt(dynamic value) {

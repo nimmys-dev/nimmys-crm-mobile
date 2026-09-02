@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
 import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
+import 'package:nimmys_crm/features/leads/widgets/status_chip.dart';
 import 'package:nimmys_crm/shared/widgets/app_gradient_header.dart';
 import 'package:nimmys_crm/utils/toast_messages.dart';
 import '../../core/theme/app_colors.dart';
@@ -401,7 +402,25 @@ class MyLeadTile extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              AppInitialBubble(letter: displayName, size: 42, isAccent: false),
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: context.palette.inkWash,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: context.palette.inkBorder),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  lead.id != null ? '#${lead.id}' : '?',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: context.palette.ink,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
 
               const SizedBox(width: AppSpacing.sm),
 
@@ -427,24 +446,12 @@ class MyLeadTile extends StatelessWidget {
                         if (lead.reference != null &&
                             lead.reference!.trim().isNotEmpty) ...[
                           const SizedBox(width: AppSpacing.xs),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
+
+                          if (lead.status != null && lead.status!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4.0),
+                              child: StatusChip(status: lead.status!),
                             ),
-                            decoration: BoxDecoration(
-                              color: context.palette.redWash,
-                              borderRadius: BorderRadius.circular(AppRadius.xs),
-                            ),
-                            child: Text(
-                              lead.reference!.trim(),
-                              style: context.type.caption.copyWith(
-                                color: AppColors.red,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ),
                         ],
                       ],
                     ),

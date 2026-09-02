@@ -12,6 +12,8 @@ import 'package:nimmys_crm/features/leads/model/call_history_list_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_source_model.dart';
 import 'package:nimmys_crm/features/leads/widgets/close_lead_bottom_sheet.dart';
+import 'package:nimmys_crm/features/leads/widgets/lead_details_status_chip.dart';
+import 'package:nimmys_crm/features/leads/widgets/status_chip.dart';
 import 'package:nimmys_crm/features/leads/widgets/tele_call_details.dart';
 import 'package:nimmys_crm/utils/toast_messages.dart';
 import '../../core/theme/app_colors.dart';
@@ -232,9 +234,9 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
                   eyebrow: eyebrow,
                   leading: const AppBackButton(),
                   actions: [
-                    if (lead != null)
+                    if (lead != null && lead.status?.toLowerCase() == 'open')
                       GestureDetector(
-                        onTap: () => _showCloseLeadSheet(context, lead!),
+                        onTap: () => _showCloseLeadSheet(context, lead),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
@@ -268,6 +270,8 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
                           ),
                         ),
                       ),
+                    if (lead != null && lead.status?.toLowerCase() != 'open')
+                      LeadDetailsSatausChip(status: lead.status ?? 'Closed'),
                   ],
                 ),
                 Expanded(
