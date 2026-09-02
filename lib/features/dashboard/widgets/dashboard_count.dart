@@ -9,6 +9,7 @@ import 'package:nimmys_crm/enum/status.dart';
 import 'package:nimmys_crm/features/dashboard/cubit/dashboard_cubit.dart';
 import 'package:nimmys_crm/features/dashboard/dashboard_screen.dart';
 import 'package:nimmys_crm/features/dashboard/model/dashboard_count_model.dart';
+import 'package:nimmys_crm/features/dashboard/model/lead_count_model.dart';
 import 'package:nimmys_crm/features/dashboard/widgets/dashboard_panels.dart';
 import 'package:nimmys_crm/features/dashboard/widgets/stat_cards.dart';
 import 'package:nimmys_crm/routing/app_route_name.dart';
@@ -27,39 +28,59 @@ class DashboardContent extends StatefulWidget {
 class _DashboardContentState extends State<DashboardContent> {
   @override
   void initState() {
-    context.read<DashboardCubit>().getDashboardCount();
     super.initState();
+    context.read<DashboardCubit>().getDashboardCount();
+    context.read<DashboardCubit>().getLeadCount();
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<DashboardCubit, DashboardState>(
+      listenWhen: (prev, curr) =>
+          prev.dashboardCountUIState?.status != curr.dashboardCountUIState?.status ||
+          prev.leadCountUIState?.status != curr.leadCountUIState?.status,
       listener: (context, state) {
         if (state.dashboardCountUIState?.status == Status.ERROR) {
           ToastMessages.error(
-            message:
-                state.dashboardCountUIState?.errorType?.getText(context) ??
+            message: state.dashboardCountUIState?.errorType?.getText(context) ??
                 'Failed to load dashboard data',
+          );
+        }
+        if (state.leadCountUIState?.status == Status.ERROR) {
+          ToastMessages.error(
+            message: state.leadCountUIState?.errorType?.getText(context) ??
+                'Failed to load lead data',
           );
         }
       },
       builder: (context, state) {
-        final countState = state.dashboardCountUIState;
-        final isLoading =
-            countState?.status == Status.LOADING ||
-            countState?.status == null ||
-            countState?.status == Status.INITIAL;
-        final counts = countState?.data;
+        // ---- Duty counts ----
+        final dutyState = state.dashboardCountUIState;
+        final isLoadingDuty = dutyState?.status == Status.LOADING ||
+            dutyState?.status == null ||
+            dutyState?.status == Status.INITIAL;
+        final counts = dutyState?.data;
 
-        // Build stat items from counts
+        // ---- Lead counts ----
+        final leadState = state.leadCountUIState;
+        final isLoadingLead = leadState?.status == Status.LOADING ||
+            leadState?.status == null ||
+            leadState?.status == Status.INITIAL;
+        final leadCounts = leadState?.data?.data?.counts;
+
+        final isLoading = isLoadingDuty || isLoadingLead;
+
+        // Build stat items
         final dutyStats = _buildDutyStats(widget.role, counts);
-        final leadStats = _buildLeadStats(counts);
-        final yourLeads = counts?.data?.approvalPending?.toString() ?? '0';
+        final leadStats = _buildLeadStats(leadCounts);
+        final yourLeads = leadCounts?.myLeads?.toString() ?? '0';
         final totalLeads = widget.role.can(AppPermission.viewAllLeads)
-            ? counts?.data?.approvalPending?.toString() ?? '0'
+            ? leadCounts?.totalLeads?.toString() ?? '0'
             : null;
+
         Future<void> refreshDashboard() async {
           await context.read<DashboardCubit>().getDashboardCount();
+          await context.read<DashboardCubit>().getLeadCount();
         }
 
         return RefreshIndicator(
@@ -131,12 +152,12 @@ class _DashboardContentState extends State<DashboardContent> {
     );
   }
 
-  // Helper to build duty stat items
+  // Helper to build duty stat items (from DashboardCount)
   List<StatItem> _buildDutyStats(UserRole role, DashboardCount? counts) {
-    final today = counts?.data?.todayDuty?.toString() ?? '0';
-    final overdue = counts?.data?.overdueDuty?.toString() ?? '0';
-    final upcoming = counts?.data?.upcomingDuty?.toString() ?? '0';
-    final approval = counts?.data?.approvalPending?.toString() ?? '0';
+    final today = counts?.data?.counts?.todayDuty?.toString() ?? '0';
+    final overdue = counts?.data?.counts?.overdueDuty?.toString() ?? '0';
+    final upcoming = counts?.data?.counts?.upcomingDuty?.toString() ?? '0';
+    final approval = counts?.data?.counts?.approvalPending?.toString() ?? '0';
 
     return [
       StatItem(
@@ -171,12 +192,12 @@ class _DashboardContentState extends State<DashboardContent> {
     ];
   }
 
-  // Helper to build lead stat items
-  List<StatItem> _buildLeadStats(DashboardCount? counts) {
-    final unattended = counts?.data?.approvalPending?.toString() ?? '0';
-    final todayFollow = counts?.data?.approvalPending?.toString() ?? '0';
-    final overdueFollow = counts?.data?.approvalPending?.toString() ?? '0';
-    final upcomingFollow = counts?.data?.approvalPending?.toString() ?? '0';
+  // Helper to build lead stat items (from LeadCounts)
+  List<StatItem> _buildLeadStats(LeadCounts? leadCounts) {
+    final unattended = leadCounts?.unattended?.toString() ?? '0';
+    final todayFollow = leadCounts?.todayFollowup?.toString() ?? '0';
+    final overdueFollow = leadCounts?.overdueFollowup?.toString() ?? '0';
+    final upcomingFollow = leadCounts?.upcomingFollowup?.toString() ?? '0';
 
     return [
       StatItem(

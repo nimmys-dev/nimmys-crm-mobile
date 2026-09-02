@@ -5,6 +5,7 @@ import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/ui_state/ui_state.dart';
 import 'package:nimmys_crm/enum/status.dart';
 import 'package:nimmys_crm/features/dashboard/model/dashboard_count_model.dart';
+import 'package:nimmys_crm/features/dashboard/model/lead_count_model.dart';
 import 'package:nimmys_crm/features/dashboard/repository/dashboard_repository.dart';
 
 part 'dashboard_state.dart';
@@ -40,6 +41,30 @@ class DashboardCubit extends BaseCubit<DashboardState> {
     _setDashboardCountUIState(
       resetUIState<DashboardCount>(state.dashboardCountUIState),
     );
+  }
+
+  // Lead Count State
+
+  void _setLeadCountUIState(UIState<LeadCountModel>? uiState) {
+    emit(state.copyWith(leadCountUIState: uiState));
+  }
+
+  /// Fetches lead counts (leads, duties, etc.)
+  Future<void> getLeadCount() async {
+    _setLeadCountUIState(UIState.loading());
+
+    final Result<LeadCountModel> result = await _repository.getLeadsCount();
+
+    if (result is Success<LeadCountModel>) {
+      _setLeadCountUIState(UIState.success(result.value));
+    } else if (result is Error<LeadCountModel>) {
+      _setLeadCountUIState(UIState.error(result.type));
+    }
+  }
+
+  /// Resets the lead count state to initial (null).
+  void resetLeadCountState() {
+    _setLeadCountUIState(resetUIState<LeadCountModel>(state.leadCountUIState));
   }
 
   // ---------------------------------------------------------------------------

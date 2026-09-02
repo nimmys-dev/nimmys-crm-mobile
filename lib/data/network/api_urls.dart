@@ -32,6 +32,7 @@ class ApiUrls {
   static String companyProfile = "$_baseUrl/company-profile";
   static String updateCompanyProfile = "$_baseUrl/company-profile/update";
   static String getDashboardCount = "$_baseUrl/dashboard/task-counts";
+  static String getLeadsCount = "$_baseUrl/dashboard-lead-statistics";
   static String getMyTasksList = "$_baseUrl/my-tasks";
   static String reassignTask = "$baseUrl/reassign-task";
   static String quotationPdf(int leadId) =>
