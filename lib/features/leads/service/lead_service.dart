@@ -10,6 +10,7 @@ import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_source_model.dart';
+import 'package:nimmys_crm/features/leads/model/not_interested_reason_model.dart';
 import 'package:nimmys_crm/features/leads/model/quotation_pdf_model.dart';
 
 /// Network access for lead reads, writes and lookups.
@@ -330,6 +331,27 @@ class LeadService {
       }
     } catch (_) {
       return Error<CloseLeadResponse>(DeserializationError());
+    }
+  }
+
+    /// GET /api/lead-assignees. Returns staff members who can be assigned a lead.
+  Future<Result<NotInterestedReasonModel>> getNotInterestedReasonModel() async {
+    try {
+      final String url = ApiUrls.notInterestedReason;
+      final Result<dynamic> result = await _apiService.get(url);
+      if (result is Success<dynamic>) {
+        return await _apiService.getResponseStatus<NotInterestedReasonModel>(
+          result.value,
+          (dynamic json) =>
+              NotInterestedReasonModel.fromJson(json as Map<String, dynamic>),
+        );
+      } else if (result is Error<dynamic>) {
+        return Error<NotInterestedReasonModel>(result.type);
+      } else {
+        return Error<NotInterestedReasonModel>(GenericError());
+      }
+    } catch (_) {
+      return Error<NotInterestedReasonModel>(DeserializationError());
     }
   }
 }

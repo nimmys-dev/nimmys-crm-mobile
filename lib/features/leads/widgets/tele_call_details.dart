@@ -237,6 +237,8 @@ class TeleCallDetailCard extends StatelessWidget {
 
     final String remarks = detail['remarks']?.toString() ?? '';
 
+    final String reason = detail['reason']?.toString() ?? '';
+
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       padding: const EdgeInsets.all(AppSpacing.sm),
@@ -306,7 +308,18 @@ class TeleCallDetailCard extends StatelessWidget {
           if (remarks.isNotEmpty) ...[
             const SizedBox(height: 10),
 
-            Text(remarks, style: const TextStyle(fontSize: 13, height: 1.3)),
+            Text(
+              'Remarks : $remarks',
+              style: const TextStyle(fontSize: 13, height: 1.3),
+            ),
+          ],
+          if (reason.isNotEmpty) ...[
+            const SizedBox(height: 10),
+
+            Text(
+              'Reason : $reason',
+              style: const TextStyle(fontSize: 13, height: 1.3),
+            ),
           ],
         ],
       ),
@@ -515,6 +528,9 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
 
   File? _invoiceFile;
 
+  Map<String, String>? _reasonMap;
+  String? _selectedReasonName;
+
   @override
   void initState() {
     super.initState();
@@ -523,6 +539,10 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     _calledTimeController.text =
         '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    final cubit = context.read<LeadsCubit>();
+    if (cubit.state.notInterestedReasonsUIState?.data == null) {
+      cubit.getNotInterestedReasons(force: false);
+    }
   }
 
   @override
@@ -582,43 +602,46 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
   // ======================================================
 
   Future<void> _save() async {
+    // --- Validation (unchanged) ---
     if (_calledDateController.text.trim().isEmpty) {
       ToastMessages.error(message: 'Called Date is required');
       return;
     }
-
     if (_calledTimeController.text.trim().isEmpty) {
       ToastMessages.error(message: 'Called Time is required');
       return;
     }
-
     if (_selectedCallStatus == null || _selectedCallStatus!.isEmpty) {
       ToastMessages.error(message: 'Call Status is required');
       return;
     }
-
     if (_remarksController.text.trim().isEmpty) {
       ToastMessages.error(message: 'Remarks is required');
       return;
     }
-
-    if (!_interest && _reasonController.text.trim().isEmpty) {
-      ToastMessages.error(message: 'Not Interested Reason is required');
-      return;
+    if (!_interest) {
+      if (_selectedReasonName == null || _selectedReasonName!.isEmpty) {
+        ToastMessages.error(message: 'Not Interested Reason is required');
+        return;
+      }
     }
-
     if (!_isItemSold &&
         _interest &&
         _nextFollowUpDateController.text.trim().isEmpty) {
       ToastMessages.error(message: 'Next Follow-up Date is required');
       return;
     }
-
     if (_isItemSold && _invoiceNumberController.text.trim().isEmpty) {
       ToastMessages.error(
-        message: 'Invoice Number is required when Item Sold is true',
+        message: 'Invoice Number is required when Item is sold.',
       );
       return;
+    }
+
+    // --- Compute reason value ---
+    String? reasonValue;
+    if (!_interest) {
+      reasonValue = _reasonMap?[_selectedReasonName!];
     }
 
     final String callStatus = _selectedCallStatus == 'Answered'
@@ -627,47 +650,25 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
 
     final Map<String, dynamic> detail = <String, dynamic>{
       'called_date': _calledDateController.text.trim(),
-
       'called_time': _calledTimeController.text.trim(),
-
       'call_status': callStatus,
-
       'call_status_label': _selectedCallStatus,
-
       'interest': _interest,
-
       'is_item_sold': _isItemSold,
-
       'invoice_number': _invoiceNumberController.text.trim(),
-
       'next_followup_date': _nextFollowUpDateController.text.trim(),
-
       'remarks': _remarksController.text.trim(),
-
       'invoice_file': _invoiceFile,
-
-      'reason': _reasonController.text.trim(),
+      'reason': reasonValue ?? '', // now defined
     };
 
-    // --------------------------------------------------
-    // Wait for API result
-    // --------------------------------------------------
-
     final bool success = await widget.onSave(detail);
-
     if (!mounted) return;
-
-    // --------------------------------------------------
-    // Close ONLY when API succeeds
-    // --------------------------------------------------
-
     if (success) {
       FocusScope.of(context).unfocus();
-
       Navigator.of(context).pop();
     }
   }
-
   // ======================================================
   // BUILD
   // ======================================================
@@ -840,6 +841,7 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                               _interest = value;
 
                               if (_interest) {
+                                _selectedReasonName = null;
                                 _reasonController.clear();
                               }
                             });
@@ -853,19 +855,44 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                         // ==================================================
                         Visibility(
                           visible: !_interest,
+                          child: BlocBuilder<LeadsCubit, LeadsState>(
+                            buildWhen: (previous, current) =>
+                                previous.notInterestedReasonsUIState !=
+                                current.notInterestedReasonsUIState,
+                            builder: (context, state) {
+                              final reasonsState =
+                                  state.notInterestedReasonsUIState;
+                              List<String> options = [];
+                              if (reasonsState?.data != null) {
+                                // Build the map and options list
+                                _reasonMap = {
+                                  for (var item
+                                      in reasonsState!.data!.data ?? [])
+                                    item.name ?? '': item.value ?? '',
+                                };
+                                options = _reasonMap!.keys.toList();
+                              } else if (reasonsState?.status ==
+                                  Status.LOADING) {
+                                options = ['Loading...'];
+                              }
 
-                          child: AppFormField(
-                            isRequired: !_interest,
-
-                            label: 'Not Interested Reason',
-
-                            child: AppTextField(
-                              hint: 'Reason for not being interested',
-
-                              controller: _reasonController,
-
-                              icon: Icons.report,
-                            ),
+                              return AppFormField(
+                                isRequired: !_interest,
+                                label: 'Not Interested Reason',
+                                child: AppSelectField(
+                                  hint: 'Select reason',
+                                  sheetTitle: 'Not Interested Reason',
+                                  icon: Icons.report,
+                                  options: options,
+                                  value: _selectedReasonName,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectedReasonName = value;
+                                    });
+                                  },
+                                ),
+                              );
+                            },
                           ),
                         ),
 
@@ -911,19 +938,18 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                         // ==================================================
                         // NEXT FOLLOW-UP
                         // ==================================================
-                        AppFormField(
-                          label: 'Next Follow-up Date',
-
-                          child: AppTextField(
-                            hint: 'Select date',
-
-                            controller: _nextFollowUpDateController,
-
-                            icon: Icons.event_available,
-
-                            readOnly: true,
-
-                            onTap: () => _pickDate(_nextFollowUpDateController),
+                        Visibility(
+                          visible: _interest && !_isItemSold,
+                          child: AppFormField(
+                            label: 'Next Follow-up Date',
+                            child: AppTextField(
+                              hint: 'Select date',
+                              controller: _nextFollowUpDateController,
+                              icon: Icons.event_available,
+                              readOnly: true,
+                              onTap: () =>
+                                  _pickDate(_nextFollowUpDateController),
+                            ),
                           ),
                         ),
 
@@ -932,9 +958,7 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                         // ==================================================
                         AppFormField(
                           isRequired: true,
-
                           label: 'Remarks',
-
                           child: AppTextField(
                             hint: 'Notes / remarks',
 

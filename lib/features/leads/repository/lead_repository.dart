@@ -8,6 +8,7 @@ import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_source_model.dart';
+import 'package:nimmys_crm/features/leads/model/not_interested_reason_model.dart';
 import 'package:nimmys_crm/features/leads/model/quotation_pdf_model.dart';
 import 'package:nimmys_crm/features/leads/service/lead_service.dart';
 
@@ -154,6 +155,16 @@ class LeadRepository {
       );
     } catch (e) {
       return Error<CloseLeadResponse>(ErrorWithMessage(message: e.toString()));
+    }
+  }
+
+    Future<Result<NotInterestedReasonModel>> getNotInterestedReasons() async {
+    try {
+      return await _service.getNotInterestedReasonModel();
+    } catch (e) {
+      return Error<NotInterestedReasonModel>(
+        ErrorWithMessage(message: e.toString()),
+      );
     }
   }
 }

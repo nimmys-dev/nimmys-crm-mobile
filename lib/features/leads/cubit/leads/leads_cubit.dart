@@ -13,6 +13,7 @@ import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_source_model.dart';
+import 'package:nimmys_crm/features/leads/model/not_interested_reason_model.dart';
 import 'package:nimmys_crm/features/leads/model/quotation_pdf_model.dart';
 import 'package:nimmys_crm/features/leads/repository/lead_repository.dart';
 
@@ -419,7 +420,38 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       resetUIState<CloseLeadResponse>(state.closeLeadUIState),
     );
   }
+  // ---------------------------------------------------------------------------
+  // Not Interested Reasons
+  // ---------------------------------------------------------------------------
 
+  void _setNotInterestedReasonsUIState(
+    UIState<NotInterestedReasonModel>? uiState,
+  ) {
+    emit(state.copyWith(notInterestedReasonsUIState: uiState));
+  }
+
+  Future<void> getNotInterestedReasons({bool force = false}) async {
+    if (!force && state.notInterestedReasonsUIState?.data != null) {
+      return;
+    }
+
+    _setNotInterestedReasonsUIState(UIState.loading());
+
+    final Result<NotInterestedReasonModel> result = await _repository
+        .getNotInterestedReasons();
+
+    if (result is Success<NotInterestedReasonModel>) {
+      _setNotInterestedReasonsUIState(UIState.success(result.value));
+    } else if (result is Error<NotInterestedReasonModel>) {
+      _setNotInterestedReasonsUIState(UIState.error(result.type));
+    }
+  }
+
+  void resetNotInterestedReasonsState() {
+    _setNotInterestedReasonsUIState(
+      resetUIState<NotInterestedReasonModel>(state.notInterestedReasonsUIState),
+    );
+  }
   // ---------------------------------------------------------------------------
   // Reset Entire State
   // ---------------------------------------------------------------------------

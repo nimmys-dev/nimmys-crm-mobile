@@ -75,6 +75,8 @@ class LeadsState extends Equatable {
   /// PUT /api/leads/{id}/close state.
   final UIState<CloseLeadResponse>? closeLeadUIState;
 
+  final UIState<NotInterestedReasonModel>? notInterestedReasonsUIState;
+
   const LeadsState({
     this.leadListUIState,
     this.leadList = const <LeadItemData>[],
@@ -89,6 +91,7 @@ class LeadsState extends Equatable {
     this.addCallLogUIState,
     this.callHistoryUIState,
     this.closeLeadUIState,
+    this.notInterestedReasonsUIState,
   });
 
   LeadsState copyWith({
@@ -105,6 +108,7 @@ class LeadsState extends Equatable {
     UIState<TeleCallDetailResponseModel>? addCallLogUIState,
     UIState<CallHistoryResponseListModel>? callHistoryUIState,
     UIState<CloseLeadResponse>? closeLeadUIState,
+    UIState<NotInterestedReasonModel>? notInterestedReasonsUIState,
   }) {
     return LeadsState(
       leadListUIState: leadListUIState ?? this.leadListUIState,
@@ -120,6 +124,8 @@ class LeadsState extends Equatable {
       addCallLogUIState: addCallLogUIState ?? this.addCallLogUIState,
       callHistoryUIState: callHistoryUIState ?? this.callHistoryUIState,
       closeLeadUIState: closeLeadUIState ?? this.closeLeadUIState,
+      notInterestedReasonsUIState:
+          notInterestedReasonsUIState ?? this.notInterestedReasonsUIState,
     );
   }
 
@@ -187,5 +193,11 @@ class LeadsState extends Equatable {
     closeLeadUIState?.status,
     closeLeadUIState?.data,
     closeLeadUIState?.errorType,
+
+    // Not Interested Reasons
+    notInterestedReasonsUIState,
+    notInterestedReasonsUIState?.status,
+    notInterestedReasonsUIState?.data,
+    notInterestedReasonsUIState?.errorType,
   ];
 }
