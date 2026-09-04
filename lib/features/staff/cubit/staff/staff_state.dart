@@ -4,6 +4,7 @@ class StaffState extends Equatable {
   final UIState<StoreModelSuccess>? branchesUIState;
   final UIState<UserRoleSuccess>? userRolesUIState;
   final UIState<CreateStaffSuccess>? createStaffUIState;
+  final UIState<StaffPasswordResetFromAdmin>? resetPasswordUIState;
 
   /// The record behind `GET /api/view-staff/{id}` — Staff Details reads this,
   /// and Edit Staff prefills its form from it.
@@ -62,6 +63,7 @@ class StaffState extends Equatable {
     this.myTasksSearchQuery = '',
     this.isLoadingMoreMyTasks = false,
     this.reassignTasksUIState,
+    this.resetPasswordUIState,
   });
 
   StaffState copyWith({
@@ -87,6 +89,7 @@ class StaffState extends Equatable {
     String? myTasksSearchQuery,
     bool? isLoadingMoreMyTasks,
     UIState<ReassignTaskResponse>? reassignTasksUIState,
+    UIState<StaffPasswordResetFromAdmin>? resetPasswordUIState,
   }) {
     return StaffState(
       branchesUIState: branchesUIState ?? this.branchesUIState,
@@ -109,6 +112,7 @@ class StaffState extends Equatable {
       myTasksSearchQuery: myTasksSearchQuery ?? this.myTasksSearchQuery,
       isLoadingMoreMyTasks: isLoadingMoreMyTasks ?? this.isLoadingMoreMyTasks,
       reassignTasksUIState: reassignTasksUIState ?? this.reassignTasksUIState,
+      resetPasswordUIState: resetPasswordUIState ?? this.resetPasswordUIState,
     );
   }
 
@@ -160,5 +164,11 @@ class StaffState extends Equatable {
     reassignTasksUIState?.status,
     reassignTasksUIState?.data,
     reassignTasksUIState?.errorType,
+
+    // reset password from admin
+    resetPasswordUIState,
+    resetPasswordUIState?.status,
+    resetPasswordUIState?.data,
+    resetPasswordUIState?.errorType,
   ];
 }

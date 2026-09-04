@@ -45,6 +45,9 @@ class ApiUrls {
   static String markTasksAsCompleted(int id) => "$_baseUrl/tasks/$id/approve";
   static String notInterestedReason = "$_baseUrl/call-reasons";
   static String forgotPasswordReset = "$_baseUrl/forgot-password";
+  // In api_urls.dart
+  static String resetStaffPassword(int id) =>
+      "$_baseUrl/staff/$id/reset-password";
 
   // Tasks
   static String tasks = "$_baseUrl/tasks";

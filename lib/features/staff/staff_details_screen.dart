@@ -19,6 +19,8 @@ import '../../shared/widgets/app_gradient_header.dart';
 import '../../shared/widgets/app_section_card.dart';
 import '../../shared/widgets/app_select_field.dart';
 import '../../utils/constant_variables.dart';
+import '../../utils/toast_messages.dart';
+import '../../utils/validator.dart';
 import '../authentication/cubit/session/session_cubit.dart';
 import '../profile/profile_sheet.dart';
 import 'cubit/staff/staff_cubit.dart';
@@ -46,17 +48,13 @@ class _StaffDetailsScreenState extends State<StaffDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    // Branches and roles are only needed to turn `shop_id`/`role` into the
-    // names this screen shows — `getBranches`/`getUserRoles` skip the call
-    // when another staff screen already loaded them this session. The record
-    // itself always fetches fresh: see `StaffCubit.getStaffDetails`.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<StaffCubit>()
           ..getStaffDetails(widget.staffId)
           ..getBranches()
           ..getUserRoles()
-          ..getStaffList(); // <-- ADDED: fetch staff list for transfer
+          ..getStaffList(); // for transfer
       }
     });
   }
@@ -65,12 +63,113 @@ class _StaffDetailsScreenState extends State<StaffDetailsScreen> {
     final Object? result = await context.push<Object?>(
       AppRouteName.staffEditFor(widget.staffId),
     );
-    // Any non-null result means Save ran successfully — re-fetch so this
-    // screen shows what was actually saved rather than trusting the form's
-    // own copy of it.
     if (result != null && mounted) {
       context.read<StaffCubit>().getStaffDetails(widget.staffId);
     }
+  }
+
+  /// Shows a dialog to reset the staff member's password.
+  Future<void> _showResetPasswordDialog() async {
+    final TextEditingController passwordController = TextEditingController();
+    final TextEditingController confirmController = TextEditingController();
+    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return BlocConsumer<StaffCubit, StaffState>(
+          listener: (context, state) {
+            final resetState = state.resetPasswordUIState;
+            if (resetState?.status == Status.SUCCESS) {
+              ToastMessages.success(
+                message: resetState?.data?.message ?? 'Password reset successfully.',
+              );
+              // Dismiss the dialog on success
+              Navigator.of(context).pop();
+              context.read<StaffCubit>().resetResetPasswordState();
+            } else if (resetState?.status == Status.ERROR) {
+              ToastMessages.error(
+                message: resetState?.errorType?.getText(context) ??
+                    'Failed to reset password. Please try again.',
+              );
+              context.read<StaffCubit>().resetResetPasswordState();
+            }
+          },
+          builder: (context, state) {
+            final bool isLoading = state.resetPasswordUIState?.status == Status.LOADING;
+
+            return AlertDialog(
+              title: const Text('Reset Password'),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: passwordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'New Password',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) => Validator.fieldRequired(value, fieldName: 'Password'),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    TextFormField(
+                      controller: confirmController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Confirm Password',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please confirm your password';
+                        }
+                        if (value != passwordController.text) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isLoading ? null : () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          if (formKey.currentState?.validate() ?? false) {
+                            context.read<StaffCubit>().resetStaffPassword(
+                                  id: widget.staffId,
+                                  password: passwordController.text,
+                                  passwordConfirmation: confirmController.text,
+                                );
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Reset Password'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -93,11 +192,17 @@ class _StaffDetailsScreenState extends State<StaffDetailsScreen> {
                     eyebrow: 'TEAM',
                     leading: const AppBackButton(),
                     actions: <Widget>[
-                      if (canEdit)
+                      if (canEdit) ...[
+                        AppHeaderIconButton(
+                          icon: Icons.password_outlined,
+                          onTap: _showResetPasswordDialog,
+                        ),
+                        const SizedBox(width: 4),
                         AppHeaderIconButton(
                           icon: Icons.edit_outlined,
                           onTap: _openEdit,
                         ),
+                      ],
                     ],
                   ),
                   Expanded(
@@ -162,8 +267,6 @@ class _StaffDetailsBody extends StatelessWidget {
         state.branchesUIState?.data?.activeBranches ?? <StoreResponseData>[];
     final List<UserRoleOption> roles =
         state.userRolesUIState?.data?.selectableRoles ?? <UserRoleOption>[];
-
-    // <-- ADDED: get staff list for transfer
     final List<StaffListItem> staffList =
         state.staffListUIState?.data?.data ?? <StaffListItem>[];
 
@@ -329,7 +432,7 @@ class _StaffDetailsBody extends StatelessWidget {
         // ---- Tasks Section ----
         StaffTasksSection(
           staffId: staff.id!,
-          staffList: staffList, // <-- CHANGED: pass staff list, not branches
+          staffList: staffList,
         ),
       ],
     );

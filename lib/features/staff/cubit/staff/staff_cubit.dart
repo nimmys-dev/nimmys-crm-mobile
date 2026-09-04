@@ -11,6 +11,7 @@ import 'package:nimmys_crm/features/staff/api_request/update_staff_api_request.d
 import 'package:nimmys_crm/features/staff/model/create_staffsuccess_model.dart';
 import 'package:nimmys_crm/features/staff/model/delete_staff_model.dart';
 import 'package:nimmys_crm/features/staff/model/reassign_task_model.dart';
+import 'package:nimmys_crm/features/staff/model/reset_password_admin.dart';
 import 'package:nimmys_crm/features/staff/model/staff_details_model.dart';
 import 'package:nimmys_crm/features/staff/model/staff_list_model.dart';
 import 'package:nimmys_crm/features/staff/model/store_success_model.dart';
@@ -302,7 +303,6 @@ class StaffCubit extends BaseCubit<StaffState> {
   // My Tasks List
   // ---------------------------------------------------------------------------
 
-
   Future<void> getMyTasks({bool refresh = false, String? search}) async {
     if (state.myTasksListUIState?.status == Status.LOADING) {
       return;
@@ -502,6 +502,39 @@ class StaffCubit extends BaseCubit<StaffState> {
   void resetReassignTasksState() {
     _setReassignTasksUIState(
       resetUIState<ReassignTaskResponse>(state.reassignTasksUIState),
+    );
+  }
+
+  // ---- Reset Staff Password ----
+  void _setResetPasswordUIState(UIState<StaffPasswordResetFromAdmin>? uiState) {
+    emit(state.copyWith(resetPasswordUIState: uiState));
+  }
+
+  /// Resets the password for a staff member.
+  /// The server returns the updated staff data in the response.
+  Future<void> resetStaffPassword({
+    required int id,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    if (state.resetPasswordUIState?.status == Status.LOADING) return;
+
+    _setResetPasswordUIState(UIState.loading());
+    final result = await _repository.resetStaffPassword(
+      id,
+      password,
+      passwordConfirmation,
+    );
+    if (result is Success<StaffPasswordResetFromAdmin>) {
+      _setResetPasswordUIState(UIState.success(result.value));
+    } else if (result is Error<StaffPasswordResetFromAdmin>) {
+      _setResetPasswordUIState(UIState.error(result.type));
+    }
+  }
+
+  void resetResetPasswordState() {
+    _setResetPasswordUIState(
+      resetUIState<StaffPasswordResetFromAdmin>(state.resetPasswordUIState),
     );
   }
 

@@ -5,6 +5,7 @@ import 'package:nimmys_crm/features/staff/model/create_staffsuccess_model.dart';
 import 'package:nimmys_crm/features/staff/api_request/update_staff_api_request.dart';
 import 'package:nimmys_crm/features/staff/model/delete_staff_model.dart';
 import 'package:nimmys_crm/features/staff/model/reassign_task_model.dart';
+import 'package:nimmys_crm/features/staff/model/reset_password_admin.dart';
 import 'package:nimmys_crm/features/staff/model/staff_details_model.dart';
 import 'package:nimmys_crm/features/staff/model/staff_list_model.dart';
 import 'package:nimmys_crm/features/staff/model/store_success_model.dart';
@@ -120,6 +121,24 @@ class StaffRepository {
       );
     } catch (e) {
       return Error<ReassignTaskResponse>(
+        ErrorWithMessage(message: e.toString()),
+      );
+    }
+  } // Reset Staff Password Repo
+
+  Future<Result<StaffPasswordResetFromAdmin>> resetStaffPassword(
+    int id,
+    String password,
+    String passwordConfirmation,
+  ) async {
+    try {
+      return await _service.resetStaffPassword(
+        id,
+        password,
+        passwordConfirmation,
+      );
+    } catch (e) {
+      return Error<StaffPasswordResetFromAdmin>(
         ErrorWithMessage(message: e.toString()),
       );
     }

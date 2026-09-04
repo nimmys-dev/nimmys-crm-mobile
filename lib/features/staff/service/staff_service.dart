@@ -7,6 +7,7 @@ import 'package:nimmys_crm/features/staff/model/create_staffsuccess_model.dart';
 import 'package:nimmys_crm/features/staff/api_request/update_staff_api_request.dart';
 import 'package:nimmys_crm/features/staff/model/delete_staff_model.dart';
 import 'package:nimmys_crm/features/staff/model/reassign_task_model.dart';
+import 'package:nimmys_crm/features/staff/model/reset_password_admin.dart';
 import 'package:nimmys_crm/features/staff/model/staff_details_model.dart';
 import 'package:nimmys_crm/features/staff/model/staff_list_model.dart';
 import 'package:nimmys_crm/features/staff/model/store_success_model.dart';
@@ -266,6 +267,35 @@ class StaffService {
       }
     } catch (e) {
       return Error<ReassignTaskResponse>(DeserializationError());
+    }
+  }
+
+  /// POST /api/staff/{id}/reset-password
+  /// Sends the new password and its confirmation.
+  Future<Result<StaffPasswordResetFromAdmin>> resetStaffPassword(
+    int id,
+    String password,
+    String passwordConfirmation,
+  ) async {
+    try {
+      final url = ApiUrls.resetStaffPassword(id);
+      final Map<String, dynamic> body = {
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      };
+      final result = await _apiService.post(url, body: body);
+      if (result is Success<dynamic>) {
+        return await _apiService.getResponseStatus<StaffPasswordResetFromAdmin>(
+          result.value,
+          (json) => StaffPasswordResetFromAdmin.fromJson(json),
+        );
+      } else if (result is Error<dynamic>) {
+        return Error<StaffPasswordResetFromAdmin>(result.type);
+      } else {
+        return Error<StaffPasswordResetFromAdmin>(GenericError());
+      }
+    } catch (e) {
+      return Error<StaffPasswordResetFromAdmin>(DeserializationError());
     }
   }
 }
