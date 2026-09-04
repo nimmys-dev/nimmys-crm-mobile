@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/theme/app_theme.dart';
@@ -42,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _rememberMe = true;
   String? _emailError;
   String? _passwordError;
-
+  String? _fcmToken;
   @override
   void initState() {
     super.initState();
@@ -60,6 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         context.read<LoginCubit>().resetLoginState();
         _checkForUpdate();
+        _getFcmToken();
       }
     });
   }
@@ -69,6 +71,18 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _getFcmToken() async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (mounted) {
+        setState(() => _fcmToken = token);
+      }
+    } catch (e) {
+      debugPrint('Failed to get FCM token: $e');
+      // Optionally set token to null or a default
+    }
   }
 
   Future<void> _setRememberMe(bool value) async {
@@ -131,7 +145,11 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
     await context.read<LoginCubit>().login(
-      LoginApiRequest(email: email, password: password),
+      LoginApiRequest(
+        email: email,
+        password: password,
+        fcm_token: _fcmToken.toString(),
+      ),
     );
   }
 
