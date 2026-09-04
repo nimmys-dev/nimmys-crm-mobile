@@ -181,8 +181,10 @@ class AppRoutes {
           final bool? isAppHeaderRequired = bool.tryParse(
             state.uri.queryParameters['isAppHeaderRequired'] ?? '',
           );
+          final String? status = state.uri.queryParameters['status'];
           return MyLeadsScreen(
             isAppHeaderRequired: isAppHeaderRequired ?? true,
+            status: status, // pass null if missing
           );
         },
       ),

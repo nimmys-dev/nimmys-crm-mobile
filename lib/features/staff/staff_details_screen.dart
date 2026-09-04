@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nimmys_crm/features/staff/model/staff_list_model.dart';
 import 'package:nimmys_crm/features/staff/widgets/staff_task_widget.dart';
+import 'package:nimmys_crm/shared/widgets/app_text_field.dart';
 
 import '../../core/auth/app_permission.dart';
 import '../../core/theme/app_colors.dart';
@@ -73,98 +74,148 @@ class _StaffDetailsScreenState extends State<StaffDetailsScreen> {
     final TextEditingController passwordController = TextEditingController();
     final TextEditingController confirmController = TextEditingController();
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+    bool obscurePassword = true;
+    bool obscureConfirm = true;
 
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return BlocConsumer<StaffCubit, StaffState>(
-          listener: (context, state) {
-            final resetState = state.resetPasswordUIState;
-            if (resetState?.status == Status.SUCCESS) {
-              ToastMessages.success(
-                message: resetState?.data?.message ?? 'Password reset successfully.',
-              );
-              // Dismiss the dialog on success
-              Navigator.of(context).pop();
-              context.read<StaffCubit>().resetResetPasswordState();
-            } else if (resetState?.status == Status.ERROR) {
-              ToastMessages.error(
-                message: resetState?.errorType?.getText(context) ??
-                    'Failed to reset password. Please try again.',
-              );
-              context.read<StaffCubit>().resetResetPasswordState();
-            }
-          },
-          builder: (context, state) {
-            final bool isLoading = state.resetPasswordUIState?.status == Status.LOADING;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return BlocConsumer<StaffCubit, StaffState>(
+              listener: (context, state) {
+                final resetState = state.resetPasswordUIState;
+                if (resetState?.status == Status.SUCCESS) {
+                  ToastMessages.success(
+                    message:
+                        resetState?.data?.message ??
+                        'Password reset successfully.',
+                  );
+                  Navigator.of(context).pop();
+                  context.read<StaffCubit>().resetResetPasswordState();
+                } else if (resetState?.status == Status.ERROR) {
+                  ToastMessages.error(
+                    message:
+                        resetState?.errorType?.getText(context) ??
+                        'Failed to reset password. Please try again.',
+                  );
+                  context.read<StaffCubit>().resetResetPasswordState();
+                }
+              },
+              builder: (context, state) {
+                final bool isLoading =
+                    state.resetPasswordUIState?.status == Status.LOADING;
 
-            return AlertDialog(
-              title: const Text('Reset Password'),
-              content: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: passwordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'New Password',
-                        border: OutlineInputBorder(),
+                return AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                  ),
+                  titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+                  contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+                  actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  title: Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: AppColors.red,
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                        ),
                       ),
-                      validator: (value) => Validator.fieldRequired(value, fieldName: 'Password'),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    TextFormField(
-                      controller: confirmController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Confirm Password',
-                        border: OutlineInputBorder(),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Reset Password',
+                        style: context.type.pageHeading.copyWith(fontSize: 18),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please confirm your password';
-                        }
-                        if (value != passwordController.text) {
-                          return 'Passwords do not match';
-                        }
-                        return null;
-                      },
+                    ],
+                  ),
+                  content: Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(height: 8),
+                        Text(
+                          'Enter a new password for this staff member.',
+                          style: context.type.bodyMuted,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        // New Password
+                        AppPasswordField(
+                          hint: 'New Password',
+                          controller: passwordController,
+                          validator: (value) => Validator.fieldRequired(
+                            value,
+                            fieldName: 'Password',
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        // Confirm Password
+                        AppPasswordField(
+                          hint: 'Confirm Password',
+                          controller: confirmController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please confirm your password';
+                            }
+                            if (value != passwordController.text) {
+                              return 'Passwords do not match';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isLoading ? null : () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: isLoading
-                      ? null
-                      : () {
-                          if (formKey.currentState?.validate() ?? false) {
-                            context.read<StaffCubit>().resetStaffPassword(
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: isLoading
+                          ? null
+                          : () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        foregroundColor: context.palette.ink,
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: isLoading
+                          ? null
+                          : () {
+                              if (formKey.currentState?.validate() ?? false) {
+                                context.read<StaffCubit>().resetStaffPassword(
                                   id: widget.staffId,
                                   password: passwordController.text,
                                   passwordConfirmation: confirmController.text,
                                 );
-                          }
-                        },
-                  child: isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text('Reset Password'),
-                ),
-              ],
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.red,
+                        foregroundColor: AppColors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Reset Password'),
+                    ),
+                  ],
+                );
+              },
             );
           },
         );
@@ -430,10 +481,7 @@ class _StaffDetailsBody extends StatelessWidget {
           ),
         ),
         // ---- Tasks Section ----
-        StaffTasksSection(
-          staffId: staff.id!,
-          staffList: staffList,
-        ),
+        StaffTasksSection(staffId: staff.id!, staffList: staffList),
       ],
     );
   }

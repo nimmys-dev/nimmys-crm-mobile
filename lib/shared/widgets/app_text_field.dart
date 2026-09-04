@@ -14,6 +14,7 @@ class AppTextField extends StatefulWidget {
     super.key,
     required this.hint,
     this.controller,
+    this.initialValue,
     this.icon,
     this.suffix,
     this.keyboardType,
@@ -26,10 +27,15 @@ class AppTextField extends StatefulWidget {
     this.inputFormatters,
     this.textCapitalization = TextCapitalization.none,
     this.showCounter = false,
+    this.validator,
+    this.onChanged,
+    this.onSaved,
+    this.autovalidateMode = AutovalidateMode.onUserInteraction,
   });
 
   final String hint;
   final TextEditingController? controller;
+  final String? initialValue;
   final IconData? icon;
   final Widget? suffix;
   final TextInputType? keyboardType;
@@ -41,9 +47,11 @@ class AppTextField extends StatefulWidget {
   final VoidCallback? onTap;
   final List<TextInputFormatter>? inputFormatters;
   final TextCapitalization textCapitalization;
-
-  /// Shows a live `used/max` counter beneath the field.
   final bool showCounter;
+  final String? Function(String?)? validator;
+  final void Function(String)? onChanged;
+  final void Function(String?)? onSaved;
+  final AutovalidateMode autovalidateMode;
 
   @override
   State<AppTextField> createState() => _AppTextFieldState();
@@ -120,8 +128,11 @@ class _AppTextFieldState extends State<AppTextField> {
                   ),
                 ),
               Expanded(
-                child: TextField(
+                child: TextFormField(
                   controller: widget.controller,
+                  initialValue: widget.controller == null
+                      ? widget.initialValue
+                      : null,
                   focusNode: _focusNode,
                   enabled: widget.enabled,
                   readOnly: widget.readOnly,
@@ -134,6 +145,10 @@ class _AppTextFieldState extends State<AppTextField> {
                   textCapitalization: widget.textCapitalization,
                   style: context.type.input,
                   cursorColor: AppColors.red,
+                  validator: widget.validator,
+                  onChanged: widget.onChanged,
+                  onSaved: widget.onSaved,
+                  autovalidateMode: widget.autovalidateMode,
                   decoration: InputDecoration(
                     hintText: widget.hint,
                     hintStyle: context.type.hint,
@@ -143,6 +158,7 @@ class _AppTextFieldState extends State<AppTextField> {
                     contentPadding: EdgeInsets.symmetric(
                       vertical: isMultiline ? 14 : 15,
                     ),
+                    errorStyle: const TextStyle(height: 0),
                   ),
                 ),
               ),
@@ -191,18 +207,28 @@ class AppFieldCounter extends StatelessWidget {
   }
 }
 
-/// Password field with an inline show/hide toggle.
+/// Password field with inline show/hide toggle and optional validation.
 class AppPasswordField extends StatefulWidget {
   const AppPasswordField({
     super.key,
     required this.hint,
     this.controller,
     this.icon = Icons.lock_outline_rounded,
+    this.validator,
+    this.initialValue,
+    this.onChanged,
+    this.onSaved,
+    this.autovalidateMode = AutovalidateMode.onUserInteraction,
   });
 
   final String hint;
   final TextEditingController? controller;
   final IconData icon;
+  final String? Function(String?)? validator;
+  final String? initialValue;
+  final void Function(String)? onChanged;
+  final void Function(String?)? onSaved;
+  final AutovalidateMode autovalidateMode;
 
   @override
   State<AppPasswordField> createState() => _AppPasswordFieldState();
@@ -216,9 +242,14 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
     return AppTextField(
       hint: widget.hint,
       controller: widget.controller,
+      initialValue: widget.initialValue,
       icon: widget.icon,
       obscureText: _isHidden,
       keyboardType: TextInputType.visiblePassword,
+      validator: widget.validator,
+      onChanged: widget.onChanged,
+      onSaved: widget.onSaved,
+      autovalidateMode: widget.autovalidateMode,
       suffix: IconButton(
         onPressed: () => setState(() => _isHidden = !_isHidden),
         icon: Icon(

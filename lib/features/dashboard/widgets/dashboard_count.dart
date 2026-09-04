@@ -37,18 +37,21 @@ class _DashboardContentState extends State<DashboardContent> {
   Widget build(BuildContext context) {
     return BlocConsumer<DashboardCubit, DashboardState>(
       listenWhen: (prev, curr) =>
-          prev.dashboardCountUIState?.status != curr.dashboardCountUIState?.status ||
+          prev.dashboardCountUIState?.status !=
+              curr.dashboardCountUIState?.status ||
           prev.leadCountUIState?.status != curr.leadCountUIState?.status,
       listener: (context, state) {
         if (state.dashboardCountUIState?.status == Status.ERROR) {
           ToastMessages.error(
-            message: state.dashboardCountUIState?.errorType?.getText(context) ??
+            message:
+                state.dashboardCountUIState?.errorType?.getText(context) ??
                 'Failed to load dashboard data',
           );
         }
         if (state.leadCountUIState?.status == Status.ERROR) {
           ToastMessages.error(
-            message: state.leadCountUIState?.errorType?.getText(context) ??
+            message:
+                state.leadCountUIState?.errorType?.getText(context) ??
                 'Failed to load lead data',
           );
         }
@@ -56,14 +59,16 @@ class _DashboardContentState extends State<DashboardContent> {
       builder: (context, state) {
         // ---- Duty counts ----
         final dutyState = state.dashboardCountUIState;
-        final isLoadingDuty = dutyState?.status == Status.LOADING ||
+        final isLoadingDuty =
+            dutyState?.status == Status.LOADING ||
             dutyState?.status == null ||
             dutyState?.status == Status.INITIAL;
         final counts = dutyState?.data;
 
         // ---- Lead counts ----
         final leadState = state.leadCountUIState;
-        final isLoadingLead = leadState?.status == Status.LOADING ||
+        final isLoadingLead =
+            leadState?.status == Status.LOADING ||
             leadState?.status == null ||
             leadState?.status == Status.INITIAL;
         final leadCounts = leadState?.data?.data?.counts;
@@ -205,28 +210,28 @@ class _DashboardContentState extends State<DashboardContent> {
         value: unattended,
         icon: Icons.groups_outlined,
         tone: StatTone.red,
-        route: AppRouteName.leads,
+        route: AppRouteName.leadsWithStatus('open'),
       ),
       StatItem(
         label: "Today's Follow Up",
         value: todayFollow,
         icon: Icons.person_add_alt_1_outlined,
         tone: StatTone.ink,
-        route: AppRouteName.leads,
+        route: AppRouteName.leadsWithStatus('today'),
       ),
       StatItem(
         label: 'Overdue Follow Up',
         value: overdueFollow,
         icon: Icons.history_toggle_off_rounded,
         tone: StatTone.ink,
-        route: AppRouteName.leads,
+        route: AppRouteName.leadsWithStatus('overdue'),
       ),
       StatItem(
         label: 'Upcoming Follow Up',
         value: upcomingFollow,
         icon: Icons.event_available_outlined,
         tone: StatTone.red,
-        route: AppRouteName.leads,
+        route: AppRouteName.leadsWithStatus('upcoming'),
       ),
     ];
   }

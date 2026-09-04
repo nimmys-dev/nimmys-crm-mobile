@@ -30,26 +30,39 @@ class LeadsCubit extends BaseCubit<LeadsState> {
   // Leads List
   // ---------------------------------------------------------------------------
 
-  Future<void> getLeads({bool refresh = false, String? search}) async {
-    await _fetchLeadsPage(page: 1, search: search, skipIfCached: !refresh);
+  Future<void> getLeads({
+    bool refresh = false,
+    String? search,
+    String? status,
+  }) async {
+    // Store the current status in state
+    emit(state.copyWith(currentLeadStatus: status));
+    await _fetchLeadsPage(
+      page: 1,
+      search: search,
+      skipIfCached: !refresh,
+      status: status,
+    );
   }
 
   Future<void> refreshLeads() async {
-    await _fetchLeadsPage(page: 1, skipIfCached: false);
+    final status = state.currentLeadStatus ?? '';
+    await _fetchLeadsPage(page: 1, skipIfCached: false, status: status);
   }
 
   Future<void> goToLeadsPage(int page) async {
     if (page < 1 || page == state.leadPagination?.currentPage) {
       return;
     }
-
-    await _fetchLeadsPage(page: page, skipIfCached: false);
+    final status = state.currentLeadStatus ?? '';
+    await _fetchLeadsPage(page: page, skipIfCached: false, status: status);
   }
 
   Future<void> _fetchLeadsPage({
     required int page,
     String? search,
     bool skipIfCached = false,
+    String? status,
   }) async {
     if (state.leadListUIState?.status == Status.LOADING) {
       return;
@@ -58,8 +71,11 @@ class LeadsCubit extends BaseCubit<LeadsState> {
     final String query = (search ?? state.leadSearchQuery).trim();
 
     final bool searchChanged = query != state.leadSearchQuery;
+    final bool statusChanged = status != state.lastFetchedStatus; // <-- NEW
 
+    // Only skip if status hasn't changed, search hasn't changed, and we're allowed to cache.
     if (!searchChanged &&
+        !statusChanged && // <-- Added check
         skipIfCached &&
         state.leadList.isNotEmpty &&
         page == (state.leadPagination?.currentPage ?? 1)) {
@@ -70,7 +86,9 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       state.copyWith(
         leadListUIState: UIState.loading(),
         leadSearchQuery: query,
-        leadList: searchChanged ? <LeadItemData>[] : state.leadList,
+        leadList: (searchChanged || statusChanged)
+            ? <LeadItemData>[]
+            : state.leadList,
       ),
     );
 
@@ -78,16 +96,12 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       page: page,
       perPage: _pageSize,
       search: query,
+      status: status,
     );
 
     if (result is Success<LeadListResponse>) {
-      final bool searchChanged =
-          query !=
-          state
-              .leadSearchQuery; // but query already computed before loading; need keep? Actually query computed local before await. We can use query variable. But searchChanged also computed before await; could use final bool searchChanged from earlier. But state.leadSearchQuery may have changed? We computed before. Use `final bool isFirstPage = page == 1; final bool shouldReplace = isFirstPage || searchChanged;`
+      final bool shouldReplace = page == 1 || searchChanged || statusChanged;
       final List<LeadItemData> newItems = result.value.data;
-      final bool shouldReplace = page == 1 || searchChanged;
-
       final List<LeadItemData> updatedLeads = shouldReplace
           ? newItems
           : [...state.leadList, ...newItems];
@@ -97,6 +111,7 @@ class LeadsCubit extends BaseCubit<LeadsState> {
           leadListUIState: UIState.success(result.value),
           leadList: updatedLeads,
           leadPagination: result.value.pagination,
+          lastFetchedStatus: status, // <-- Remember this status
         ),
       );
     } else if (result is Error<LeadListResponse>) {
@@ -179,7 +194,9 @@ class LeadsCubit extends BaseCubit<LeadsState> {
     if (result is Success<dynamic>) {
       _setCreateLeadUIState(UIState.success(result.value));
 
-      unawaited(getLeads(refresh: true));
+      // Refresh with the current status (which is stored in state)
+      final status = state.currentLeadStatus ?? '';
+      unawaited(getLeads(refresh: true, status: status));
     } else if (result is Error<dynamic>) {
       _setCreateLeadUIState(UIState.error(result.type));
     }
@@ -244,7 +261,8 @@ class LeadsCubit extends BaseCubit<LeadsState> {
         _setLeadDetailsUIState(UIState.success(result.value));
       }
 
-      unawaited(getLeads(refresh: true));
+      final status = state.currentLeadStatus ?? '';
+      unawaited(getLeads(refresh: true, status: status));
     } else if (result is Error<LeadDetailsSuccess>) {
       _setUpdateLeadUIState(UIState.error(result.type));
     }
@@ -379,6 +397,7 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       resetUIState<CallHistoryResponseListModel>(state.callHistoryUIState),
     );
   }
+
   // ---------------------------------------------------------------------------
   // Close Lead
   // ---------------------------------------------------------------------------
@@ -409,7 +428,8 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       _setCloseLeadUIState(UIState.success(result.value));
       // Refresh the lead details and the list after closing
       unawaited(getLeadDetails(leadId));
-      unawaited(getLeads(refresh: true));
+      final currentStatus = state.currentLeadStatus ?? '';
+      unawaited(getLeads(refresh: true, status: currentStatus));
     } else if (result is Error<CloseLeadResponse>) {
       _setCloseLeadUIState(UIState.error(result.type));
     }
@@ -420,6 +440,7 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       resetUIState<CloseLeadResponse>(state.closeLeadUIState),
     );
   }
+
   // ---------------------------------------------------------------------------
   // Not Interested Reasons
   // ---------------------------------------------------------------------------
@@ -452,6 +473,7 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       resetUIState<NotInterestedReasonModel>(state.notInterestedReasonsUIState),
     );
   }
+
   // ---------------------------------------------------------------------------
   // Reset Entire State
   // ---------------------------------------------------------------------------

@@ -21,12 +21,14 @@ class LeadRepository {
     int page = 1,
     int perPage = 10,
     String? search,
+    String? status
   }) async {
     try {
       return await _service.getLeads(
         page: page,
         perPage: perPage,
         search: search,
+        status: status
       );
     } catch (e) {
       return Error<LeadListResponse>(ErrorWithMessage(message: e.toString()));

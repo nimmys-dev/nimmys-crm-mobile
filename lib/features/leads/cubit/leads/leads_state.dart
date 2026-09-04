@@ -17,6 +17,12 @@ class LeadsState extends Equatable {
   /// Current search query.
   final String leadSearchQuery;
 
+  /// Current filter status (e.g. 'all', 'unattended', 'overdue').
+  final String? currentLeadStatus;
+
+  /// Last status that was successfully fetched. Used to detect status changes.
+  final String? lastFetchedStatus;
+
   // ---------------------------------------------------------------------------
   // Lead Assignees
   // ---------------------------------------------------------------------------
@@ -82,6 +88,8 @@ class LeadsState extends Equatable {
     this.leadList = const <LeadItemData>[],
     this.leadPagination,
     this.leadSearchQuery = '',
+    this.currentLeadStatus,
+    this.lastFetchedStatus,
     this.leadAssigneesUIState,
     this.leadSourcesUIState,
     this.createLeadUIState,
@@ -99,6 +107,8 @@ class LeadsState extends Equatable {
     List<LeadItemData>? leadList,
     LeadPagination? leadPagination,
     String? leadSearchQuery,
+    String? currentLeadStatus,
+    String? lastFetchedStatus,
     UIState<LeadAssigneeSuccess>? leadAssigneesUIState,
     UIState<LeadSourceModel>? leadSourcesUIState,
     UIState<dynamic>? createLeadUIState,
@@ -115,6 +125,8 @@ class LeadsState extends Equatable {
       leadList: leadList ?? this.leadList,
       leadPagination: leadPagination ?? this.leadPagination,
       leadSearchQuery: leadSearchQuery ?? this.leadSearchQuery,
+      currentLeadStatus: currentLeadStatus ?? this.currentLeadStatus,
+      lastFetchedStatus: lastFetchedStatus ?? this.lastFetchedStatus,
       leadAssigneesUIState: leadAssigneesUIState ?? this.leadAssigneesUIState,
       leadSourcesUIState: leadSourcesUIState ?? this.leadSourcesUIState,
       createLeadUIState: createLeadUIState ?? this.createLeadUIState,
@@ -139,6 +151,8 @@ class LeadsState extends Equatable {
     leadList,
     leadPagination,
     leadSearchQuery,
+    currentLeadStatus,
+    lastFetchedStatus,
 
     // Assignees
     leadAssigneesUIState,

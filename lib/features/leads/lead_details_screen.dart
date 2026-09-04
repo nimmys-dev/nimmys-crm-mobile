@@ -234,44 +234,44 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
                   eyebrow: eyebrow,
                   leading: const AppBackButton(),
                   actions: [
-                    if (lead != null && lead.status?.toLowerCase() == 'open')
-                      GestureDetector(
-                        onTap: () => _showCloseLeadSheet(context, lead),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.red.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: AppColors.red.withOpacity(0.3),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(
-                                Icons.close_rounded,
-                                color: AppColors.white,
-                                size: 18,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                'Close Lead',
-                                style: TextStyle(
-                                  color: AppColors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    if (lead != null && lead.status?.toLowerCase() != 'open')
-                      LeadDetailsSatausChip(status: lead.status ?? 'Closed'),
+                    // if (lead != null && lead.status?.toLowerCase() == 'open')
+                    //   GestureDetector(
+                    //     onTap: () => _showCloseLeadSheet(context, lead),
+                    //     child: Container(
+                    //       padding: const EdgeInsets.symmetric(
+                    //         horizontal: 10,
+                    //         vertical: 6,
+                    //       ),
+                    //       decoration: BoxDecoration(
+                    //         color: AppColors.red.withOpacity(0.15),
+                    //         borderRadius: BorderRadius.circular(20),
+                    //         border: Border.all(
+                    //           color: AppColors.red.withOpacity(0.3),
+                    //         ),
+                    //       ),
+                    //       child: Row(
+                    //         mainAxisSize: MainAxisSize.min,
+                    //         children: const [
+                    //           Icon(
+                    //             Icons.close_rounded,
+                    //             color: AppColors.white,
+                    //             size: 18,
+                    //           ),
+                    //           SizedBox(width: 4),
+                    //           Text(
+                    //             'Close Lead',
+                    //             style: TextStyle(
+                    //               color: AppColors.white,
+                    //               fontWeight: FontWeight.w600,
+                    //               fontSize: 13,
+                    //             ),
+                    //           ),
+                    //         ],
+                    //       ),
+                    //     ),
+                    //   ),
+                    if (lead != null)
+                      LeadDetailsSatausChip(status: lead?.status ?? 'Closed'),
                   ],
                 ),
                 Expanded(

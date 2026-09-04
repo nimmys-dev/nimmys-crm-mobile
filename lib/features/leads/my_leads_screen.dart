@@ -25,8 +25,13 @@ import 'widgets/lead_contact_actions.dart';
 /// Leads List screen — displays leads retrieved from `GET /api/leads` with
 /// server-side pagination.
 class MyLeadsScreen extends StatefulWidget {
+  final String? status;
   final bool isAppHeaderRequired;
-  const MyLeadsScreen({super.key, required this.isAppHeaderRequired});
+  const MyLeadsScreen({
+    super.key,
+    required this.isAppHeaderRequired,
+    this.status,
+  });
 
   @override
   State<MyLeadsScreen> createState() => _MyLeadsScreenState();
@@ -41,7 +46,7 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<LeadsCubit>().getLeads();
+        context.read<LeadsCubit>().getLeads(status: widget.status.toString());
       }
     });
   }
@@ -57,7 +62,10 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 350), () {
       if (mounted) {
-        context.read<LeadsCubit>().getLeads(search: value);
+        context.read<LeadsCubit>().getLeads(
+          search: value,
+          status: widget.status.toString(),
+        );
       }
     });
   }
@@ -69,7 +77,10 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
   Future<void> _openCreateLead() async {
     final dynamic result = await context.push(AppRouteName.leadNew);
     if (result == true && mounted) {
-      await context.read<LeadsCubit>().getLeads(refresh: true);
+      await context.read<LeadsCubit>().getLeads(
+        refresh: true,
+        status: widget.status.toString(),
+      );
     }
   }
 

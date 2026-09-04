@@ -24,6 +24,7 @@ class LeadService {
     int page = 1,
     int perPage = 10,
     String? search,
+    String? status,
   }) async {
     try {
       final String url = ApiUrls.leads;
@@ -31,6 +32,8 @@ class LeadService {
         "page": page,
         "per_page": perPage,
         if (search != null && search.trim().isNotEmpty) "search": search.trim(),
+        if (status != null && status != 'null' && status.trim().isNotEmpty)
+          "status": status.trim(),
       };
       final Result<dynamic> result = await _apiService.get(
         url,
@@ -334,7 +337,7 @@ class LeadService {
     }
   }
 
-    /// GET /api/lead-assignees. Returns staff members who can be assigned a lead.
+  /// GET /api/lead-assignees. Returns staff members who can be assigned a lead.
   Future<Result<NotInterestedReasonModel>> getNotInterestedReasonModel() async {
     try {
       final String url = ApiUrls.notInterestedReason;
