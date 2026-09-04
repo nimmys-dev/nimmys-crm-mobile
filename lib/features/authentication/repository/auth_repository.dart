@@ -1,5 +1,6 @@
 import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/storage/secured_shared_preferences.dart';
+import 'package:nimmys_crm/features/authentication/model/forgot_password_response.dart';
 import 'package:nimmys_crm/features/authentication/model/login_model.dart';
 import 'package:nimmys_crm/features/authentication/model/logout_model.dart';
 import 'package:nimmys_crm/features/authentication/service/auth_service.dart';
@@ -11,7 +12,11 @@ class AuthRepository {
   final SecuredSharedPreferences _securedSharedPref;
   final NotificationService _notificationService;
   final AuthService _authService;
-  AuthRepository(this._securedSharedPref, this._notificationService, this._authService);
+  AuthRepository(
+    this._securedSharedPref,
+    this._notificationService,
+    this._authService,
+  );
 
   // Save user data from login
   //
@@ -23,16 +28,30 @@ class AuthRepository {
       final token = login.token;
       if (token == null || token.isEmpty) {
         CustomLog.error(this, "Login response carried no token", null);
-        return Error(ErrorWithMessage(message: AppString.errorType.loginAttemptError));
+        return Error(
+          ErrorWithMessage(message: AppString.errorType.loginAttemptError),
+        );
       }
       await _securedSharedPref.saveKey(AppString.sessionKey.userToken, token);
 
       final user = login.user;
       if (user != null) {
-        await _securedSharedPref.saveKey(AppString.sessionKey.userId, user.id?.toString() ?? "");
-        await _securedSharedPref.saveKey(AppString.sessionKey.userFullName, user.name ?? "");
-        await _securedSharedPref.saveKey(AppString.sessionKey.userEmail, user.email ?? "");
-        await _securedSharedPref.saveKey(AppString.sessionKey.userType, user.role ?? "");
+        await _securedSharedPref.saveKey(
+          AppString.sessionKey.userId,
+          user.id?.toString() ?? "",
+        );
+        await _securedSharedPref.saveKey(
+          AppString.sessionKey.userFullName,
+          user.name ?? "",
+        );
+        await _securedSharedPref.saveKey(
+          AppString.sessionKey.userEmail,
+          user.email ?? "",
+        );
+        await _securedSharedPref.saveKey(
+          AppString.sessionKey.userType,
+          user.role ?? "",
+        );
       }
       CustomLog.debug(this, "Save user from login saved successfully");
       return const Success(true);
@@ -42,13 +61,11 @@ class AuthRepository {
     }
   }
 
-
   // Logged in check
   Future<bool> isLoggedIn() async {
     final token = await _securedSharedPref.get(AppString.sessionKey.userToken);
     return token != null && token.isNotEmpty;
   }
-
 
   // Clear auth & cache
   Future<void> _clearAuthData() async {
@@ -75,7 +92,6 @@ class AuthRepository {
     }
   }
 
-
   // Sign out
   Future<Result<bool>> signOut() async {
     try {
@@ -87,6 +103,13 @@ class AuthRepository {
     }
   }
 
-
-
+  // Returns the API response (success/failure) without modifying local storage.
+  Future<Result<ForgotPasswordResponse>> forgotPassword(String email) async {
+    try {
+      return await _authService.forgotPassword(email);
+    } catch (e) {
+      CustomLog.error(this, "Forgot password attempt error", e);
+      return Error(GenericError());
+    }
+  }
 }

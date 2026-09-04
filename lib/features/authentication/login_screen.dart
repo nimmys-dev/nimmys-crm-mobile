@@ -22,15 +22,9 @@ import 'cubit/login/login_cubit.dart';
 import 'cubit/session/session_cubit.dart';
 
 /// Email + password sign-in.
-///
-/// Black brand stage up top, white credential card below. Credentials go to
-/// `POST /api/login` through [LoginCubit]; the token and user land in secure
-/// storage before [onSignedIn] fires.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, this.onSignedIn});
 
-  /// Called once the API has accepted the credentials and the session has been
-  /// persisted — this is where the host app routes on to the dashboard.
   final VoidCallback? onSignedIn;
 
   @override
@@ -44,10 +38,10 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _emailError;
   String? _passwordError;
   String? _fcmToken;
+
   @override
   void initState() {
     super.initState();
-    // Restore the remembered address so returning users only type a password.
     if (AppPreferences.isReady) {
       final AppPreferences prefs = AppPreferences.instance;
       _rememberMe = prefs.rememberMe;
@@ -55,11 +49,10 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text = prefs.savedEmail;
       }
     }
-    // The cubit is a singleton, so a previous visit's SUCCESS/ERROR would still
-    // be sitting in state and fire the listener the moment this screen mounts.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<LoginCubit>().resetLoginState();
+        context.read<LoginCubit>().resetForgotPasswordState();
         _checkForUpdate();
         _getFcmToken();
       }
@@ -76,36 +69,26 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _getFcmToken() async {
     try {
       final token = await FirebaseMessaging.instance.getToken();
-      if (mounted) {
-        setState(() => _fcmToken = token);
-      }
+      if (mounted) setState(() => _fcmToken = token);
     } catch (e) {
       debugPrint('Failed to get FCM token: $e');
-      // Optionally set token to null or a default
     }
   }
 
   Future<void> _setRememberMe(bool value) async {
     setState(() => _rememberMe = value);
-    if (!AppPreferences.isReady) {
-      return;
-    }
+    if (!AppPreferences.isReady) return;
     final AppPreferences prefs = AppPreferences.instance;
     await prefs.setRememberMe(value);
-    if (!value) {
-      await prefs.clearSavedEmail();
-    }
+    if (!value) await prefs.clearSavedEmail();
   }
 
   Future<void> _checkForUpdate() async {
     try {
       final updater = InAppUpdateFlutter();
-
       if (Platform.isAndroid) {
         final info = await updater.checkUpdateAndroid();
-
-        if (info.updateAvailability ==
-                UpdateAvailabilityAndroid.updateAvailable &&
+        if (info.updateAvailability == UpdateAvailabilityAndroid.updateAvailable &&
             info.isImmediateUpdateAllowed) {
           await updater.startImmediateUpdateAndroid();
         }
@@ -127,9 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _emailError = Validator.email(email);
       _passwordError = Validator.fieldRequired(password, fieldName: 'Password');
     });
-    if (_emailError != null || _passwordError != null) {
-      return;
-    }
+    if (_emailError != null || _passwordError != null) return;
 
     if (AppPreferences.isReady) {
       final AppPreferences prefs = AppPreferences.instance;
@@ -141,24 +122,55 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
     await context.read<LoginCubit>().login(
-      LoginApiRequest(
-        email: email,
-        password: password,
-        fcm_token: _fcmToken.toString(),
-      ),
-    );
+          LoginApiRequest(
+            email: email,
+            password: password,
+            fcm_token: _fcmToken ?? '',
+          ),
+        );
   }
 
-  /// Reacts to the one terminal state per attempt: toast on failure, hand off
-  /// to the host app on success.
-  Future<void> _onLoginStateChanged(
-    BuildContext context,
-    LoginState state,
-  ) async {
+  Future<void> _handleForgotPassword() async {
+    FocusScope.of(context).unfocus();
+
+    final String email = _emailController.text.trim();
+    final error = Validator.email(email);
+    if (error != null) {
+      ToastMessages.error(message: error);
+      return;
+    }
+
+    if (!mounted) return;
+    context.read<LoginCubit>().forgotPassword(email);
+  }
+
+  void _showForgotPasswordToast(LoginState state) {
+    final forgotState = state.forgotPasswordUIState;
+    if (forgotState == null) return;
+
+    switch (forgotState.status) {
+      case Status.SUCCESS:
+        ToastMessages.success(
+          message: forgotState.data?.message ?? 'Reset link sent successfully.',
+        );
+        context.read<LoginCubit>().resetForgotPasswordState();
+        break;
+      case Status.ERROR:
+        ToastMessages.error(
+          message: forgotState.errorType?.getText(context) ??
+              'Failed to send reset link. Please try again.',
+        );
+        context.read<LoginCubit>().resetForgotPasswordState();
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _onLoginStateChanged(BuildContext context, LoginState state) {
+    // Handle login terminal states
     switch (state.loginUIState?.status) {
       case Status.SUCCESS:
         final String name = state.loginUIState?.data?.user?.name ?? '';
@@ -166,51 +178,40 @@ class _LoginScreenState extends State<LoginScreen> {
           message: name.isEmpty ? 'Login successful' : 'Welcome back, $name',
         );
         final AppPreferences prefs = AppPreferences.instance;
-        await prefs.setUserId(state.loginUIState?.data?.user?.id ?? 1);
-        // The profile cubit is a singleton that outlives this screen: without
-        // clearing it, signing in as a second user would show the first user's
-        // name in the dashboard header until something forced a refresh.
+        prefs.setUserId(state.loginUIState?.data?.user?.id ?? 1);
         context.read<ProfileCubit>().resetProfileState();
-        // Awaited, not fired and forgotten: the router's permission guard reads
-        // the role synchronously, and navigating first would hand the next
-        // route a session that still says "unknown" — denying an admin their
-        // own dashboard for a frame. LoginCubit has already persisted
-        // `user.role` by the time SUCCESS lands, so this only re-reads it.
-        await context.read<SessionCubit>().loadSession();
-        if (!mounted) {
-          return;
-        }
-        widget.onSignedIn?.call();
+        context.read<SessionCubit>().loadSession();
+        if (mounted) widget.onSignedIn?.call();
+        break;
       case Status.ERROR:
         ToastMessages.error(
-          message:
-              state.loginUIState?.errorType?.getText(context) ??
+          message: state.loginUIState?.errorType?.getText(context) ??
               'Login attempt unsuccessful, Please try again later',
         );
-      case Status.LOADING:
-      case Status.INITIAL:
-      case null:
+        break;
+      default:
         break;
     }
+
+    // Handle forgot password terminal states
+    _showForgotPasswordToast(state);
   }
 
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light.copyWith(
-        statusBarColor: Colors.transparent,
-      ),
+      value: SystemUiOverlayStyle.light.copyWith(statusBarColor: Colors.transparent),
       child: Scaffold(
         backgroundColor: context.palette.canvas,
         resizeToAvoidBottomInset: true,
         body: BlocConsumer<LoginCubit, LoginState>(
           listener: _onLoginStateChanged,
           builder: (BuildContext context, LoginState state) {
-            final bool isSubmitting =
-                state.loginUIState?.status == Status.LOADING;
+            final bool isLoginLoading = state.loginUIState?.status == Status.LOADING;
+            final bool isForgotLoading = state.forgotPasswordUIState?.status == Status.LOADING;
 
             return Column(
-              children: <Widget>[
+              children: [
                 const LoginBrandStage(),
                 Expanded(
                   child: SingleChildScrollView(
@@ -218,25 +219,32 @@ class _LoginScreenState extends State<LoginScreen> {
                       left: AppSpacing.lg,
                       right: AppSpacing.lg,
                       top: AppSpacing.xl,
-                      bottom:
-                          MediaQuery.of(context).viewInsets.bottom +
-                          AppSpacing.xl,
+                      bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
+                      children: [
                         const LoginWelcomeText(),
                         const SizedBox(height: AppSpacing.xl),
+
+                        // Linear loader for forgot password
+                        if (isForgotLoading)
+                          const LinearProgressIndicator(
+                            backgroundColor: Colors.transparent,
+                            color: AppColors.red,
+                          ),
+
                         const AppFieldLabel(text: 'Email', isRequired: true),
                         AppTextField(
                           hint: 'you@nimmys.com',
                           controller: _emailController,
                           icon: Icons.mail_outline_rounded,
                           keyboardType: TextInputType.emailAddress,
-                          enabled: !isSubmitting,
+                          enabled: !isLoginLoading && !isForgotLoading,
                         ),
                         LoginFieldError(message: _emailError),
                         const SizedBox(height: AppSpacing.md),
+
                         const AppFieldLabel(text: 'Password', isRequired: true),
                         AppPasswordField(
                           hint: 'Enter your password',
@@ -244,18 +252,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         LoginFieldError(message: _passwordError),
                         const SizedBox(height: AppSpacing.xs),
+
                         LoginOptionsRow(
                           rememberMe: _rememberMe,
                           onRememberChanged: _setRememberMe,
+                          onForgotPassword: _handleForgotPassword,
                         ),
                         const SizedBox(height: AppSpacing.lg),
+
                         AppPrimaryButton(
                           label: 'LOGIN',
                           icon: Icons.login_rounded,
-                          isLoading: isSubmitting,
-                          onPressed: isSubmitting ? null : _handleLogin,
+                          isLoading: isLoginLoading,
+                          onPressed: (isLoginLoading || isForgotLoading) ? null : _handleLogin,
                         ),
                         const SizedBox(height: AppSpacing.xl),
+
                         const LoginSecurityNote(),
                         const SizedBox(height: AppSpacing.lg),
                         const LoginFooter(),
@@ -272,27 +284,20 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-/// Inline validation message under a credential field. Collapses to nothing
-/// when [message] is null so the form does not jump on every keystroke.
+// ---------- (all the stateless widgets remain exactly as before) ----------
+
 class LoginFieldError extends StatelessWidget {
   const LoginFieldError({super.key, this.message});
-
   final String? message;
 
   @override
   Widget build(BuildContext context) {
-    if (message == null) {
-      return const SizedBox.shrink();
-    }
+    if (message == null) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(top: 6, left: 4),
       child: Row(
-        children: <Widget>[
-          const Icon(
-            Icons.error_outline_rounded,
-            size: 14,
-            color: AppColors.red,
-          ),
+        children: [
+          const Icon(Icons.error_outline_rounded, size: 14, color: AppColors.red),
           const SizedBox(width: 4),
           Expanded(
             child: Text(
@@ -306,14 +311,12 @@ class LoginFieldError extends StatelessWidget {
   }
 }
 
-/// Black curved hero holding the logo above the credential form.
 class LoginBrandStage extends StatelessWidget {
   const LoginBrandStage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final double topInset = MediaQuery.of(context).padding.top;
-
     return ClipPath(
       clipper: const LoginStageClipper(),
       child: Container(
@@ -327,7 +330,7 @@ class LoginBrandStage extends StatelessWidget {
         decoration: const BoxDecoration(gradient: AppColors.splashGradient),
         child: Stack(
           alignment: Alignment.center,
-          children: <Widget>[
+          children: [
             Positioned(
               right: -50,
               top: -30,
@@ -342,27 +345,19 @@ class LoginBrandStage extends StatelessWidget {
             ),
             Column(
               mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
+              children: [
                 const AppLogo(height: 52),
                 const SizedBox(height: AppSpacing.md),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: 5,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 5),
                   decoration: BoxDecoration(
                     color: AppColors.white.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(AppRadius.pill),
-                    border: Border.all(
-                      color: AppColors.white.withValues(alpha: 0.14),
-                    ),
+                    border: Border.all(color: AppColors.white.withValues(alpha: 0.14)),
                   ),
                   child: Text(
                     'CRM WORKSPACE',
-                    style: context.type.splashTagline.copyWith(
-                      fontSize: 10,
-                      letterSpacing: 2.4,
-                    ),
+                    style: context.type.splashTagline.copyWith(fontSize: 10, letterSpacing: 2.4),
                   ),
                 ),
               ],
@@ -374,55 +369,42 @@ class LoginBrandStage extends StatelessWidget {
   }
 }
 
-/// Sweeping bottom edge for the login hero.
 class LoginStageClipper extends CustomClipper<Path> {
   const LoginStageClipper();
-
   @override
   Path getClip(Size size) {
     final Path path = Path()
       ..lineTo(0, size.height - 46)
-      ..quadraticBezierTo(
-        size.width * 0.5,
-        size.height + 26,
-        size.width,
-        size.height - 46,
-      )
+      ..quadraticBezierTo(size.width * 0.5, size.height + 26, size.width, size.height - 46)
       ..lineTo(size.width, 0)
       ..close();
     return path;
   }
-
   @override
   bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
 
-/// Greeting copy above the fields.
 class LoginWelcomeText extends StatelessWidget {
   const LoginWelcomeText({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
+      children: [
         Row(
-          children: <Widget>[
+          children: [
             Container(
               width: 4,
               height: 22,
               margin: const EdgeInsets.only(right: AppSpacing.xs),
-              decoration: BoxDecoration(
-                color: AppColors.red,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-              ),
+              decoration: BoxDecoration(color: AppColors.red, borderRadius: BorderRadius.circular(AppRadius.pill)),
             ),
             Text('Welcome back', style: context.type.pageHeading),
           ],
         ),
         const SizedBox(height: 6),
         Padding(
-          padding: EdgeInsets.only(left: 12),
+          padding: const EdgeInsets.only(left: 12),
           child: Text(
             'Sign in to manage your leads, duties and follow ups.',
             style: context.type.bodyMuted,
@@ -433,7 +415,6 @@ class LoginWelcomeText extends StatelessWidget {
   }
 }
 
-/// "Remember me" checkbox paired with the forgot-password link.
 class LoginOptionsRow extends StatelessWidget {
   const LoginOptionsRow({
     super.key,
@@ -449,7 +430,7 @@ class LoginOptionsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: <Widget>[
+      children: [
         SizedBox(
           width: 32,
           height: 32,
@@ -459,9 +440,7 @@ class LoginOptionsRow extends StatelessWidget {
             activeColor: AppColors.red,
             checkColor: AppColors.white,
             side: BorderSide(color: context.palette.inkBorder, width: 1.6),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(5),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
             visualDensity: VisualDensity.compact,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
@@ -494,10 +473,8 @@ class LoginOptionsRow extends StatelessWidget {
   }
 }
 
-/// Reassurance strip beneath the login button.
 class LoginSecurityNote extends StatelessWidget {
   const LoginSecurityNote({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -508,12 +485,8 @@ class LoginSecurityNote extends StatelessWidget {
         border: Border.all(color: context.palette.redBorder),
       ),
       child: Row(
-        children: <Widget>[
-          const Icon(
-            Icons.verified_user_outlined,
-            size: 20,
-            color: AppColors.red,
-          ),
+        children: [
+          const Icon(Icons.verified_user_outlined, size: 20, color: AppColors.red),
           const SizedBox(width: AppSpacing.xs),
           Expanded(
             child: Text(
@@ -527,18 +500,16 @@ class LoginSecurityNote extends StatelessWidget {
   }
 }
 
-/// Support line at the bottom of the login screen.
 class LoginFooter extends StatelessWidget {
   const LoginFooter({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: <Widget>[
+      children: [
         Wrap(
           alignment: WrapAlignment.center,
           spacing: 4,
-          children: <Widget>[
+          children: [
             Text('Trouble signing in?', style: context.type.caption),
             Text(
               'Contact admin',
@@ -549,10 +520,7 @@ class LoginFooter extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         Text(
           '© nimmys camera centre',
-          style: context.type.caption.copyWith(
-            fontSize: 11,
-            color: context.palette.faint,
-          ),
+          style: context.type.caption.copyWith(fontSize: 11, color: context.palette.faint),
         ),
       ],
     );

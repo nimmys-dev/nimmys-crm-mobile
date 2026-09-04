@@ -44,6 +44,7 @@ class ApiUrls {
   static String getAllApprovalPendingList = "$_baseUrl/approval-task";
   static String markTasksAsCompleted(int id) => "$_baseUrl/tasks/$id/approve";
   static String notInterestedReason = "$_baseUrl/call-reasons";
+  static String forgotPasswordReset = "$_baseUrl/forgot-password";
 
   // Tasks
   static String tasks = "$_baseUrl/tasks";

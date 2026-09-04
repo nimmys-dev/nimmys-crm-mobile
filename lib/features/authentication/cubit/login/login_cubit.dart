@@ -4,18 +4,20 @@ import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/ui_state/ui_state.dart';
 import 'package:nimmys_crm/features/authentication/api_request/login_api_request.dart';
 import 'package:nimmys_crm/features/authentication/model/login_model.dart';
+import 'package:nimmys_crm/features/authentication/model/forgot_password_response.dart'; // ✅ ensure import
 import 'package:nimmys_crm/features/authentication/repository/auth_repository.dart';
 import 'package:nimmys_crm/features/authentication/repository/login_repository.dart';
+
 part 'login_state.dart';
 
 class LoginCubit extends BaseCubit<LoginState> {
   final LoginRepository _repository;
   final AuthRepository _authRepository;
-  LoginCubit(this._repository, this._authRepository) : super(const LoginState());
+  LoginCubit(this._repository, this._authRepository)
+    : super(const LoginState());
 
-
-  // Login Api Call
-  void _setLoginUIState(UIState<LoginSuccessModel>? uiState){
+  // ---- Login ----
+  void _setLoginUIState(UIState<LoginSuccessModel>? uiState) {
     emit(state.copyWith(loginUIState: uiState));
   }
 
@@ -23,11 +25,9 @@ class LoginCubit extends BaseCubit<LoginState> {
     _setLoginUIState(UIState.loading());
     Result result = await _repository.login(request);
     if (result is Success<LoginSuccessModel>) {
-      // Session first, SUCCESS second: the listener navigates on SUCCESS, and the
-      // next screen's request needs the token already in secure storage.
-      // `Error<bool>`, not a bare `Error`: `Result<bool>` is not a subtype of
-      // `Error<dynamic>`, so the bare form never promotes and `.type` is unresolved.
-      final Result<bool> saved = await _authRepository.saveUserInfoFromLogin(result.value);
+      final Result<bool> saved = await _authRepository.saveUserInfoFromLogin(
+        result.value,
+      );
       if (saved is Error<bool>) {
         _setLoginUIState(UIState.error(saved.type));
         return;
@@ -39,10 +39,31 @@ class LoginCubit extends BaseCubit<LoginState> {
     }
   }
 
-  // Drops the terminal state so a dismissed error or a return to this screen
-  // does not replay the old toast / navigation.
   void resetLoginState() {
     _setLoginUIState(resetUIState<LoginSuccessModel>(state.loginUIState));
   }
 
+  // ---- Forgot Password ----
+  void _setForgotPasswordUIState(UIState<ForgotPasswordResponse>? uiState) {
+    emit(state.copyWith(forgotPasswordUIState: uiState));
+  }
+
+  Future<void> forgotPassword(String email) async {
+    _setForgotPasswordUIState(UIState.loading());
+    final Result<ForgotPasswordResponse> result = await _authRepository
+        .forgotPassword(email);
+    if (result is Success<ForgotPasswordResponse>) {
+      _setForgotPasswordUIState(UIState.success(result.value));
+    } else if (result is Error<ForgotPasswordResponse>) {
+      _setForgotPasswordUIState(
+        UIState.error(result.type),
+      ); // ✅ now 'type' is resolved
+    }
+  }
+
+  void resetForgotPasswordState() {
+    _setForgotPasswordUIState(
+      resetUIState<ForgotPasswordResponse>(state.forgotPasswordUIState),
+    );
+  } // Drops the terminal state so a dismissed error or a return to this screen
 }

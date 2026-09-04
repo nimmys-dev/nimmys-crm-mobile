@@ -1,6 +1,7 @@
 import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/network/api_service.dart';
 import 'package:nimmys_crm/data/network/api_urls.dart';
+import 'package:nimmys_crm/features/authentication/model/forgot_password_response.dart';
 import 'package:nimmys_crm/features/authentication/model/logout_model.dart';
 
 class AuthService {
@@ -22,8 +23,15 @@ class AuthService {
           (json) => LogoutSuccessModel.fromJson(json),
         );
       } else if (result is Error) {
-        if (result.type is UnauthenticatedError || result.type is InvalidTokenError) {
-          return Success(LogoutSuccessModel(status: true, statusCode: 200, message: "Logout successful"));
+        if (result.type is UnauthenticatedError ||
+            result.type is InvalidTokenError) {
+          return Success(
+            LogoutSuccessModel(
+              status: true,
+              statusCode: 200,
+              message: "Logout successful",
+            ),
+          );
         }
         return Error(result.type);
       } else {
@@ -34,4 +42,22 @@ class AuthService {
     }
   }
 
+  Future<Result<ForgotPasswordResponse>> forgotPassword(String email) async {
+    try {
+      final url = ApiUrls.forgotPasswordReset;
+      final result = await _apiService.post(url, body: {'email': email});
+      if (result is Success) {
+        return await _apiService.getResponseStatus<ForgotPasswordResponse>(
+          result.value,
+          (json) => ForgotPasswordResponse.fromJson(json),
+        );
+      } else if (result is Error) {
+        return Error(result.type);
+      } else {
+        return Error(GenericError());
+      }
+    } catch (e) {
+      return Error(DeserializationError());
+    }
+  }
 }
