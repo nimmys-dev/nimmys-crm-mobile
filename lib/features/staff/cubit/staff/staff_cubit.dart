@@ -17,9 +17,7 @@ import 'package:nimmys_crm/features/staff/model/staff_list_model.dart';
 import 'package:nimmys_crm/features/staff/model/store_success_model.dart';
 import 'package:nimmys_crm/features/staff/model/user_role_model.dart';
 import 'package:nimmys_crm/features/staff/repository/staff_repository.dart';
-import 'package:nimmys_crm/features/duties/model/task_details_model.dart';
 import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
-import 'package:nimmys_crm/features/duties/repository/tasks_repository.dart';
 part 'staff_state.dart';
 
 class StaffCubit extends BaseCubit<StaffState> {

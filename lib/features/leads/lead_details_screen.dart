@@ -11,9 +11,7 @@ import 'package:nimmys_crm/features/leads/model/lead_assignee_model.dart';
 import 'package:nimmys_crm/features/leads/model/call_history_list_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_details_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_source_model.dart';
-import 'package:nimmys_crm/features/leads/widgets/close_lead_bottom_sheet.dart';
 import 'package:nimmys_crm/features/leads/widgets/lead_details_status_chip.dart';
-import 'package:nimmys_crm/features/leads/widgets/status_chip.dart';
 import 'package:nimmys_crm/features/leads/widgets/tele_call_details.dart';
 import 'package:nimmys_crm/utils/toast_messages.dart';
 import '../../core/theme/app_colors.dart';
@@ -170,16 +168,6 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
     }
   }
 
-  void _showCloseLeadSheet(BuildContext context, LeadDetailsData lead) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => CloseLeadBottomSheet(lead: lead),
-    );
-  }
 
   void _onCloseLeadStateChanged(BuildContext context, LeadsState state) {
     final uiState = state.closeLeadUIState;
@@ -271,7 +259,7 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
                     //     ),
                     //   ),
                     if (lead != null)
-                      LeadDetailsSatausChip(status: lead?.status ?? 'Closed'),
+                      LeadDetailsSatausChip(status: lead.status ?? 'Closed'),
                   ],
                 ),
                 Expanded(

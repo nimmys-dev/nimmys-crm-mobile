@@ -1,3 +1,5 @@
+// ignore_for_file: non_constant_identifier_names
+
 import 'package:nimmys_crm/data/model/serializable.dart';
 
 class LoginApiRequest extends Serializable{

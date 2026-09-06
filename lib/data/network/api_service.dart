@@ -37,7 +37,6 @@ class ApiService {
       AppString.sessionKey.userToken,
     );
     if (bearerToken != null && bearerToken.isNotEmpty) {
-      print('Bearer ${bearerToken}');
       headers['Authorization'] = 'Bearer $bearerToken';
       return headers;
     }
@@ -76,7 +75,7 @@ class ApiService {
   }) async {
     CustomLog.debug(
       this,
-      "\nMethod : Get, \nURL : $url,n\,QueryParams : $queryParams",
+      "\nMethod : Get, \nURL : $url,n,QueryParams : $queryParams",
     );
     try {
       if (HasInternetConnection.isInternet != true) {

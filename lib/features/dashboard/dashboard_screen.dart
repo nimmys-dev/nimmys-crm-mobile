@@ -22,7 +22,6 @@ import '../profile/cubit/profile/profile_cubit.dart';
 import '../profile/model/profile_model.dart';
 import '../profile/profile_sheet.dart';
 import 'widgets/dashboard_header.dart';
-import 'widgets/dashboard_panels.dart';
 import 'widgets/stat_cards.dart';
 
 /// Home screen with bottom navigation tabs.
@@ -121,14 +120,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     route: AppRouteName.approvals,
   );
 
-  static List<StatItem> _dutyStatsFor(UserRole role) {
-    return <StatItem>[
-      _todaysDuty,
-      _overdueDuty,
-      _upcomingDuty,
-      if (role.canAccessApprovals) _approvalPending,
-    ];
-  }
 
   static final List<StatItem> _leads = <StatItem>[
     StatItem(

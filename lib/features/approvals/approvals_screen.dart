@@ -9,7 +9,6 @@ import 'package:nimmys_crm/core/theme/app_theme.dart';
 import 'package:nimmys_crm/enum/status.dart';
 import 'package:nimmys_crm/features/dashboard/cubit/dashboard_cubit.dart';
 import 'package:nimmys_crm/features/duties/cubit/tasks_cubit.dart';
-import 'package:nimmys_crm/features/duties/model/get_all_pending_task_model.dart';
 import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
 import 'package:nimmys_crm/shared/widgets/app_avatar.dart';
 import 'package:nimmys_crm/shared/widgets/app_buttons.dart';

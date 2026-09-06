@@ -418,7 +418,6 @@ class TasksCubit extends BaseCubit<TasksState> {
 
   /// Refresh the current page.
   Future<void> refreshApprovalPendingTasks() async {
-    final currentPage = state.approvalPendingTasksPagination?.currentPage ?? 1;
     await getApprovalPendingTasks(refresh: true);
   }
 
@@ -544,7 +543,6 @@ class TasksCubit extends BaseCubit<TasksState> {
     String? search,
     String? status,
   }) async {
-    print('-------------------- ${status}');
     // If same staff and search, and not refreshing, skip if data exists.
     if (!refresh &&
         state.currentStaffIdForTasks == staffId &&

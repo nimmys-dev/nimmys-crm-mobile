@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:nimmys_crm/core/theme/app_theme.dart';
 
 class StatusChip extends StatelessWidget {

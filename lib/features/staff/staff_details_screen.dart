@@ -74,8 +74,6 @@ class _StaffDetailsScreenState extends State<StaffDetailsScreen> {
     final TextEditingController passwordController = TextEditingController();
     final TextEditingController confirmController = TextEditingController();
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-    bool obscurePassword = true;
-    bool obscureConfirm = true;
 
     return showDialog<void>(
       context: context,
