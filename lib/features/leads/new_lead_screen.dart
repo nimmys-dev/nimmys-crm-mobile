@@ -51,7 +51,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
   LeadAssigneeData? _selectedAssignee;
 
   LeadSourceData? _source; // ✅ Now using the enum, not LeadSourceData
-  DateTime? _nextFollowUp;
+  // DateTime? _nextFollowUp;
   bool _addQuotation = false;
 
   @override
@@ -134,7 +134,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
     requiredItems: _requirementController.text.trim().isEmpty
         ? null
         : _requirementController.text.trim(),
-    nextFollowUpAt: _nextFollowUp,
+    // nextFollowUpAt: _nextFollowUp,
     assignedToId: _selectedAssignee?.id?.toString(),
   );
 
@@ -149,8 +149,8 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
       'source':
           _source?.value.toString() ?? 'Call', // ✅ now matches LeadSource? type
       'assigned_to': _selectedAssignee?.id,
-      if (_nextFollowUp != null)
-        'next_follow_up_date': _dateOnly(_nextFollowUp!),
+      // if (_nextFollowUp != null)
+      //   'next_follow_up_date': _dateOnly(_nextFollowUp!),
       if (_requirementController.text.trim().isNotEmpty)
         'description': _requirementController.text.trim(),
       if (quotation != null)
@@ -392,16 +392,16 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
                                 },
                               ),
                             ),
-                            AppFormField(
-                              label: 'Next Follow Up',
-                              bottomSpacing: 0,
-                              child: AppDateField(
-                                hint: 'Select follow up date',
-                                value: _nextFollowUp,
-                                onChanged: (value) =>
-                                    setState(() => _nextFollowUp = value),
-                              ),
-                            ),
+                            // AppFormField(
+                            //   label: 'Next Follow Up',
+                            //   bottomSpacing: 0,
+                            //   child: AppDateField(
+                            //     hint: 'Select follow up date',
+                            //     value: _nextFollowUp,
+                            //     onChanged: (value) =>
+                            //         setState(() => _nextFollowUp = value),
+                            //   ),
+                            // ),
                           ],
                         ),
                       ),

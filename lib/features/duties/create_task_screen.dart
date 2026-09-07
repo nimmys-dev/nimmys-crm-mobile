@@ -288,7 +288,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                 if (!_isEditing && createState?.status == Status.SUCCESS) {
                   context.read<TasksCubit>().resetCreateTaskState();
                   context.read<DashboardCubit>().getDashboardCount();
-                  context.go(AppRouteName.duties);
+                  context.pop();
                 } else if (_isEditing &&
                     updateState?.status == Status.SUCCESS) {
                   context.read<TasksCubit>().resetUpdateTaskState();
