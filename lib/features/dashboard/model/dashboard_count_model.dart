@@ -2,7 +2,7 @@ class DashboardCount {
   bool? status;
   int? statusCode;
   String? message;
-  DashboardCountData? data;
+  Data? data;
 
   DashboardCount({
     this.status,
@@ -11,100 +11,149 @@ class DashboardCount {
     this.data,
   });
 
-  DashboardCount.fromJson(Map<String, dynamic> json) {
-    status = json['status'];
-    statusCode = json['status_code'];
-    message = json['message'];
-    data = json['data'] != null
-        ? DashboardCountData.fromJson(json['data'])
-        : null;
+  factory DashboardCount.fromJson(Map<String, dynamic> json) {
+    return DashboardCount(
+      status: json['status'] as bool?,
+      statusCode: json['status_code'] as int?,
+      message: json['message'] as String?,
+      data: json['data'] != null ? Data.fromJson(json['data'] as Map<String, dynamic>) : null,
+    );
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = {};
-    data['status'] = status;
-    data['status_code'] = statusCode;
-    data['message'] = message;
-
-    if (this.data != null) {
-      data['data'] = this.data!.toJson();
-    }
-
-    return data;
+    return {
+      'status': status,
+      'status_code': statusCode,
+      'message': message,
+      'data': data?.toJson(),
+    };
   }
 }
 
-class DashboardCountData {
-  dynamic filter;
-  DashboardCounts? counts;
-  List<dynamic>? tasks;
-  dynamic pagination;
+class Data {
+  dynamic filter; // nullable, can be any type
+  String? scope;
+  Counts? counts;
+  List<dynamic>? tasks; // empty list, but can hold task objects if needed
+  dynamic pagination; // nullable
 
-  DashboardCountData({
+  Data({
     this.filter,
+    this.scope,
     this.counts,
     this.tasks,
     this.pagination,
   });
 
-  DashboardCountData.fromJson(Map<String, dynamic> json) {
-    filter = json['filter'];
-    counts = json['counts'] != null
-        ? DashboardCounts.fromJson(json['counts'])
-        : null;
-    tasks = json['tasks'] != null
-        ? List<dynamic>.from(json['tasks'])
-        : null;
-    pagination = json['pagination'];
+  factory Data.fromJson(Map<String, dynamic> json) {
+    return Data(
+      filter: json['filter'],
+      scope: json['scope'] as String?,
+      counts: json['counts'] != null ? Counts.fromJson(json['counts'] as Map<String, dynamic>) : null,
+      tasks: json['tasks'] as List<dynamic>?,
+      pagination: json['pagination'],
+    );
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = {};
-
-    data['filter'] = filter;
-
-    if (counts != null) {
-      data['counts'] = counts!.toJson();
-    }
-
-    if (tasks != null) {
-      data['tasks'] = tasks;
-    }
-
-    data['pagination'] = pagination;
-
-    return data;
+    return {
+      'filter': filter,
+      'scope': scope,
+      'counts': counts?.toJson(),
+      'tasks': tasks,
+      'pagination': pagination,
+    };
   }
 }
 
-class DashboardCounts {
+class Counts {
+  MyTasks? myTasks;
+  AllTasks? allTasks;
+
+  Counts({
+    this.myTasks,
+    this.allTasks,
+  });
+
+  factory Counts.fromJson(Map<String, dynamic> json) {
+    return Counts(
+      myTasks: json['myTasks'] != null ? MyTasks.fromJson(json['myTasks'] as Map<String, dynamic>) : null,
+      allTasks: json['allTasks'] != null ? AllTasks.fromJson(json['allTasks'] as Map<String, dynamic>) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'myTasks': myTasks?.toJson(),
+      'allTasks': allTasks?.toJson(),
+    };
+  }
+}
+
+class MyTasks {
+  int? todayDuty;
+  int? overdueDuty;
+  int? upcomingDuty;
+  int? approvalPending;
+  int? sendingApproval;
+
+  MyTasks({
+    this.todayDuty,
+    this.overdueDuty,
+    this.upcomingDuty,
+    this.approvalPending,
+    this.sendingApproval,
+  });
+
+  factory MyTasks.fromJson(Map<String, dynamic> json) {
+    return MyTasks(
+      todayDuty: json['todayDuty'] as int?,
+      overdueDuty: json['overdueDuty'] as int?,
+      upcomingDuty: json['upcomingDuty'] as int?,
+      approvalPending: json['approvalPending'] as int?,
+      sendingApproval: json['sendingApproval'] as int?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'todayDuty': todayDuty,
+      'overdueDuty': overdueDuty,
+      'upcomingDuty': upcomingDuty,
+      'approvalPending': approvalPending,
+      'sendingApproval': sendingApproval,
+    };
+  }
+}
+
+class AllTasks {
   int? todayDuty;
   int? overdueDuty;
   int? upcomingDuty;
   int? approvalPending;
 
-  DashboardCounts({
+  AllTasks({
     this.todayDuty,
     this.overdueDuty,
     this.upcomingDuty,
     this.approvalPending,
   });
 
-  DashboardCounts.fromJson(Map<String, dynamic> json) {
-    todayDuty = json['today_duty'];
-    overdueDuty = json['overdue_duty'];
-    upcomingDuty = json['upcoming_duty'];
-    approvalPending = json['approvalPending'];
+  factory AllTasks.fromJson(Map<String, dynamic> json) {
+    return AllTasks(
+      todayDuty: json['todayDuty'] as int?,
+      overdueDuty: json['overdueDuty'] as int?,
+      upcomingDuty: json['upcomingDuty'] as int?,
+      approvalPending: json['approvalPending'] as int?,
+    );
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = {};
-
-    data['today_duty'] = todayDuty;
-    data['overdue_duty'] = overdueDuty;
-    data['upcoming_duty'] = upcomingDuty;
-    data['approvalPending'] = approvalPending;
-
-    return data;
+    return {
+      'todayDuty': todayDuty,
+      'overdueDuty': overdueDuty,
+      'upcomingDuty': upcomingDuty,
+      'approvalPending': approvalPending,
+    };
   }
 }

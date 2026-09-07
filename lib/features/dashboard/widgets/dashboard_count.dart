@@ -79,9 +79,9 @@ class _DashboardContentState extends State<DashboardContent> {
         // Build stat items
         final dutyStats = _buildDutyStats(widget.role, counts);
         final leadStats = _buildLeadStats(leadCounts);
-        final yourLeads = leadCounts?.myLeads?.toString() ?? '0';
+        final yourLeads = leadCounts?.myLeads?.yourLeads?.toString() ?? '0';
         final totalLeads = widget.role.can(AppPermission.viewAllLeads)
-            ? leadCounts?.totalLeads?.toString() ?? '0'
+            ? leadCounts?.myLeads?.totalLeads?.toString() ?? '0'
             : null;
 
         Future<void> refreshDashboard() async {
@@ -184,10 +184,13 @@ class _DashboardContentState extends State<DashboardContent> {
 
   // Helper to build duty stat items (from DashboardCount)
   List<StatItem> _buildDutyStats(UserRole role, DashboardCount? counts) {
-    final today = counts?.data?.counts?.todayDuty?.toString() ?? '0';
-    final overdue = counts?.data?.counts?.overdueDuty?.toString() ?? '0';
-    final upcoming = counts?.data?.counts?.upcomingDuty?.toString() ?? '0';
-    final approval = counts?.data?.counts?.approvalPending?.toString() ?? '0';
+    final today = counts?.data?.counts?.myTasks?.todayDuty?.toString() ?? '0';
+    final overdue =
+        counts?.data?.counts?.myTasks?.overdueDuty?.toString() ?? '0';
+    final upcoming =
+        counts?.data?.counts?.myTasks?.upcomingDuty?.toString() ?? '0';
+    final approval =
+        counts?.data?.counts?.myTasks?.approvalPending?.toString() ?? '0';
 
     return [
       StatItem(
@@ -224,10 +227,12 @@ class _DashboardContentState extends State<DashboardContent> {
 
   // Helper to build lead stat items (from LeadCounts)
   List<StatItem> _buildLeadStats(LeadCounts? leadCounts) {
-    final unattended = leadCounts?.unattended?.toString() ?? '0';
-    final todayFollow = leadCounts?.todayFollowup?.toString() ?? '0';
-    final overdueFollow = leadCounts?.overdueFollowup?.toString() ?? '0';
-    final upcomingFollow = leadCounts?.upcomingFollowup?.toString() ?? '0';
+    final unattended = leadCounts?.myLeads?.unattended?.toString() ?? '0';
+    final todayFollow = leadCounts?.myLeads?.todayFollowup?.toString() ?? '0';
+    final overdueFollow =
+        leadCounts?.myLeads?.overdueFollowup?.toString() ?? '0';
+    final upcomingFollow =
+        leadCounts?.myLeads?.upcomingFollowup?.toString() ?? '0';
 
     return [
       StatItem(

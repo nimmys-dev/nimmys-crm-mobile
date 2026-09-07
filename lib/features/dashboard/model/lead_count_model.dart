@@ -2,7 +2,7 @@ class LeadCountModel {
   bool? status;
   int? statusCode;
   String? message;
-  LeadCountData? data;
+  LeadData? data;
 
   LeadCountModel({
     this.status,
@@ -11,114 +11,161 @@ class LeadCountModel {
     this.data,
   });
 
-  LeadCountModel.fromJson(Map<String, dynamic> json) {
-    status = json['status'];
-    statusCode = json['status_code'];
-    message = json['message'];
-    data = json['data'] != null
-        ? LeadCountData.fromJson(json['data'])
-        : null;
+  factory LeadCountModel.fromJson(Map<String, dynamic> json) {
+    return LeadCountModel(
+      status: json['status'] as bool?,
+      statusCode: json['status_code'] as int?,
+      message: json['message'] as String?,
+      data: json['data'] != null ? LeadData.fromJson(json['data'] as Map<String, dynamic>) : null,
+    );
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = {};
-
-    data['status'] = status;
-    data['status_code'] = statusCode;
-    data['message'] = message;
-
-    if (this.data != null) {
-      data['data'] = this.data!.toJson();
-    }
-
-    return data;
+    return {
+      'status': status,
+      'status_code': statusCode,
+      'message': message,
+      'data': data?.toJson(),
+    };
   }
 }
 
-class LeadCountData {
-  dynamic filter;
+class LeadData {
+  dynamic filter; // null, can be any type
+  String? scope;
   LeadCounts? counts;
-  dynamic filteredCount;
-  List<dynamic>? leads;
-  dynamic pagination;
+  dynamic filteredCount; // null
+  List<dynamic>? leads; // empty list
+  dynamic pagination; // null
 
-  LeadCountData({
+  LeadData({
     this.filter,
+    this.scope,
     this.counts,
     this.filteredCount,
     this.leads,
     this.pagination,
   });
 
-  LeadCountData.fromJson(Map<String, dynamic> json) {
-    filter = json['filter'];
-
-    counts = json['counts'] != null
-        ? LeadCounts.fromJson(json['counts'])
-        : null;
-
-    filteredCount = json['filtered_count'];
-
-    leads = json['leads'] != null
-        ? List<dynamic>.from(json['leads'])
-        : null;
-
-    pagination = json['pagination'];
+  factory LeadData.fromJson(Map<String, dynamic> json) {
+    return LeadData(
+      filter: json['filter'],
+      scope: json['scope'] as String?,
+      counts: json['counts'] != null ? LeadCounts.fromJson(json['counts'] as Map<String, dynamic>) : null,
+      filteredCount: json['filtered_count'],
+      leads: json['leads'] as List<dynamic>?,
+      pagination: json['pagination'],
+    );
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = {};
-
-    data['filter'] = filter;
-
-    if (counts != null) {
-      data['counts'] = counts!.toJson();
-    }
-
-    data['filtered_count'] = filteredCount;
-    data['leads'] = leads;
-    data['pagination'] = pagination;
-
-    return data;
+    return {
+      'filter': filter,
+      'scope': scope,
+      'counts': counts?.toJson(),
+      'filtered_count': filteredCount,
+      'leads': leads,
+      'pagination': pagination,
+    };
   }
 }
 
 class LeadCounts {
+  MyLeads? myLeads;
+  AllLeads? allLeads;
+
+  LeadCounts({
+    this.myLeads,
+    this.allLeads,
+  });
+
+  factory LeadCounts.fromJson(Map<String, dynamic> json) {
+    return LeadCounts(
+      myLeads: json['my_leads'] != null ? MyLeads.fromJson(json['my_leads'] as Map<String, dynamic>) : null,
+      allLeads: json['all_leads'] != null ? AllLeads.fromJson(json['all_leads'] as Map<String, dynamic>) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'my_leads': myLeads?.toJson(),
+      'all_leads': allLeads?.toJson(),
+    };
+  }
+}
+
+class MyLeads {
   int? unattended;
   int? todayFollowup;
   int? overdueFollowup;
   int? upcomingFollowup;
-  int? myLeads;
+  int? yourLeads;
   int? totalLeads;
 
-  LeadCounts({
+  MyLeads({
     this.unattended,
     this.todayFollowup,
     this.overdueFollowup,
     this.upcomingFollowup,
-    this.myLeads,
+    this.yourLeads,
     this.totalLeads,
   });
 
-  LeadCounts.fromJson(Map<String, dynamic> json) {
-    unattended = json['unattended'];
-    todayFollowup = json['today_followup'];
-    overdueFollowup = json['overdue_followup'];
-    upcomingFollowup = json['upcoming_followup'];
-    myLeads = json['my_leads'];
-    totalLeads = json['total_leads'];
+  factory MyLeads.fromJson(Map<String, dynamic> json) {
+    return MyLeads(
+      unattended: json['unattended'] as int?,
+      todayFollowup: json['today_followup'] as int?,
+      overdueFollowup: json['overdue_followup'] as int?,
+      upcomingFollowup: json['upcoming_followup'] as int?,
+      yourLeads: json['your_leads'] as int?,
+      totalLeads: json['total_leads'] as int?,
+    );
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = {};
+    return {
+      'unattended': unattended,
+      'today_followup': todayFollowup,
+      'overdue_followup': overdueFollowup,
+      'upcoming_followup': upcomingFollowup,
+      'your_leads': yourLeads,
+      'total_leads': totalLeads,
+    };
+  }
+}
 
-    data['unattended'] = unattended;
-    data['today_followup'] = todayFollowup;
-    data['overdue_followup'] = overdueFollowup;
-    data['upcoming_followup'] = upcomingFollowup;
-    data['my_leads'] = myLeads;
-    data['total_leads'] = totalLeads;
+class AllLeads {
+  int? unattended;
+  int? todayFollowup;
+  int? overdueFollowup;
+  int? upcomingFollowup;
+  int? totalLeads;
 
-    return data;
+  AllLeads({
+    this.unattended,
+    this.todayFollowup,
+    this.overdueFollowup,
+    this.upcomingFollowup,
+    this.totalLeads,
+  });
+
+  factory AllLeads.fromJson(Map<String, dynamic> json) {
+    return AllLeads(
+      unattended: json['unattended'] as int?,
+      todayFollowup: json['today_followup'] as int?,
+      overdueFollowup: json['overdue_followup'] as int?,
+      upcomingFollowup: json['upcoming_followup'] as int?,
+      totalLeads: json['total_leads'] as int?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'unattended': unattended,
+      'today_followup': todayFollowup,
+      'overdue_followup': overdueFollowup,
+      'upcoming_followup': upcomingFollowup,
+      'total_leads': totalLeads,
+    };
   }
 }

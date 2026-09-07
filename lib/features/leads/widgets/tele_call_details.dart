@@ -337,11 +337,9 @@ class TeleCallDetailCard extends StatelessWidget {
 
     try {
       final DateTime date = DateTime.parse(value).toLocal();
-
       final DateTime now = DateTime.now();
 
       final DateTime today = DateTime(now.year, now.month, now.day);
-
       final DateTime targetDate = DateTime(date.year, date.month, date.day);
 
       final int difference = targetDate.difference(today).inDays;
@@ -360,10 +358,11 @@ class TeleCallDetailCard extends StatelessWidget {
         relativeText = '${difference.abs()} days ago';
       }
 
-      final String formattedDate =
-          '${date.day.toString().padLeft(2, '0')} '
-          '${_monthName(date.month)} '
-          '${date.year}';
+      final String day = date.day.toString().padLeft(2, '0');
+      final String month = _monthName(date.month);
+      final String year = date.year.toString();
+
+      final String formattedDate = '$day$month $year';
 
       if (relativeText.isEmpty) {
         return formattedDate;
@@ -374,7 +373,6 @@ class TeleCallDetailCard extends StatelessWidget {
       return value;
     }
   }
-
   // --------------------------------------------------
   // MONTH NAME
   // --------------------------------------------------
