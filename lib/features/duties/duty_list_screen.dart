@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nimmys_crm/core/preferences/app_preferences.dart';
 import 'package:nimmys_crm/enum/status.dart';
-import 'package:nimmys_crm/features/duties/cubit/tasks_cubit.dart';
+import 'package:nimmys_crm/features/dashboard/cubit/dashboard_cubit.dart';
 import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
@@ -17,8 +17,9 @@ import '../../shared/widgets/app_search_field.dart';
 import '../../shared/widgets/app_section_card.dart';
 
 class DutyListScreen extends StatefulWidget {
-  final String? taskStatus;
-  const DutyListScreen({super.key, required this.taskStatus});
+  final String? taskStatus; // e.g. 'overdue_duty', 'today_duty', etc.
+  final String? scope;
+  const DutyListScreen({super.key, required this.taskStatus,required this.scope});
 
   @override
   State<DutyListScreen> createState() => _DutyListScreenState();
@@ -28,21 +29,18 @@ class _DutyListScreenState extends State<DutyListScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   String _query = '';
-  int? _staffId;
 
   @override
   void initState() {
     super.initState();
-    _staffId = AppPreferences.instance.userId;
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_staffId != null) {
-        context.read<TasksCubit>().getTasksByStaffId(
-          staffId: _staffId!,
-          refresh: true,
-          status: widget.taskStatus,
-        );
-      }
+      // Initial fetch: page 1, using the given taskStatus as filter
+      context.read<DashboardCubit>().getTaskCounts(
+            filter: widget.taskStatus ?? '',
+            scope: widget.scope,
+            page: 1,
+          );
     });
   }
 
@@ -54,46 +52,43 @@ class _DutyListScreenState extends State<DutyListScreen> {
   }
 
   void _onScroll() {
-    final cubit = context.read<TasksCubit>();
+    final cubit = context.read<DashboardCubit>();
     final state = cubit.state;
-    if (state.isLoadingMoreTasksByStaffId ||
-        state.tasksByStaffIdUIState?.status == Status.LOADING) {
+    // Prevent multiple loads
+    if (state.isLoadingMoreTasks ||
+        state.taskCountsUIState?.status == Status.LOADING) {
       return;
     }
-    final pagination = state.tasksByStaffIdPagination;
+    final pagination = state.taskPagination;
     if (pagination == null || !pagination.hasNextPage) return;
 
     final maxScroll = _scrollController.position.maxScrollExtent;
     final pixels = _scrollController.position.pixels;
-    if (pixels >= maxScroll - 200 && _staffId != null) {
-      cubit.loadMoreTasksByStaffId(_staffId!, widget.taskStatus);
+    if (pixels >= maxScroll - 200) {
+      // Load next page
+      cubit.goToTaskPage(pagination.nextPage);
     }
   }
 
   Future<void> _refreshTasks() async {
-    if (_staffId == null) return;
-    await context.read<TasksCubit>().getTasksByStaffId(
-      staffId: _staffId!,
-      refresh: true,
-      search: _searchController.text.trim(),
-      status: widget.taskStatus,
-    );
+    await context.read<DashboardCubit>().refreshTaskCounts();
   }
 
   void _onSearchChanged(String value) {
     _query = value;
-    if (_staffId == null) return;
-    context.read<TasksCubit>().getTasksByStaffId(
-      staffId: _staffId!,
-      search: value.trim(),
-      status: widget.taskStatus,
-    );
+    // When search changes, we re‑fetch page 1 with the current filter.
+    // The cubit will replace the list because refresh is true.
+    context.read<DashboardCubit>().getTaskCounts(
+          refresh: true,
+          filter: widget.taskStatus ?? '',
+          scope: widget.scope,
+          page: 1,
+        );
   }
 
   List<Task> _visibleDuties(List<Task> allTasks) {
     final needle = _query.trim().toLowerCase();
     if (needle.isEmpty) return allTasks;
-
     return allTasks.where((task) {
       final title = task.title?.toLowerCase() ?? '';
       final description = task.description?.toLowerCase() ?? '';
@@ -113,19 +108,18 @@ class _DutyListScreenState extends State<DutyListScreen> {
       child: SafeArea(
         child: Scaffold(
           backgroundColor: context.palette.canvas,
-          body: BlocBuilder<TasksCubit, TasksState>(
+          body: BlocBuilder<DashboardCubit, DashboardState>(
             builder: (context, state) {
-              final allTasks = state.tasksByStaffIdList;
+              final allTasks = state.taskList ?? [];
               final isLoading =
-                  state.tasksByStaffIdUIState?.status == Status.LOADING;
+                  state.taskCountsUIState?.status == Status.LOADING &&
+                      allTasks.isEmpty;
               final hasError =
-                  state.tasksByStaffIdUIState?.status == Status.ERROR;
-              final error = state.tasksByStaffIdUIState?.errorType;
-              final total =
-                  state.tasksByStaffIdPagination?.total ?? allTasks.length;
-              final hasMore =
-                  state.tasksByStaffIdPagination?.hasNextPage ?? false;
-              final isLoadingMore = state.isLoadingMoreTasksByStaffId;
+                  state.taskCountsUIState?.status == Status.ERROR;
+              final error = state.taskCountsUIState?.errorType;
+              final total = state.taskPagination?.total ?? allTasks.length;
+              final hasMore = state.taskPagination?.hasNextPage ?? false;
+              final isLoadingMore = state.isLoadingMoreTasks;
 
               return Column(
                 children: <Widget>[
@@ -182,7 +176,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
     required bool hasMore,
     required bool isLoadingMore,
   }) {
-    if (isLoading && allTasks.isEmpty) {
+    if (isLoading) {
       return RefreshIndicator(
         onRefresh: _refreshTasks,
         child: const _AlwaysScrollableBody(
@@ -283,11 +277,11 @@ class _AlwaysScrollableBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-    builder: (BuildContext context, BoxConstraints constraints) => ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: <Widget>[SizedBox(height: constraints.maxHeight, child: child)],
-    ),
-  );
+        builder: (BuildContext context, BoxConstraints constraints) => ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: <Widget>[SizedBox(height: constraints.maxHeight, child: child)],
+        ),
+      );
 }
 
 class _ErrorRetry extends StatelessWidget {

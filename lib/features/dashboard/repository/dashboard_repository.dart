@@ -7,19 +7,49 @@ class DashboardRepository {
   DashboardRepository(this._service);
 
   final DashboardCountService _service;
+
+  // ──────────────────────────────────────────────────────────────
+  // 1. Summary counts (no filters)
+  // ──────────────────────────────────────────────────────────────
   Future<Result<DashboardCount>> getDashboardCount() async {
     try {
       return await _service.getDashboardCount();
     } catch (e) {
-      return Error<DashboardCount>(ErrorWithMessage(message: e.toString()));
+      // Use GenericError if ErrorWithMessage is not imported
+      return Error<DashboardCount>(GenericError());
     }
   }
 
-  Future<Result<LeadCountModel>> getLeadsCount() async {
+  // ──────────────────────────────────────────────────────────────
+  // 2. Filtered + paginated task counts
+  // ──────────────────────────────────────────────────────────────
+  Future<Result<DashboardCount>> getTaskCounts({
+    required String filter,
+    int perPage = 10,
+    int page = 1,
+    String? scope,
+  }) async {
     try {
+      return await _service.getTaskCounts(
+        filter: filter,
+        perPage: perPage,
+        page: page,
+        scope: scope,
+      );
+    } catch (e) {
+      return Error<DashboardCount>(GenericError());
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 3. Lead counts (with corrected method name)
+  // ──────────────────────────────────────────────────────────────
+  Future<Result<LeadCountModel>> getLeadCount() async {
+    try {
+      // Service method is now getLeadCount() (renamed from getleadCount)
       return await _service.getleadCount();
     } catch (e) {
-      return Error<LeadCountModel>(ErrorWithMessage(message: e.toString()));
+      return Error<LeadCountModel>(GenericError());
     }
   }
 }

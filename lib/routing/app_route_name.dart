@@ -39,8 +39,8 @@ class AppRouteName {
   /// Built here rather than at the call sites so the query key lives next to
   /// the path it belongs to. [filter] is a `DutyFilter.wireValue`; an
   /// unrecognised one simply opens the default tab.
-  static String dutiesFiltered(String taskStatus) =>
-      "$duties?taskStatus=$taskStatus";
+  static String dutiesFiltered(String taskStatus, String scope) =>
+      "$duties?taskStatus=$taskStatus&scope=$scope"; // ✅ use '&' between params
 
   /// [staffDetails] / [staffEdit] for a specific staff member — e.g.
   /// `/staff/details?id=15`. Both routes need the id to know which record to

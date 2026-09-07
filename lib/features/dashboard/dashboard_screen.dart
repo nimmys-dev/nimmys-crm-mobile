@@ -96,21 +96,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     value: '12',
     icon: Icons.fact_check_outlined,
     tone: StatTone.red,
-    route: AppRouteName.dutiesFiltered('today'),
+    route: AppRouteName.dutiesFiltered('today', 'my_tasks'),
   );
   static final StatItem _overdueDuty = StatItem(
     label: 'Overdue Duty',
     value: '5',
     icon: Icons.event_busy_outlined,
     tone: StatTone.ink,
-    route: AppRouteName.dutiesFiltered('overdue'),
+    route: AppRouteName.dutiesFiltered('overdue', 'my_tasks'),
   );
   static final StatItem _upcomingDuty = StatItem(
     label: 'Upcoming Duty',
     value: '8',
     icon: Icons.schedule_rounded,
     tone: StatTone.red,
-    route: AppRouteName.dutiesFiltered('upcoming'),
+    route: AppRouteName.dutiesFiltered('upcoming', 'my_tasks'),
   );
   static final StatItem _approvalPending = StatItem(
     label: 'Approval Pending',

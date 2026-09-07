@@ -157,7 +157,8 @@ class AppRoutes {
         path: AppRouteName.duties,
         builder: (BuildContext context, GoRouterState state) {
           final String? taskStatus = state.uri.queryParameters['taskStatus'];
-          return DutyListScreen(taskStatus: taskStatus);
+           final String? scope = state.uri.queryParameters['scope'];
+          return DutyListScreen(taskStatus: taskStatus,scope: scope);
         },
       ),
 
