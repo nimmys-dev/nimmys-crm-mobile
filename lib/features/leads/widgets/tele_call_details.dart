@@ -539,6 +539,9 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     _calledTimeController.text =
         '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
+    _nextFollowUpDateController.text =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     final cubit = context.read<LeadsCubit>();
     if (cubit.state.notInterestedReasonsUIState?.data == null) {
       cubit.getNotInterestedReasons(force: false);
