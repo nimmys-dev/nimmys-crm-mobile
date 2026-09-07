@@ -11,6 +11,7 @@ import 'package:nimmys_crm/features/dashboard/dashboard_screen.dart';
 import 'package:nimmys_crm/features/dashboard/model/dashboard_count_model.dart';
 import 'package:nimmys_crm/features/dashboard/model/lead_count_model.dart';
 import 'package:nimmys_crm/features/dashboard/widgets/dashboard_panels.dart';
+import 'package:nimmys_crm/features/dashboard/widgets/my_tasks_widget.dart';
 import 'package:nimmys_crm/features/dashboard/widgets/stat_cards.dart';
 import 'package:nimmys_crm/routing/app_route_name.dart';
 import 'package:nimmys_crm/shared/widgets/app_section_card.dart';
@@ -113,8 +114,32 @@ class _DashboardContentState extends State<DashboardContent> {
                           ),
                         )
                       else ...[
-                        DashboardDutySection(items: dutyStats),
-                        DashboardLeadsSection(items: leadStats),
+                        DashboardDutySection(
+                          items: dutyStats,
+                          taskTitle: 'My Tasks',
+                        ),
+                        Visibility(
+                          visible:
+                              UserRole.admin == widget.role ||
+                              UserRole.manager == widget.role,
+                          child: DashboardDutySection(
+                            items: dutyStats,
+                            taskTitle: 'All Tasks',
+                          ),
+                        ),
+                        DashboardLeadsSection(
+                          items: leadStats,
+                          title: 'My Leads',
+                        ),
+                        Visibility(
+                          visible:
+                              UserRole.admin == widget.role ||
+                              UserRole.manager == widget.role,
+                          child: DashboardLeadsSection(
+                            items: leadStats,
+                            title: 'All Leads',
+                          ),
+                        ),
                         AppSectionCard(
                           child: DashboardTotalsCard(
                             yourLeads: yourLeads,

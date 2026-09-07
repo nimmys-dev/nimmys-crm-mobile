@@ -25,6 +25,7 @@ class DashboardTotalsCard extends StatelessWidget {
   /// is how the reports screen uses it.
   final VoidCallback? onTap;
 
+
   @override
   Widget build(BuildContext context) {
     final Widget panel = _buildPanel(context);

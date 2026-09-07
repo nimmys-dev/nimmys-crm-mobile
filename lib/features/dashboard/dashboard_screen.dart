@@ -120,7 +120,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     route: AppRouteName.approvals,
   );
 
-
   static final List<StatItem> _leads = <StatItem>[
     StatItem(
       label: 'Unattended Leads',
@@ -275,42 +274,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-/// "MY DUTIES" card holding the four duty counters in one row.
-class DashboardDutySection extends StatelessWidget {
-  const DashboardDutySection({super.key, required this.items});
-
-  final List<StatItem> items;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppSectionCard(
-      child: Column(
-        children: <Widget>[
-          AppSectionHeader(
-            title: 'My Duties',
-            actionLabel: 'View All',
-            onAction: () => context.push(AppRouteName.duties),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: <Widget>[
-              for (int index = 0; index < items.length; index++) ...<Widget>[
-                if (index > 0) const SizedBox(width: 7),
-                Expanded(
-                  child: DutyStatCard(
-                    item: items[index],
-                    onTap: openStatRoute(context, items[index]),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// Tap handler for a stat tile, or null when the tile has no screen behind it.
 ///
 /// Shared by both dashboard sections so a counter is wired the same way
@@ -326,7 +289,12 @@ VoidCallback? openStatRoute(BuildContext context, StatItem item) {
 
 /// "MY LEADS" card holding the four lead counters as a 2×2 grid.
 class DashboardLeadsSection extends StatelessWidget {
-  const DashboardLeadsSection({super.key, required this.items});
+  final String title;
+  const DashboardLeadsSection({
+    super.key,
+    required this.items,
+    required this.title,
+  });
 
   final List<StatItem> items;
 
@@ -336,7 +304,7 @@ class DashboardLeadsSection extends StatelessWidget {
       child: Column(
         children: <Widget>[
           AppSectionHeader(
-            title: 'My Leads',
+            title: title,
             actionLabel: 'View All',
             onAction: () =>
                 context.push('${AppRouteName.leads}?isAppHeaderRequired=true'),
