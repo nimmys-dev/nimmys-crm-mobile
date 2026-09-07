@@ -3,11 +3,6 @@ import 'package:nimmys_crm/data/network/api_service.dart';
 import 'package:nimmys_crm/data/network/api_urls.dart';
 import 'package:nimmys_crm/features/dashboard/model/dashboard_count_model.dart';
 import 'package:nimmys_crm/features/dashboard/model/lead_count_model.dart';
-import 'package:nimmys_crm/data/model/result.dart';
-import 'package:nimmys_crm/data/network/api_service.dart';
-import 'package:nimmys_crm/data/network/api_urls.dart';
-import 'package:nimmys_crm/features/dashboard/model/dashboard_count_model.dart';
-import 'package:nimmys_crm/features/dashboard/model/lead_count_model.dart';
 
 /// Network access for dashboard counts (summary & task‑counts).
 class DashboardCountService {
