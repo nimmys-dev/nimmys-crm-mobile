@@ -77,8 +77,10 @@ class _DashboardContentState extends State<DashboardContent> {
         final isLoading = isLoadingDuty || isLoadingLead;
 
         // Build stat items
-        final dutyStats = _buildDutyStats(widget.role, counts);
-        final leadStats = _buildLeadStats(leadCounts);
+        final myDutyStats = _buildMyDutyStats(widget.role, counts);
+        final allTaskStats = _buildAllDutyStats(widget.role, counts);
+        final myLeadStats = _buildMyLeadStats(leadCounts);
+        final allLeadStats = _buildAllLeadStats(leadCounts);
         final yourLeads = leadCounts?.myLeads?.yourLeads?.toString() ?? '0';
         final totalLeads = widget.role.can(AppPermission.viewAllLeads)
             ? leadCounts?.myLeads?.totalLeads?.toString() ?? '0'
@@ -115,7 +117,7 @@ class _DashboardContentState extends State<DashboardContent> {
                         )
                       else ...[
                         DashboardDutySection(
-                          items: dutyStats,
+                          items: myDutyStats,
                           taskTitle: 'My Tasks',
                         ),
                         Visibility(
@@ -123,12 +125,12 @@ class _DashboardContentState extends State<DashboardContent> {
                               UserRole.admin == widget.role ||
                               UserRole.manager == widget.role,
                           child: DashboardDutySection(
-                            items: dutyStats,
+                            items: allTaskStats,
                             taskTitle: 'All Tasks',
                           ),
                         ),
                         DashboardLeadsSection(
-                          items: leadStats,
+                          items: myLeadStats,
                           title: 'My Leads',
                         ),
                         Visibility(
@@ -136,7 +138,7 @@ class _DashboardContentState extends State<DashboardContent> {
                               UserRole.admin == widget.role ||
                               UserRole.manager == widget.role,
                           child: DashboardLeadsSection(
-                            items: leadStats,
+                            items: allLeadStats,
                             title: 'All Leads',
                           ),
                         ),
@@ -183,7 +185,7 @@ class _DashboardContentState extends State<DashboardContent> {
   }
 
   // Helper to build duty stat items (from DashboardCount)
-  List<StatItem> _buildDutyStats(UserRole role, DashboardCount? counts) {
+  List<StatItem> _buildMyDutyStats(UserRole role, DashboardCount? counts) {
     final today = counts?.data?.counts?.myTasks?.todayDuty?.toString() ?? '0';
     final overdue =
         counts?.data?.counts?.myTasks?.overdueDuty?.toString() ?? '0';
@@ -225,14 +227,98 @@ class _DashboardContentState extends State<DashboardContent> {
     ];
   }
 
+  // Helper to build duty stat items (from DashboardCount)
+  List<StatItem> _buildAllDutyStats(UserRole role, DashboardCount? counts) {
+    final today = counts?.data?.counts?.allTasks?.todayDuty?.toString() ?? '0';
+    final overdue =
+        counts?.data?.counts?.allTasks?.overdueDuty?.toString() ?? '0';
+    final upcoming =
+        counts?.data?.counts?.allTasks?.upcomingDuty?.toString() ?? '0';
+    final approval =
+        counts?.data?.counts?.allTasks?.approvalPending?.toString() ?? '0';
+
+    return [
+      StatItem(
+        label: "Today's All Duty",
+        value: today,
+        icon: Icons.fact_check_outlined,
+        tone: StatTone.red,
+        route: AppRouteName.dutiesFiltered('ongoing'),
+      ),
+      StatItem(
+        label: 'Overdue Duty',
+        value: overdue,
+        icon: Icons.event_busy_outlined,
+        tone: StatTone.ink,
+        route: AppRouteName.dutiesFiltered('overdue'),
+      ),
+      StatItem(
+        label: 'Upcoming Duty',
+        value: upcoming,
+        icon: Icons.schedule_rounded,
+        tone: StatTone.red,
+        route: AppRouteName.dutiesFiltered('upcoming'),
+      ),
+      if (role.canAccessApprovals)
+        StatItem(
+          label: 'Approval Pending',
+          value: approval,
+          icon: Icons.assignment_turned_in_outlined,
+          tone: StatTone.ink,
+          route: AppRouteName.approvals,
+        ),
+    ];
+  }
+
   // Helper to build lead stat items (from LeadCounts)
-  List<StatItem> _buildLeadStats(LeadCounts? leadCounts) {
+  List<StatItem> _buildMyLeadStats(LeadCounts? leadCounts) {
     final unattended = leadCounts?.myLeads?.unattended?.toString() ?? '0';
     final todayFollow = leadCounts?.myLeads?.todayFollowup?.toString() ?? '0';
     final overdueFollow =
         leadCounts?.myLeads?.overdueFollowup?.toString() ?? '0';
     final upcomingFollow =
         leadCounts?.myLeads?.upcomingFollowup?.toString() ?? '0';
+
+    return [
+      StatItem(
+        label: 'Unattended Leads',
+        value: unattended,
+        icon: Icons.groups_outlined,
+        tone: StatTone.red,
+        route: AppRouteName.leadsWithStatus('open'),
+      ),
+      StatItem(
+        label: "Today's Follow Up",
+        value: todayFollow,
+        icon: Icons.person_add_alt_1_outlined,
+        tone: StatTone.ink,
+        route: AppRouteName.leadsWithStatus('today'),
+      ),
+      StatItem(
+        label: 'Overdue Follow Up',
+        value: overdueFollow,
+        icon: Icons.history_toggle_off_rounded,
+        tone: StatTone.ink,
+        route: AppRouteName.leadsWithStatus('overdue'),
+      ),
+      StatItem(
+        label: 'Upcoming Follow Up',
+        value: upcomingFollow,
+        icon: Icons.event_available_outlined,
+        tone: StatTone.red,
+        route: AppRouteName.leadsWithStatus('upcoming'),
+      ),
+    ];
+  }
+
+  // Helper to build lead stat items (from LeadCounts)
+  List<StatItem> _buildAllLeadStats(LeadCounts? leadCounts) {
+    final unattended = leadCounts?.allLeads?.unattended?.toString() ?? '0';
+    final todayFollow = leadCounts?.allLeads?.todayFollowup?.toString() ?? '0';
+    final overdueFollow =
+        leadCounts?.allLeads?.overdueFollowup?.toString() ?? '0';
+    final upcomingFollow =
+        leadCounts?.allLeads?.upcomingFollowup?.toString() ?? '0';
 
     return [
       StatItem(
