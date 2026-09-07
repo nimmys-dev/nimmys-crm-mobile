@@ -44,10 +44,40 @@ class DashboardRepository {
   // ──────────────────────────────────────────────────────────────
   // 3. Lead counts (with corrected method name)
   // ──────────────────────────────────────────────────────────────
-  Future<Result<LeadCountModel>> getLeadCount() async {
+  Future<Result<LeadCountModel>> getLeadCount({
+    String? filter,
+    int perPage = 10,
+    int page = 1,
+    String? scope,
+  }) async {
     try {
       // Service method is now getLeadCount() (renamed from getleadCount)
-      return await _service.getleadCount();
+      return await _service.getleadCount(
+        filter: filter,
+        page: page,
+        scope: scope,
+        perPage: perPage,
+      );
+    } catch (e) {
+      return Error<LeadCountModel>(GenericError());
+    }
+  }
+
+  // dashboard_repository.dart (add this method)
+
+  Future<Result<LeadCountModel>> getLeadList({
+    required String filter,
+    int perPage = 10,
+    int page = 1,
+    String? scope,
+  }) async {
+    try {
+      return await _service.getleadCount(
+        filter: filter,
+        perPage: perPage,
+        page: page,
+        scope: scope,
+      );
     } catch (e) {
       return Error<LeadCountModel>(GenericError());
     }

@@ -76,8 +76,11 @@ class LeadItemData {
       name: json["name"] as String?,
       phone: json["phone"] as String?,
       source: json["source"] as String?,
-      assignedTo: json["assigned_to"] as String?,
-      createdBy: json["created_by"] as String?,
+      // The dashboard endpoint returns user IDs here (for example `1`),
+      // whereas other lead endpoints can return display names.  Do not use an
+      // `as String?` cast: an integer ID would throw during deserialization.
+      assignedTo: _asString(json["assigned_to"]),
+      createdBy: _asString(json["created_by"]),
       description: json["description"] as String?,
       has_quotation: json["has_quotation"] as bool?,
       status : json["status"] as String?
@@ -104,6 +107,13 @@ class LeadItemData {
     if (value is String) {
       return int.tryParse(value.trim());
     }
+    return null;
+  }
+
+  static String? _asString(dynamic value) {
+    if (value == null) return null;
+    if (value is String) return value;
+    if (value is num || value is bool) return value.toString();
     return null;
   }
 

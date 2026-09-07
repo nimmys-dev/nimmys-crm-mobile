@@ -11,6 +11,7 @@ import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
 
 part 'dashboard_state.dart';
 
+
 class DashboardCubit extends BaseCubit<DashboardState> {
   final DashboardRepository _repository;
   static const int _pageSize = 10;
@@ -41,7 +42,7 @@ class DashboardCubit extends BaseCubit<DashboardState> {
   }
 
   // ────────────────────────────────────────────────────────────────────────────
-  // Lead Count
+  // Summary Lead Count
   // ────────────────────────────────────────────────────────────────────────────
   void _setLeadCountUIState(UIState<LeadCountModel>? uiState) {
     emit(state.copyWith(leadCountUIState: uiState));
@@ -49,7 +50,7 @@ class DashboardCubit extends BaseCubit<DashboardState> {
 
   Future<void> getLeadCount() async {
     _setLeadCountUIState(UIState.loading());
-    final result = await _repository.getLeadCount();
+    final result = await _repository.getLeadCount(); // no pagination params
     if (result is Success<LeadCountModel>) {
       _setLeadCountUIState(UIState.success(result.value));
     } else if (result is Error<LeadCountModel>) {
@@ -62,18 +63,12 @@ class DashboardCubit extends BaseCubit<DashboardState> {
   }
 
   // ────────────────────────────────────────────────────────────────────────────
-  // Task Counts (filtered + paginated) – follows LeadCubit pattern
+  // Task Counts (filtered + paginated)
   // ────────────────────────────────────────────────────────────────────────────
   void _setTaskCountsUIState(UIState<DashboardCount>? uiState) {
     emit(state.copyWith(taskCountsUIState: uiState));
   }
 
-  /// Fetches a specific page of task counts.
-  /// - [refresh] – if true, forces a fresh fetch (replaces list).
-  /// - [filter] – the filter to apply (e.g., 'overdue_duty').
-  /// - [scope] – the scope (default 'all_tasks').
-  /// - [page] – the page number to fetch (default 1).
-  /// - [isLoadMore] – internal flag to control the loading‑more indicator.
   Future<void> getTaskCounts({
     bool refresh = false,
     String? filter,
@@ -81,31 +76,25 @@ class DashboardCubit extends BaseCubit<DashboardState> {
     int page = 1,
     bool isLoadMore = false,
   }) async {
-    // If loading more, show the footer loader
     if (isLoadMore) {
       emit(state.copyWith(isLoadingMoreTasks: true));
     }
 
-    // Update the current filter/scope in state
     emit(state.copyWith(currentTaskFilter: filter, currentTaskScope: scope));
 
-    // Determine if filter or scope changed since last fetch
     final filterChanged = filter != state.lastFetchedTaskFilter;
     final scopeChanged = scope != state.lastFetchedTaskScope;
     final shouldReplace = page == 1 || refresh || filterChanged || scopeChanged;
 
-    // If not refreshing and we already have data and page is the current one, skip
     if (!refresh &&
         state.taskCountsUIState?.data != null &&
         page == (state.taskPagination?.currentPage ?? 1) &&
         !filterChanged &&
         !scopeChanged &&
         !isLoadMore) {
-      // No need to reset loading flag because we haven't changed state
       return;
     }
 
-    // Set loading state, and clear list if replacing
     emit(
       state.copyWith(
         taskCountsUIState: UIState.loading(),
@@ -137,20 +126,19 @@ class DashboardCubit extends BaseCubit<DashboardState> {
           taskPagination: pagination,
           lastFetchedTaskFilter: filter,
           lastFetchedTaskScope: scope,
-          isLoadingMoreTasks: false, // Reset loader flag
+          isLoadingMoreTasks: false,
         ),
       );
     } else if (result is Error<DashboardCount>) {
       emit(
         state.copyWith(
           taskCountsUIState: UIState.error(result.type),
-          isLoadingMoreTasks: false, // Reset loader flag
+          isLoadingMoreTasks: false,
         ),
       );
     }
   }
 
-  /// Convenience method to refresh the current task list (page 1).
   Future<void> refreshTaskCounts() async {
     await getTaskCounts(
       refresh: true,
@@ -160,8 +148,6 @@ class DashboardCubit extends BaseCubit<DashboardState> {
     );
   }
 
-  /// Navigate to a specific page (used for pagination).
-  /// If the page is greater than the current page, it's treated as "load more".
   Future<void> goToTaskPage(int page) async {
     if (page < 1) return;
     final currentPage = state.taskPagination?.currentPage ?? 1;
@@ -175,13 +161,10 @@ class DashboardCubit extends BaseCubit<DashboardState> {
     );
   }
 
-  /// Resets the task counts state to initial (null).
   void resetTaskCountsState() {
     emit(
       state.copyWith(
-        taskCountsUIState: resetUIState<DashboardCount>(
-          state.taskCountsUIState,
-        ),
+        taskCountsUIState: resetUIState<DashboardCount>(state.taskCountsUIState),
         taskList: null,
         taskPagination: null,
         lastFetchedTaskFilter: null,
@@ -189,6 +172,113 @@ class DashboardCubit extends BaseCubit<DashboardState> {
         isLoadingMoreTasks: false,
       ),
     );
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // LEAD LIST (filtered + paginated) – NEW
+  // ────────────────────────────────────────────────────────────────────────────
+  void _setLeadListUIState(UIState<LeadCountModel>? uiState) {
+    emit(state.copyWith(leadListUIState: uiState));
+  }
+
+  Future<void> getLeads({
+    bool refresh = false,
+    String? filter,
+    String? scope,
+    int page = 1,
+    bool isLoadMore = false,
+  }) async {
+    if (isLoadMore) {
+      emit(state.copyWith(isLoadingMoreLeads: true));
+    }
+
+    emit(state.copyWith(
+      currentLeadFilter: filter,
+      currentLeadScope: scope,
+    ));
+
+    final filterChanged = filter != state.lastFetchedLeadFilter;
+    final scopeChanged = scope != state.lastFetchedLeadScope;
+    final shouldReplace = page == 1 || refresh || filterChanged || scopeChanged;
+
+    if (!refresh &&
+        state.leadListUIState?.data != null &&
+        page == (state.leadPagination?.currentPage ?? 1) &&
+        !filterChanged &&
+        !scopeChanged &&
+        !isLoadMore) {
+      return;
+    }
+
+    emit(state.copyWith(
+      leadListUIState: UIState.loading(),
+      leadList: shouldReplace ? null : state.leadList,
+      leadPagination: shouldReplace ? null : state.leadPagination,
+    ));
+
+    final result = await _repository.getLeadCount(
+      filter: filter ?? state.currentLeadFilter ?? '',
+      perPage: _pageSize,
+      page: page,
+      scope: scope ?? state.currentLeadScope,
+    );
+
+    if (result is Success<LeadCountModel>) {
+      final data = result.value;
+      final newLeads = data.data?.leads ?? [];
+      final pagination = data.data?.pagination;
+
+      final List<LeadItemData> updatedLeads = shouldReplace
+          ? newLeads
+          : [...?state.leadList, ...newLeads];
+
+      emit(state.copyWith(
+        leadListUIState: UIState.success(data),
+        leadList: updatedLeads.isEmpty ? null : updatedLeads,
+        leadPagination: pagination,
+        lastFetchedLeadFilter: filter,
+        lastFetchedLeadScope: scope,
+        isLoadingMoreLeads: false,
+      ));
+    } else if (result is Error<LeadCountModel>) {
+      emit(state.copyWith(
+        leadListUIState: UIState.error(result.type),
+        isLoadingMoreLeads: false,
+      ));
+    }
+  }
+
+  Future<void> refreshLeads() async {
+    await getLeads(
+      refresh: true,
+      filter: state.currentLeadFilter,
+      scope: state.currentLeadScope,
+      page: 1,
+    );
+  }
+
+  Future<void> goToLeadPage(int page) async {
+    if (page < 1) return;
+    final currentPage = state.leadPagination?.currentPage ?? 1;
+    if (page == currentPage) return;
+    final isLoadMore = page > currentPage;
+    await getLeads(
+      filter: state.currentLeadFilter,
+      scope: state.currentLeadScope,
+      page: page,
+      isLoadMore: isLoadMore,
+    );
+  }
+
+  void resetLeadListState() {
+    emit(state.copyWith(
+      leadListUIState: resetUIState<LeadCountModel>(state.leadListUIState),
+      leadList: null,
+      leadPagination: null,
+      lastFetchedLeadFilter: null,
+      lastFetchedLeadScope: null,
+      isLoadingMoreLeads: false,
+    ));
   }
 
   // ────────────────────────────────────────────────────────────────────────────

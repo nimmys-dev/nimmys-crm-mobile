@@ -62,7 +62,9 @@ class LeadData {
             )
           : null,
 
-      pagination: json['pagination'] as LeadPagination?,
+      pagination: json['pagination'] != null
+          ? LeadPagination.fromJson(json['pagination'] as Map<String, dynamic>)
+          : null,
     );
   }
 

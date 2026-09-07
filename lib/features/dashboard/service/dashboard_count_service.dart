@@ -79,10 +79,28 @@ class DashboardCountService {
   // ────────────────────────────────────────────────────────────────────────────
   // 3. Lead count (rename to getLeadCount for consistency)
   // ────────────────────────────────────────────────────────────────────────────
-  Future<Result<LeadCountModel>> getleadCount() async {
+  Future<Result<LeadCountModel>> getleadCount({
+    String? filter,
+    int perPage = 10,
+    int page = 1,
+    String? scope,
+  }) async {
     try {
+      // Build query map, omitting null values
+      final Map<String, dynamic> query = {
+        'filter': filter?.trim(), // ensure no extra spaces
+        'per_page': perPage,
+        'page': page,
+      };
+      // Add scope only if not null and not empty
+      if (scope != null && scope.isNotEmpty) {
+        query['scope'] = scope;
+      } else {}
       final String url = ApiUrls.getLeadsCount;
-      final Result<dynamic> result = await _apiService.get(url);
+      final Result<dynamic> result = await _apiService.get(
+        url,
+        queryParams: query,
+      );
       if (result is Success<dynamic>) {
         return await _apiService.getResponseStatus<LeadCountModel>(
           result.value,

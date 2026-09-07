@@ -1,10 +1,11 @@
 part of 'dashboard_cubit.dart';
 
 class DashboardState extends Equatable {
-  // ─── Summary ──────────────────────────────────────────────────────────────
+  // ─── Summary counts ──────────────────────────────────────────
   final UIState<DashboardCount>? dashboardCountUIState;
+  final UIState<LeadCountModel>? leadCountUIState;   // keep summary
 
-  // ─── Task Counts (filtered + paginated) ──────────────────────────────────
+  // ─── Task list (paginated) ──────────────────────────────────
   final UIState<DashboardCount>? taskCountsUIState;
   final List<Task>? taskList;
   final LeadPagination? taskPagination;
@@ -12,15 +13,21 @@ class DashboardState extends Equatable {
   final String? currentTaskScope;
   final String? lastFetchedTaskFilter;
   final String? lastFetchedTaskScope;
+  final bool isLoadingMoreTasks;
 
-  // ─── Loading state for pagination ────────────────────────────────────────
-  final bool isLoadingMoreTasks; // <-- NEW
-
-  // ─── Lead Count ───────────────────────────────────────────────────────────
-  final UIState<LeadCountModel>? leadCountUIState;
+  // ─── Lead list (paginated) ──────────────────────────────────
+  final UIState<LeadCountModel>? leadListUIState;   // new
+  final List<LeadItemData>? leadList;               // extracted from data.leads
+  final LeadPagination? leadPagination;             // extracted from data.pagination
+  final String? currentLeadFilter;
+  final String? currentLeadScope;
+  final String? lastFetchedLeadFilter;
+  final String? lastFetchedLeadScope;
+  final bool isLoadingMoreLeads;
 
   const DashboardState({
     this.dashboardCountUIState,
+    this.leadCountUIState,
     this.taskCountsUIState,
     this.taskList,
     this.taskPagination,
@@ -28,12 +35,20 @@ class DashboardState extends Equatable {
     this.currentTaskScope,
     this.lastFetchedTaskFilter,
     this.lastFetchedTaskScope,
-    this.isLoadingMoreTasks = false, // <-- default false
-    this.leadCountUIState,
+    this.isLoadingMoreTasks = false,
+    this.leadListUIState,
+    this.leadList,
+    this.leadPagination,
+    this.currentLeadFilter,
+    this.currentLeadScope,
+    this.lastFetchedLeadFilter,
+    this.lastFetchedLeadScope,
+    this.isLoadingMoreLeads = false,
   });
 
   DashboardState copyWith({
     UIState<DashboardCount>? dashboardCountUIState,
+    UIState<LeadCountModel>? leadCountUIState,
     UIState<DashboardCount>? taskCountsUIState,
     List<Task>? taskList,
     LeadPagination? taskPagination,
@@ -42,10 +57,18 @@ class DashboardState extends Equatable {
     String? lastFetchedTaskFilter,
     String? lastFetchedTaskScope,
     bool? isLoadingMoreTasks,
-    UIState<LeadCountModel>? leadCountUIState,
+    UIState<LeadCountModel>? leadListUIState,
+    List<LeadItemData>? leadList,
+    LeadPagination? leadPagination,
+    String? currentLeadFilter,
+    String? currentLeadScope,
+    String? lastFetchedLeadFilter,
+    String? lastFetchedLeadScope,
+    bool? isLoadingMoreLeads,
   }) {
     return DashboardState(
       dashboardCountUIState: dashboardCountUIState ?? this.dashboardCountUIState,
+      leadCountUIState: leadCountUIState ?? this.leadCountUIState,
       taskCountsUIState: taskCountsUIState ?? this.taskCountsUIState,
       taskList: taskList ?? this.taskList,
       taskPagination: taskPagination ?? this.taskPagination,
@@ -54,7 +77,14 @@ class DashboardState extends Equatable {
       lastFetchedTaskFilter: lastFetchedTaskFilter ?? this.lastFetchedTaskFilter,
       lastFetchedTaskScope: lastFetchedTaskScope ?? this.lastFetchedTaskScope,
       isLoadingMoreTasks: isLoadingMoreTasks ?? this.isLoadingMoreTasks,
-      leadCountUIState: leadCountUIState ?? this.leadCountUIState,
+      leadListUIState: leadListUIState ?? this.leadListUIState,
+      leadList: leadList ?? this.leadList,
+      leadPagination: leadPagination ?? this.leadPagination,
+      currentLeadFilter: currentLeadFilter ?? this.currentLeadFilter,
+      currentLeadScope: currentLeadScope ?? this.currentLeadScope,
+      lastFetchedLeadFilter: lastFetchedLeadFilter ?? this.lastFetchedLeadFilter,
+      lastFetchedLeadScope: lastFetchedLeadScope ?? this.lastFetchedLeadScope,
+      isLoadingMoreLeads: isLoadingMoreLeads ?? this.isLoadingMoreLeads,
     );
   }
 
@@ -64,6 +94,10 @@ class DashboardState extends Equatable {
         dashboardCountUIState?.status,
         dashboardCountUIState?.data,
         dashboardCountUIState?.errorType,
+        leadCountUIState,
+        leadCountUIState?.status,
+        leadCountUIState?.data,
+        leadCountUIState?.errorType,
         taskCountsUIState,
         taskCountsUIState?.status,
         taskCountsUIState?.data,
@@ -74,10 +108,17 @@ class DashboardState extends Equatable {
         currentTaskScope,
         lastFetchedTaskFilter,
         lastFetchedTaskScope,
-        isLoadingMoreTasks, // <-- added
-        leadCountUIState,
-        leadCountUIState?.status,
-        leadCountUIState?.data,
-        leadCountUIState?.errorType,
+        isLoadingMoreTasks,
+        leadListUIState,
+        leadListUIState?.status,
+        leadListUIState?.data,
+        leadListUIState?.errorType,
+        leadList,
+        leadPagination,
+        currentLeadFilter,
+        currentLeadScope,
+        lastFetchedLeadFilter,
+        lastFetchedLeadScope,
+        isLoadingMoreLeads,
       ];
 }

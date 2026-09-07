@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
+import 'package:nimmys_crm/features/dashboard/cubit/dashboard_cubit.dart';
+import 'package:nimmys_crm/features/dashboard/model/lead_count_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
 import 'package:nimmys_crm/features/leads/widgets/status_chip.dart';
 import 'package:nimmys_crm/shared/widgets/app_gradient_header.dart';
@@ -22,11 +23,12 @@ import '../../shared/widgets/app_search_field.dart';
 import '../../shared/widgets/app_section_card.dart';
 import 'widgets/lead_contact_actions.dart';
 
-/// Leads List screen — displays leads retrieved from `GET /api/leads` with
-/// server-side pagination.
+/// Leads List screen — displays leads retrieved from the DashboardCubit
+/// with server‑side pagination and filtering.
 class MyLeadsScreen extends StatefulWidget {
   final String? status;
   final bool isAppHeaderRequired;
+
   const MyLeadsScreen({
     super.key,
     required this.isAppHeaderRequired,
@@ -46,9 +48,10 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<LeadsCubit>().getLeads(
+        context.read<DashboardCubit>().getLeads(
           refresh: true,
-          status: widget.status.toString(),
+          filter: widget.status, // e.g. overdue_followup
+          scope: 'my_leads',
         );
       }
     });
@@ -65,31 +68,34 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 350), () {
       if (mounted) {
-        context.read<LeadsCubit>().getLeads(
-          search: value,
-          status: widget.status.toString(),
+        context.read<DashboardCubit>().getLeads(
+          refresh: true, // reset pagination on new search
+          filter: value,
+          scope: 'my_leads',
         );
       }
     });
   }
 
   Future<void> _onRefresh() async {
-    await context.read<LeadsCubit>().refreshLeads();
+    await context.read<DashboardCubit>().refreshLeads();
   }
 
   Future<void> _openCreateLead() async {
     final dynamic result = await context.push(AppRouteName.leadNew);
     if (result == true && mounted) {
-      await context.read<LeadsCubit>().getLeads(
+      await context.read<DashboardCubit>().getLeads(
         refresh: true,
-        status: widget.status.toString(),
+        filter: _searchController.text,
+        scope: 'my_leads',
       );
     }
   }
 
-  void _onLeadsStateChanged(BuildContext context, LeadsState state) {
-    final UIState<LeadListResponse>? uiState = state.leadListUIState;
-    if (uiState?.status != Status.ERROR || state.leadList.isNotEmpty) {
+  void _onLeadsStateChanged(BuildContext context, DashboardState state) {
+    final UIState<LeadCountModel>? uiState = state.leadListUIState;
+    if (uiState?.status != Status.ERROR ||
+        (state.leadList?.isNotEmpty ?? false)) {
       return;
     }
     ToastMessages.error(
@@ -130,12 +136,12 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
               ),
             ),
             Expanded(
-              child: BlocConsumer<LeadsCubit, LeadsState>(
-                listenWhen: (LeadsState previous, LeadsState current) =>
+              child: BlocConsumer<DashboardCubit, DashboardState>(
+                listenWhen: (previous, current) =>
                     previous.leadListUIState?.status !=
                     current.leadListUIState?.status,
                 listener: _onLeadsStateChanged,
-                builder: (BuildContext context, LeadsState state) {
+                builder: (context, state) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 50),
                     child: _MyLeadsBody(
@@ -143,17 +149,17 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
                       onRefresh: _onRefresh,
                       onRetry: _onRefresh,
                       onPreviousPage: () {
-                        final LeadPagination? pagination = state.leadPagination;
+                        final pagination = state.leadPagination;
                         if (pagination != null && pagination.hasPreviousPage) {
-                          context.read<LeadsCubit>().goToLeadsPage(
+                          context.read<DashboardCubit>().goToLeadPage(
                             pagination.previousPage,
                           );
                         }
                       },
                       onNextPage: () {
-                        final LeadPagination? pagination = state.leadPagination;
+                        final pagination = state.leadPagination;
                         if (pagination != null && pagination.hasNextPage) {
-                          context.read<LeadsCubit>().goToLeadsPage(
+                          context.read<DashboardCubit>().goToLeadPage(
                             pagination.nextPage,
                           );
                         }
@@ -171,7 +177,7 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
   }
 }
 
-/// Picks between the list and its loading / error / empty stand-ins.
+/// Picks between the list and its loading / error / empty stand‑ins.
 class _MyLeadsBody extends StatefulWidget {
   const _MyLeadsBody({
     required this.state,
@@ -181,7 +187,7 @@ class _MyLeadsBody extends StatefulWidget {
     required this.onNextPage,
   });
 
-  final LeadsState state;
+  final DashboardState state;
   final Future<void> Function() onRefresh;
   final Future<void> Function() onRetry;
   final VoidCallback onPreviousPage;
@@ -209,22 +215,22 @@ class _MyLeadsBodyState extends State<_MyLeadsBody> {
   }
 
   void _onScroll() {
-    final cubit = context.read<LeadsCubit>();
+    final cubit = context.read<DashboardCubit>();
     final currentState = cubit.state;
     // Only trigger if not already loading, there is a next page, and near bottom
     if (currentState.leadListUIState?.status == Status.LOADING) return;
     final pagination = currentState.leadPagination;
     if (pagination == null || !pagination.hasNextPage) return;
-    final threshold = 200.0;
+    const threshold = 200.0;
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - threshold) {
-      cubit.goToLeadsPage(pagination.nextPage);
+      cubit.goToLeadPage(pagination.nextPage);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<LeadItemData> leads = widget.state.leadList;
+    final List<LeadItemData> leads = widget.state.leadList ?? [];
     final Status? status = widget.state.leadListUIState?.status;
     final bool isLoading = status == Status.LOADING;
 
@@ -284,7 +290,7 @@ class _MyLeadsBodyState extends State<_MyLeadsBody> {
             SizedBox(
               height: MediaQuery.of(context).size.height * 0.5,
               child: MyLeadsEmptyState(
-                hasQuery: widget.state.leadSearchQuery.isNotEmpty,
+                hasQuery: widget.state.currentLeadFilter?.isNotEmpty ?? false,
               ),
             ),
           ],
@@ -292,7 +298,7 @@ class _MyLeadsBodyState extends State<_MyLeadsBody> {
       );
     }
 
-    final LeadPagination? pagination = widget.state.leadPagination;
+    final pagination = widget.state.leadPagination;
     final int currentPage = pagination?.currentPage ?? 1;
     final int perPage = pagination?.perPage ?? 10;
     final int from = pagination?.from ?? ((currentPage - 1) * perPage + 1);
@@ -435,9 +441,7 @@ class MyLeadTile extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
               ),
-
               const SizedBox(width: AppSpacing.sm),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -456,11 +460,9 @@ class MyLeadTile extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-
                         if (lead.reference != null &&
                             lead.reference!.trim().isNotEmpty) ...[
                           const SizedBox(width: AppSpacing.xs),
-
                           if (lead.status != null && lead.status!.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 4.0),
@@ -469,7 +471,6 @@ class MyLeadTile extends StatelessWidget {
                         ],
                       ],
                     ),
-
                     // --------------------------------------------------
                     // PHONE
                     // --------------------------------------------------
@@ -494,7 +495,6 @@ class MyLeadTile extends StatelessWidget {
                         ],
                       ),
                     ],
-
                     // --------------------------------------------------
                     // DESCRIPTION
                     // --------------------------------------------------
@@ -507,7 +507,6 @@ class MyLeadTile extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
-
                     // --------------------------------------------------
                     // TAGS
                     // --------------------------------------------------
@@ -526,7 +525,6 @@ class MyLeadTile extends StatelessWidget {
                               icon: Icons.badge_outlined,
                               isAccent: false,
                             ),
-
                           if (lead.createdBy != null &&
                               lead.createdBy!.trim().isNotEmpty)
                             AppTag(
@@ -537,7 +535,6 @@ class MyLeadTile extends StatelessWidget {
                         ],
                       ),
                     ],
-
                     // --------------------------------------------------
                     // CONTACT ACTIONS
                     // ALWAYS BOTTOM RIGHT
