@@ -30,11 +30,11 @@ class LeadCountModel {
 }
 
 class LeadData {
-  dynamic filter; // null, can be any type
+  String? filter; // null, can be any type
   String? scope;
   LeadCounts? counts;
   dynamic filteredCount; // null
-  List<dynamic>? leads; // empty list
+  List<LeadItemData>? leads; // empty list
   LeadPagination? pagination; // null
 
   LeadData({
@@ -48,13 +48,20 @@ class LeadData {
 
   factory LeadData.fromJson(Map<String, dynamic> json) {
     return LeadData(
-      filter: json['filter'],
+      filter: json['filter'] as String?,
       scope: json['scope'] as String?,
       counts: json['counts'] != null
           ? LeadCounts.fromJson(json['counts'] as Map<String, dynamic>)
           : null,
       filteredCount: json['filtered_count'],
-      leads: json['leads'] as List<dynamic>?,
+      leads: json['leads'] != null
+          ? List<LeadItemData>.from(
+              (json['leads'] as List<dynamic>).map(
+                (e) => LeadItemData.fromJson(e as Map<String, dynamic>),
+              ),
+            )
+          : null,
+
       pagination: json['pagination'] as LeadPagination?,
     );
   }

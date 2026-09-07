@@ -46,7 +46,10 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<LeadsCubit>().getLeads(status: widget.status.toString());
+        context.read<LeadsCubit>().getLeads(
+          refresh: true,
+          status: widget.status.toString(),
+        );
       }
     });
   }

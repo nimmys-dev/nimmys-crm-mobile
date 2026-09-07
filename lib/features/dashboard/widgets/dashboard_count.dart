@@ -200,21 +200,21 @@ class _DashboardContentState extends State<DashboardContent> {
         value: today,
         icon: Icons.fact_check_outlined,
         tone: StatTone.red,
-        route: AppRouteName.dutiesFiltered('ongoing', 'my_tasks'),
+        route: AppRouteName.dutiesFiltered('ongoing_duty', 'my_tasks'),
       ),
       StatItem(
         label: 'Overdue Duty',
         value: overdue,
         icon: Icons.event_busy_outlined,
         tone: StatTone.ink,
-        route: AppRouteName.dutiesFiltered('overdue', 'my_tasks'),
+        route: AppRouteName.dutiesFiltered('overdue_duty', 'my_tasks'),
       ),
       StatItem(
         label: 'Upcoming Duty',
         value: upcoming,
         icon: Icons.schedule_rounded,
         tone: StatTone.red,
-        route: AppRouteName.dutiesFiltered('upcoming', 'my_tasks'),
+        route: AppRouteName.dutiesFiltered('upcoming_duty', 'my_tasks'),
       ),
       if (role.canAccessApprovals)
         StatItem(
@@ -243,21 +243,21 @@ class _DashboardContentState extends State<DashboardContent> {
         value: today,
         icon: Icons.fact_check_outlined,
         tone: StatTone.red,
-        route: AppRouteName.dutiesFiltered('ongoing', 'all_tasks'),
+        route: AppRouteName.dutiesFiltered('ongoing_duty', 'all_tasks'),
       ),
       StatItem(
         label: 'Overdue Duty',
         value: overdue,
         icon: Icons.event_busy_outlined,
         tone: StatTone.ink,
-        route: AppRouteName.dutiesFiltered('overdue', 'all_tasks'),
+        route: AppRouteName.dutiesFiltered('overdue_duty', 'all_tasks'),
       ),
       StatItem(
         label: 'Upcoming Duty',
         value: upcoming,
         icon: Icons.schedule_rounded,
         tone: StatTone.red,
-        route: AppRouteName.dutiesFiltered('upcoming', 'all_tasks'),
+        route: AppRouteName.dutiesFiltered('upcoming_duty', 'all_tasks'),
       ),
       if (role.canAccessApprovals)
         StatItem(
