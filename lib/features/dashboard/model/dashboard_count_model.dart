@@ -1,3 +1,6 @@
+import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
+import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
+
 class DashboardCount {
   bool? status;
   int? statusCode;
@@ -31,11 +34,11 @@ class DashboardCount {
 }
 
 class Data {
-  dynamic filter; // nullable, can be any type
+  String? filter; // nullable, can be any type
   String? scope;
   Counts? counts;
-  List<dynamic>? tasks; // empty list, but can hold task objects if needed
-  dynamic pagination; // nullable
+  List<Task>? tasks; // empty list, but can hold task objects if needed
+  LeadPagination? pagination; // nullable
 
   Data({
     this.filter,
@@ -47,11 +50,11 @@ class Data {
 
   factory Data.fromJson(Map<String, dynamic> json) {
     return Data(
-      filter: json['filter'],
+      filter: json['filter'] as String?,
       scope: json['scope'] as String?,
       counts: json['counts'] != null ? Counts.fromJson(json['counts'] as Map<String, dynamic>) : null,
-      tasks: json['tasks'] as List<dynamic>?,
-      pagination: json['pagination'],
+      tasks: json['tasks'] != null ? List<Task>.from((json['tasks'] as List<dynamic>).map((e) => Task.fromJson(e as Map<String, dynamic>))) : null,
+      pagination: json['pagination'] != null ? LeadPagination.fromJson(json['pagination'] as Map<String, dynamic>) : null,
     );
   }
 

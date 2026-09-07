@@ -38,6 +38,7 @@ class ApiService {
     );
     if (bearerToken != null && bearerToken.isNotEmpty) {
       headers['Authorization'] = 'Bearer $bearerToken';
+      print('Bearer ${bearerToken}');
       return headers;
     }
 

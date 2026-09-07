@@ -1,22 +1,21 @@
+import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
+
 class LeadCountModel {
   bool? status;
   int? statusCode;
   String? message;
   LeadData? data;
 
-  LeadCountModel({
-    this.status,
-    this.statusCode,
-    this.message,
-    this.data,
-  });
+  LeadCountModel({this.status, this.statusCode, this.message, this.data});
 
   factory LeadCountModel.fromJson(Map<String, dynamic> json) {
     return LeadCountModel(
       status: json['status'] as bool?,
       statusCode: json['status_code'] as int?,
       message: json['message'] as String?,
-      data: json['data'] != null ? LeadData.fromJson(json['data'] as Map<String, dynamic>) : null,
+      data: json['data'] != null
+          ? LeadData.fromJson(json['data'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -36,7 +35,7 @@ class LeadData {
   LeadCounts? counts;
   dynamic filteredCount; // null
   List<dynamic>? leads; // empty list
-  dynamic pagination; // null
+  LeadPagination? pagination; // null
 
   LeadData({
     this.filter,
@@ -51,10 +50,12 @@ class LeadData {
     return LeadData(
       filter: json['filter'],
       scope: json['scope'] as String?,
-      counts: json['counts'] != null ? LeadCounts.fromJson(json['counts'] as Map<String, dynamic>) : null,
+      counts: json['counts'] != null
+          ? LeadCounts.fromJson(json['counts'] as Map<String, dynamic>)
+          : null,
       filteredCount: json['filtered_count'],
       leads: json['leads'] as List<dynamic>?,
-      pagination: json['pagination'],
+      pagination: json['pagination'] as LeadPagination?,
     );
   }
 
@@ -74,23 +75,21 @@ class LeadCounts {
   MyLeads? myLeads;
   AllLeads? allLeads;
 
-  LeadCounts({
-    this.myLeads,
-    this.allLeads,
-  });
+  LeadCounts({this.myLeads, this.allLeads});
 
   factory LeadCounts.fromJson(Map<String, dynamic> json) {
     return LeadCounts(
-      myLeads: json['my_leads'] != null ? MyLeads.fromJson(json['my_leads'] as Map<String, dynamic>) : null,
-      allLeads: json['all_leads'] != null ? AllLeads.fromJson(json['all_leads'] as Map<String, dynamic>) : null,
+      myLeads: json['my_leads'] != null
+          ? MyLeads.fromJson(json['my_leads'] as Map<String, dynamic>)
+          : null,
+      allLeads: json['all_leads'] != null
+          ? AllLeads.fromJson(json['all_leads'] as Map<String, dynamic>)
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'my_leads': myLeads?.toJson(),
-      'all_leads': allLeads?.toJson(),
-    };
+    return {'my_leads': myLeads?.toJson(), 'all_leads': allLeads?.toJson()};
   }
 }
 
