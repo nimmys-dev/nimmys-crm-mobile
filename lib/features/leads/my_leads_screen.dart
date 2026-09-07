@@ -26,12 +26,14 @@ import 'widgets/lead_contact_actions.dart';
 /// Leads List screen — displays leads retrieved from the DashboardCubit
 /// with server‑side pagination and filtering.
 class MyLeadsScreen extends StatefulWidget {
+  final String? scope;
   final String? status;
   final bool isAppHeaderRequired;
 
   const MyLeadsScreen({
     super.key,
     required this.isAppHeaderRequired,
+    required this.scope,
     this.status,
   });
 
@@ -51,7 +53,7 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
         context.read<DashboardCubit>().getLeads(
           refresh: true,
           filter: widget.status, // e.g. overdue_followup
-          scope: 'my_leads',
+          scope: widget.scope,
         );
       }
     });

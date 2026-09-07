@@ -183,9 +183,11 @@ class AppRoutes {
             state.uri.queryParameters['isAppHeaderRequired'] ?? '',
           );
           final String? status = state.uri.queryParameters['status'];
+           final String? scope = state.uri.queryParameters['scope'];
           return MyLeadsScreen(
             isAppHeaderRequired: isAppHeaderRequired ?? true,
             status: status, // pass null if missing
+            scope: scope,
           );
         },
       ),

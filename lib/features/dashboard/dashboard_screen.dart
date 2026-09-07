@@ -190,7 +190,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // return _buildDashboardContent(context, role);
         return DashboardContent(role: role);
       case 1:
-        return const MyLeadsScreen(isAppHeaderRequired: false);
+        return const MyLeadsScreen(isAppHeaderRequired: false,scope: 'my_leads',);
       case 2:
         return const StaffListScreen();
       case 3:

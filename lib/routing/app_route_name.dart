@@ -52,5 +52,6 @@ class AppRouteName {
   static String taskDetailsFor(int id) => "$taskDetails?id=$id";
 
   /// Returns the route to the leads list filtered by [status].
-  static String leadsWithStatus(String status) => '$leads?status=$status';
+  static String leadsWithStatus(String status, String scope) =>
+      '$leads?status=$status&scope=$scope';
 }
