@@ -184,7 +184,24 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                       endIndent: AppSpacing.md,
                       color: palette.line,
                     ),
+                    _buildDrawerItem(
+                      context,
+                      icon: Icons.business_outlined,
+                      activeIcon: Icons.business_rounded,
+                      title: 'Closed Leads',
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.push(AppRouteName.companyDetails);
+                      },
+                    ),
 
+                    Divider(
+                      height: AppSpacing.md,
+                      thickness: 0.5,
+                      indent: AppSpacing.md,
+                      endIndent: AppSpacing.md,
+                      color: palette.line,
+                    ),
                     _buildDrawerItem(
                       context,
                       icon: Icons.settings_outlined,

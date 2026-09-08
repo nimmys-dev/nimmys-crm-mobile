@@ -27,7 +27,7 @@ class LeadService {
     String? status,
   }) async {
     try {
-      final String url = ApiUrls.leads;
+      final String url = ApiUrls.closedLeads;
       final Map<String, dynamic> queryParams = <String, dynamic>{
         "page": page,
         "per_page": perPage,
