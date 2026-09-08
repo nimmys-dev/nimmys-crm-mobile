@@ -73,7 +73,7 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
         context.read<DashboardCubit>().getLeads(
           refresh: true, // reset pagination on new search
           filter: value,
-          scope: 'my_leads',
+          scope: widget.scope,
         );
       }
     });
@@ -89,7 +89,7 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
       await context.read<DashboardCubit>().getLeads(
         refresh: true,
         filter: _searchController.text,
-        scope: 'my_leads',
+        scope: widget.scope,
       );
     }
   }
