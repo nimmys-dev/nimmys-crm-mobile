@@ -191,7 +191,7 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                       title: 'Closed Leads',
                       onTap: () {
                         Navigator.pop(context);
-                        context.push(AppRouteName.companyDetails);
+                        context.push(AppRouteName.closedLeads);
                       },
                     ),
 
