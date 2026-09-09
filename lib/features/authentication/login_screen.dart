@@ -506,17 +506,7 @@ class LoginFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 4,
-          children: [
-            Text('Trouble signing in?', style: context.type.caption),
-            Text(
-              'Contact admin',
-              style: context.type.link.copyWith(fontSize: 12),
-            ),
-          ],
-        ),
+
         const SizedBox(height: AppSpacing.sm),
         Text(
           '© nimmys camera centre',
