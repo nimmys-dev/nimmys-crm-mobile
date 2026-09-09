@@ -96,21 +96,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
     value: '12',
     icon: Icons.fact_check_outlined,
     tone: StatTone.red,
-    route: AppRouteName.dutiesFiltered('today', 'myTasks'),
+    route: AppRouteName.dutiesFiltered(taskStatus: 'today', scope: 'myTasks'),
   );
   static final StatItem _overdueDuty = StatItem(
     label: 'Overdue Duty',
     value: '5',
     icon: Icons.event_busy_outlined,
     tone: StatTone.ink,
-    route: AppRouteName.dutiesFiltered('overdue', 'myTasks'),
+    route: AppRouteName.dutiesFiltered(taskStatus: 'overdue', scope: 'myTasks'),
   );
   static final StatItem _upcomingDuty = StatItem(
     label: 'Upcoming Duty',
     value: '8',
     icon: Icons.schedule_rounded,
     tone: StatTone.red,
-    route: AppRouteName.dutiesFiltered('upcoming', 'myTasks'),
+    route: AppRouteName.dutiesFiltered(
+      taskStatus: 'upcoming',
+      scope: 'myTasks',
+    ),
   );
   static final StatItem _approvalPending = StatItem(
     label: 'Approval Pending',
@@ -292,11 +295,13 @@ VoidCallback? openStatRoute(BuildContext context, StatItem item) {
 
 /// "MY LEADS" card holding the four lead counters as a 2×2 grid.
 class DashboardLeadsSection extends StatelessWidget {
+  final String scope;
   final String title;
   const DashboardLeadsSection({
     super.key,
     required this.items,
     required this.title,
+    required this.scope,
   });
 
   final List<StatItem> items;
@@ -310,7 +315,8 @@ class DashboardLeadsSection extends StatelessWidget {
             title: title,
             actionLabel: 'View All',
             onAction: () =>
-                context.push('${AppRouteName.leads}?isAppHeaderRequired=true'),
+                // context.push('${AppRouteName.leads}?isAppHeaderRequired=true'),
+                AppRouteName.leadsWithStatus(scope: scope),
           ),
           const SizedBox(height: AppSpacing.sm),
           GridView.builder(

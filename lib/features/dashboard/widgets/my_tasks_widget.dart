@@ -9,11 +9,13 @@ import 'package:nimmys_crm/shared/widgets/app_section_card.dart';
 /// "MY DUTIES" card holding the duty counters.
 class DashboardDutySection extends StatelessWidget {
   final String taskTitle;
+  final String scope;
 
   const DashboardDutySection({
     super.key,
     required this.items,
     required this.taskTitle,
+   required this.scope,
   });
 
   final List<StatItem> items;
@@ -27,7 +29,8 @@ class DashboardDutySection extends StatelessWidget {
           AppSectionHeader(
             title: taskTitle,
             actionLabel: 'View All',
-            onAction: () => context.push(AppRouteName.duties),
+            onAction: () =>
+                context.push(AppRouteName.dutiesFiltered(scope: scope)),
           ),
           const SizedBox(height: AppSpacing.sm),
 

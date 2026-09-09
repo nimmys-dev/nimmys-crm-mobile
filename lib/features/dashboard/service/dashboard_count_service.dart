@@ -48,9 +48,12 @@ class DashboardCountService {
         'filter': filter.trim(), // ensure no extra spaces
         'per_page': perPage,
         'page': page,
-      };
+      };// Add scope only if not null and not empty
+      if (filter != null && filter != 'null' && filter.isNotEmpty) {
+        query['filter'] = filter;
+      } else {}
       // Add scope only if not null and not empty
-      if (scope != null && scope.isNotEmpty) {
+      if (scope != null&& scope != 'null' && scope.isNotEmpty) {
         query['scope'] = scope;
       } else {}
       // Use a dedicated URL for the task‑counts endpoint
@@ -88,12 +91,15 @@ class DashboardCountService {
     try {
       // Build query map, omitting null values
       final Map<String, dynamic> query = {
-        'filter': filter?.trim(), // ensure no extra spaces
         'per_page': perPage,
         'page': page,
       };
+        // Add filter only if not null and not empty
+      if (filter != null && filter != 'null' && filter.isNotEmpty) {
+        query['filter'] = filter;
+      } else {}
       // Add scope only if not null and not empty
-      if (scope != null && scope.isNotEmpty) {
+      if (scope != null && filter != 'null'&& scope.isNotEmpty) {
         query['scope'] = scope;
       } else {}
       final String url = ApiUrls.getLeadsCount;
