@@ -25,12 +25,9 @@ import 'widgets/lead_contact_actions.dart';
 /// Leads List screen — displays leads retrieved from `GET /api/leads` with
 /// server-side pagination.
 class LeadListGlobalScreen extends StatefulWidget {
-  final String? status;
-  final bool isAppHeaderRequired;
   const LeadListGlobalScreen({
     super.key,
-    required this.isAppHeaderRequired,
-    this.status,
+  
   });
 
   @override
@@ -47,7 +44,6 @@ class _LeadListGlobalScreenState extends State<LeadListGlobalScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<LeadsCubit>().getLeads(
-          status: widget.status.toString(),
           isUniversalLeadList: true,
           refresh: true,
         );
@@ -68,7 +64,7 @@ class _LeadListGlobalScreenState extends State<LeadListGlobalScreen> {
       if (mounted) {
         context.read<LeadsCubit>().getLeads(
           search: value,
-          status: widget.status.toString(),
+          
           isUniversalLeadList: true,
         );
       }
@@ -84,7 +80,6 @@ class _LeadListGlobalScreenState extends State<LeadListGlobalScreen> {
     if (result == true && mounted) {
       await context.read<LeadsCubit>().getLeads(
         refresh: true,
-        status: widget.status.toString(),
         isUniversalLeadList: true,
       );
     }
@@ -111,7 +106,7 @@ class _LeadListGlobalScreenState extends State<LeadListGlobalScreen> {
         body: Column(
           children: <Widget>[
             Visibility(
-              visible: widget.isAppHeaderRequired,
+              visible: true,
               child: const AppGradientHeader(
                 title: 'My Leads',
                 eyebrow: 'LEAD MANAGEMENT',

@@ -78,7 +78,7 @@ class _DashboardContentState extends State<DashboardContent> {
 
         // Build stat items
         final myDutyStats = _buildMyDutyStats(widget.role, counts);
-        final allTaskStats = _buildAllDutyStats(widget.role, counts);
+        final all_taskstats = _buildAllDutyStats(widget.role, counts);
         final myLeadStats = _buildMyLeadStats(leadCounts);
         final allLeadStats = _buildAllLeadStats(leadCounts);
         final yourLeads = leadCounts?.myLeads?.yourLeads?.toString() ?? '0';
@@ -119,16 +119,16 @@ class _DashboardContentState extends State<DashboardContent> {
                         DashboardDutySection(
                           items: myDutyStats,
                           taskTitle: 'My Tasks',
-                          scope: 'myTasks',
+                          scope: 'my_tasks',
                         ),
                         Visibility(
                           visible:
                               UserRole.admin == widget.role ||
                               UserRole.manager == widget.role,
                           child: DashboardDutySection(
-                            items: allTaskStats,
+                            items: all_taskstats,
                             taskTitle: 'All Tasks',
-                            scope: 'allTasks',
+                            scope: 'all_tasks',
                           ),
                         ),
                         DashboardLeadsSection(
@@ -207,7 +207,7 @@ class _DashboardContentState extends State<DashboardContent> {
         tone: StatTone.red,
         route: AppRouteName.dutiesFiltered(
           taskStatus: 'todayDuty',
-          scope: 'myTasks',
+          scope: 'my_tasks',
         ),
       ),
       StatItem(
@@ -217,7 +217,7 @@ class _DashboardContentState extends State<DashboardContent> {
         tone: StatTone.ink,
         route: AppRouteName.dutiesFiltered(
           taskStatus: 'overdueDuty',
-          scope: 'myTasks',
+          scope: 'my_tasks',
         ),
       ),
       StatItem(
@@ -227,7 +227,7 @@ class _DashboardContentState extends State<DashboardContent> {
         tone: StatTone.red,
         route: AppRouteName.dutiesFiltered(
           taskStatus: 'upcomingDuty',
-          scope: 'myTasks',
+          scope: 'my_tasks',
         ),
       ),
       if (role.canAccessApprovals)
@@ -236,7 +236,7 @@ class _DashboardContentState extends State<DashboardContent> {
           value: approval,
           icon: Icons.assignment_turned_in_outlined,
           tone: StatTone.ink,
-          route: '${AppRouteName.approvals}?scope=myTasks',
+          route: '${AppRouteName.approvals}?scope=my_tasks',
         ),
       if (role.canAccessApprovals)
         StatItem(
@@ -246,7 +246,7 @@ class _DashboardContentState extends State<DashboardContent> {
           tone: StatTone.red,
           route: AppRouteName.dutiesFiltered(
             taskStatus: 'sendingApproval',
-            scope: 'myTasks',
+            scope: 'my_tasks',
           ),
         ),
     ];
@@ -254,13 +254,13 @@ class _DashboardContentState extends State<DashboardContent> {
 
   // Helper to build duty stat items (from DashboardCount)
   List<StatItem> _buildAllDutyStats(UserRole role, DashboardCount? counts) {
-    final today = counts?.data?.counts?.allTasks?.todayDuty?.toString() ?? '0';
+    final today = counts?.data?.counts?.all_tasks?.todayDuty?.toString() ?? '0';
     final overdue =
-        counts?.data?.counts?.allTasks?.overdueDuty?.toString() ?? '0';
+        counts?.data?.counts?.all_tasks?.overdueDuty?.toString() ?? '0';
     final upcoming =
-        counts?.data?.counts?.allTasks?.upcomingDuty?.toString() ?? '0';
+        counts?.data?.counts?.all_tasks?.upcomingDuty?.toString() ?? '0';
     final approval =
-        counts?.data?.counts?.allTasks?.approvalPending?.toString() ?? '0';
+        counts?.data?.counts?.all_tasks?.approvalPending?.toString() ?? '0';
 
     return [
       StatItem(
@@ -270,7 +270,7 @@ class _DashboardContentState extends State<DashboardContent> {
         tone: StatTone.red,
         route: AppRouteName.dutiesFiltered(
           taskStatus: 'todayDuty',
-          scope: 'allTasks',
+          scope: 'all_tasks',
         ),
       ),
       StatItem(
@@ -280,7 +280,7 @@ class _DashboardContentState extends State<DashboardContent> {
         tone: StatTone.ink,
         route: AppRouteName.dutiesFiltered(
           taskStatus: 'overdueDuty',
-          scope: 'allTasks',
+          scope: 'all_tasks',
         ),
       ),
       StatItem(
@@ -290,7 +290,7 @@ class _DashboardContentState extends State<DashboardContent> {
         tone: StatTone.red,
         route: AppRouteName.dutiesFiltered(
           taskStatus: 'upcomingDuty',
-          scope: 'allTasks',
+          scope: 'all_tasks',
         ),
       ),
       if (role.canAccessApprovals)
@@ -299,7 +299,7 @@ class _DashboardContentState extends State<DashboardContent> {
           value: approval,
           icon: Icons.assignment_turned_in_outlined,
           tone: StatTone.ink,
-          route: '${AppRouteName.approvals}?scope=allTasks',
+          route: '${AppRouteName.approvals}?scope=all_tasks',
         ),
     ];
   }

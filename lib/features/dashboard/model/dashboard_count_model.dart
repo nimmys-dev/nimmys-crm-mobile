@@ -71,24 +71,24 @@ class Data {
 
 class Counts {
   MyTasks? myTasks;
-  AllTasks? allTasks;
+  AllTasks? all_tasks;
 
   Counts({
     this.myTasks,
-    this.allTasks,
+    this.all_tasks,
   });
 
   factory Counts.fromJson(Map<String, dynamic> json) {
     return Counts(
       myTasks: json['myTasks'] != null ? MyTasks.fromJson(json['myTasks'] as Map<String, dynamic>) : null,
-      allTasks: json['allTasks'] != null ? AllTasks.fromJson(json['allTasks'] as Map<String, dynamic>) : null,
+      all_tasks: json['all_tasks'] != null ? AllTasks.fromJson(json['all_tasks'] as Map<String, dynamic>) : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'myTasks': myTasks?.toJson(),
-      'allTasks': allTasks?.toJson(),
+      'all_tasks': all_tasks?.toJson(),
     };
   }
 }

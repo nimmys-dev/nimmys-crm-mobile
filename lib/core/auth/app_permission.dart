@@ -11,7 +11,7 @@ enum AppPermission {
   /// the user's own counters.
   viewDashboardFull,
 
-  viewAllTasks,
+  viewall_tasks,
   viewOwnTasks,
   createTask,
   editAnyTask,
@@ -49,7 +49,7 @@ class AppPermissions {
   /// it does not. Split this constant the day it does.
   static const Set<AppPermission> _fullAccess = <AppPermission>{
     AppPermission.viewDashboardFull,
-    AppPermission.viewAllTasks,
+    AppPermission.viewall_tasks,
     AppPermission.viewOwnTasks,
     AppPermission.createTask,
     AppPermission.editAnyTask,
@@ -119,7 +119,7 @@ extension UserRoleAccess on UserRole {
   bool get hasFullDashboard => can(AppPermission.viewDashboardFull);
 
   bool get canViewTasks => canAny(<AppPermission>[
-    AppPermission.viewAllTasks,
+    AppPermission.viewall_tasks,
     AppPermission.viewOwnTasks,
   ]);
   bool get canCreateTask => can(AppPermission.createTask);

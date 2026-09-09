@@ -78,7 +78,7 @@ class _StaffTasksSectionState extends State<StaffTasksSection> {
   // Select All
   // -------------------------------------------------------------------------
 
-  Future<void> _selectAllTasks() async {
+  Future<void> _selectall_tasks() async {
     final cubit = context.read<TasksCubit>();
     if (_isSelectingAll) return;
 
@@ -96,7 +96,7 @@ class _StaffTasksSectionState extends State<StaffTasksSection> {
       // Load all remaining pages
       bool hasMore = cubit.state.tasksByStaffIdPagination?.hasNextPage ?? false;
       while (hasMore) {
-        await cubit.loadMoreTasksByStaffId(widget.staffId, null);
+        await cubit.loadMoreTasksByStaffId(staffId: widget.staffId);
         hasMore = cubit.state.tasksByStaffIdPagination?.hasNextPage ?? false;
       }
 
@@ -134,7 +134,7 @@ class _StaffTasksSectionState extends State<StaffTasksSection> {
 
   void _toggleAll(bool? checked) {
     if (checked == true) {
-      _selectAllTasks();
+      _selectall_tasks();
     } else {
       setState(() {
         _selectedTaskIds.clear();

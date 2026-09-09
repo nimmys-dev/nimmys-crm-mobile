@@ -40,7 +40,10 @@ class _ClosedLeadsScreenState extends State<ClosedLeadsScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<LeadsCubit>().getLeads(isUniversalLeadList: true,refresh: true,);
+        context.read<LeadsCubit>().getLeads(
+          isUniversalLeadList: false,
+          refresh: true,
+        );
       }
     });
   }
@@ -56,7 +59,10 @@ class _ClosedLeadsScreenState extends State<ClosedLeadsScreen> {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 350), () {
       if (mounted) {
-        context.read<LeadsCubit>().getLeads(search: value,  isUniversalLeadList: true,);
+        context.read<LeadsCubit>().getLeads(
+          search: value,
+          isUniversalLeadList: false,
+        );
       }
     });
   }
@@ -68,7 +74,10 @@ class _ClosedLeadsScreenState extends State<ClosedLeadsScreen> {
   Future<void> _openCreateLead() async {
     final dynamic result = await context.push(AppRouteName.leadNew);
     if (result == true && mounted) {
-      await context.read<LeadsCubit>().getLeads(refresh: true,  isUniversalLeadList: true,);
+      await context.read<LeadsCubit>().getLeads(
+        refresh: true,
+        isUniversalLeadList: false,
+      );
     }
   }
 

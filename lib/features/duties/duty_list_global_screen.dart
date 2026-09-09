@@ -17,8 +17,8 @@ import '../../shared/widgets/app_search_field.dart';
 import '../../shared/widgets/app_section_card.dart';
 
 class DutyListGlobalScreen extends StatefulWidget {
-  final String? taskStatus;
-  const DutyListGlobalScreen({super.key, required this.taskStatus});
+ 
+  const DutyListGlobalScreen({super.key});
 
   @override
   State<DutyListGlobalScreen> createState() => _DutyListGlobalScreenState();
@@ -40,7 +40,7 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
         context.read<TasksCubit>().getTasksByStaffId(
           staffId: _staffId!,
           refresh: true,
-          status: widget.taskStatus,
+       
         );
       }
     });
@@ -66,7 +66,7 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
     final maxScroll = _scrollController.position.maxScrollExtent;
     final pixels = _scrollController.position.pixels;
     if (pixels >= maxScroll - 200 && _staffId != null) {
-      cubit.loadMoreTasksByStaffId(_staffId!, widget.taskStatus);
+      cubit.loadMoreTasksByStaffId(staffId: _staffId!);
     }
   }
 
@@ -76,7 +76,7 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
       staffId: _staffId!,
       refresh: true,
       search: _searchController.text.trim(),
-      status: widget.taskStatus,
+      
     );
   }
 
@@ -86,15 +86,15 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
     context.read<TasksCubit>().getTasksByStaffId(
       staffId: _staffId!,
       search: value.trim(),
-      status: widget.taskStatus,
+
     );
   }
 
-  List<Task> _visibleDuties(List<Task> allTasks) {
+  List<Task> _visibleDuties(List<Task> all_tasks) {
     final needle = _query.trim().toLowerCase();
-    if (needle.isEmpty) return allTasks;
+    if (needle.isEmpty) return all_tasks;
 
-    return allTasks.where((task) {
+    return all_tasks.where((task) {
       final title = task.title?.toLowerCase() ?? '';
       final description = task.description?.toLowerCase() ?? '';
       final assignee = task.assignedUser?.name?.toLowerCase() ?? '';
@@ -115,14 +115,14 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
           backgroundColor: context.palette.canvas,
           body: BlocBuilder<TasksCubit, TasksState>(
             builder: (context, state) {
-              final allTasks = state.tasksByStaffIdList;
+              final all_tasks = state.tasksByStaffIdList;
               final isLoading =
                   state.tasksByStaffIdUIState?.status == Status.LOADING;
               final hasError =
                   state.tasksByStaffIdUIState?.status == Status.ERROR;
               final error = state.tasksByStaffIdUIState?.errorType;
               final total =
-                  state.tasksByStaffIdPagination?.total ?? allTasks.length;
+                  state.tasksByStaffIdPagination?.total ?? all_tasks.length;
               final hasMore =
                   state.tasksByStaffIdPagination?.hasNextPage ?? false;
               final isLoadingMore = state.isLoadingMoreTasksByStaffId;
@@ -154,7 +154,7 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
                       isLoading: isLoading,
                       hasError: hasError,
                       error: error,
-                      allTasks: allTasks,
+                      all_tasks: all_tasks,
                       totalTaskCount: total,
                       hasMore: hasMore,
                       isLoadingMore: isLoadingMore,
@@ -177,12 +177,12 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
     required bool isLoading,
     required bool hasError,
     required Object? error,
-    required List<Task> allTasks,
+    required List<Task> all_tasks,
     required int totalTaskCount,
     required bool hasMore,
     required bool isLoadingMore,
   }) {
-    if (isLoading && allTasks.isEmpty) {
+    if (isLoading && all_tasks.isEmpty) {
       return RefreshIndicator(
         onRefresh: _refreshTasks,
         child: const _AlwaysScrollableBody(
@@ -191,7 +191,7 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
       );
     }
 
-    if (hasError && allTasks.isEmpty) {
+    if (hasError && all_tasks.isEmpty) {
       return RefreshIndicator(
         onRefresh: _refreshTasks,
         child: _AlwaysScrollableBody(
@@ -200,7 +200,7 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
       );
     }
 
-    final tasks = _visibleDuties(allTasks);
+    final tasks = _visibleDuties(all_tasks);
 
     if (tasks.isEmpty) {
       return RefreshIndicator(

@@ -96,14 +96,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     value: '12',
     icon: Icons.fact_check_outlined,
     tone: StatTone.red,
-    route: AppRouteName.dutiesFiltered(taskStatus: 'today', scope: 'myTasks'),
+    route: AppRouteName.dutiesFiltered(taskStatus: 'today', scope: 'my_tasks'),
   );
   static final StatItem _overdueDuty = StatItem(
     label: 'Overdue Duty',
     value: '5',
     icon: Icons.event_busy_outlined,
     tone: StatTone.ink,
-    route: AppRouteName.dutiesFiltered(taskStatus: 'overdue', scope: 'myTasks'),
+    route: AppRouteName.dutiesFiltered(taskStatus: 'overdue', scope: 'my_tasks'),
   );
   static final StatItem _upcomingDuty = StatItem(
     label: 'Upcoming Duty',
@@ -112,7 +112,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     tone: StatTone.red,
     route: AppRouteName.dutiesFiltered(
       taskStatus: 'upcoming',
-      scope: 'myTasks',
+      scope: 'my_tasks',
     ),
   );
   static final StatItem _approvalPending = StatItem(
@@ -316,7 +316,7 @@ class DashboardLeadsSection extends StatelessWidget {
             actionLabel: 'View All',
             onAction: () =>
                 // context.push('${AppRouteName.leads}?isAppHeaderRequired=true'),
-                AppRouteName.leadsWithStatus(scope: scope),
+               context.push(AppRouteName.viewAllLeads) ,
           ),
           const SizedBox(height: AppSpacing.sm),
           GridView.builder(

@@ -93,10 +93,10 @@ class _DutyListScreenState extends State<DutyListScreen> {
     );
   }
 
-  List<Task> _visibleDuties(List<Task> allTasks) {
+  List<Task> _visibleDuties(List<Task> all_tasks) {
     final needle = _query.trim().toLowerCase();
-    if (needle.isEmpty) return allTasks;
-    return allTasks.where((task) {
+    if (needle.isEmpty) return all_tasks;
+    return all_tasks.where((task) {
       final title = task.title?.toLowerCase() ?? '';
       final description = task.description?.toLowerCase() ?? '';
       final assignee = task.assignedUser?.name?.toLowerCase() ?? '';
@@ -117,14 +117,14 @@ class _DutyListScreenState extends State<DutyListScreen> {
           backgroundColor: context.palette.canvas,
           body: BlocBuilder<DashboardCubit, DashboardState>(
             builder: (context, state) {
-              final allTasks = state.taskList ?? [];
+              final all_tasks = state.taskList ?? [];
               final isLoading =
                   _isInitialLoading ||
                   (state.taskCountsUIState?.status == Status.LOADING &&
-                      allTasks.isEmpty);
+                      all_tasks.isEmpty);
               final hasError = state.taskCountsUIState?.status == Status.ERROR;
               final error = state.taskCountsUIState?.errorType;
-              final total = state.taskPagination?.total ?? allTasks.length;
+              final total = state.taskPagination?.total ?? all_tasks.length;
               final hasMore = state.taskPagination?.hasNextPage ?? false;
               final isLoadingMore = state.isLoadingMoreTasks;
 
@@ -160,9 +160,9 @@ class _DutyListScreenState extends State<DutyListScreen> {
                         key: ValueKey<String>(
                           isLoading
                               ? 'loading'
-                              : hasError && allTasks.isEmpty
+                              : hasError && all_tasks.isEmpty
                               ? 'error'
-                              : allTasks.isEmpty
+                              : all_tasks.isEmpty
                               ? 'empty'
                               : 'list',
                         ),
@@ -171,7 +171,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
                           isLoading: isLoading,
                           hasError: hasError,
                           error: error,
-                          allTasks: allTasks,
+                          all_tasks: all_tasks,
                           totalTaskCount: total,
                           hasMore: hasMore,
                           isLoadingMore: isLoadingMore,
@@ -196,7 +196,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
     required bool isLoading,
     required bool hasError,
     required Object? error,
-    required List<Task> allTasks,
+    required List<Task> all_tasks,
     required int totalTaskCount,
     required bool hasMore,
     required bool isLoadingMore,
@@ -210,7 +210,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
       );
     }
 
-    if (hasError && allTasks.isEmpty) {
+    if (hasError && all_tasks.isEmpty) {
       return RefreshIndicator(
         onRefresh: _refreshTasks,
         child: _AlwaysScrollableBody(
@@ -219,7 +219,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
       );
     }
 
-    final tasks = _visibleDuties(allTasks);
+    final tasks = _visibleDuties(all_tasks);
 
     if (tasks.isEmpty) {
       return RefreshIndicator(

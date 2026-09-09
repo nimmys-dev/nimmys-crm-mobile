@@ -9,10 +9,12 @@ import 'package:nimmys_crm/features/authentication/cubit/session/session_cubit.d
 import 'package:nimmys_crm/features/authentication/login_screen.dart';
 import 'package:nimmys_crm/features/dashboard/dashboard_screen.dart';
 import 'package:nimmys_crm/features/duties/create_task_screen.dart';
+import 'package:nimmys_crm/features/duties/duty_list_global_screen.dart';
 import 'package:nimmys_crm/features/duties/duty_list_screen.dart';
 import 'package:nimmys_crm/features/duties/task_detail_screen.dart';
 import 'package:nimmys_crm/features/leads/closed_leads_screen.dart';
 import 'package:nimmys_crm/features/leads/lead_details_screen.dart';
+import 'package:nimmys_crm/features/leads/lead_list_global_screen.dart';
 import 'package:nimmys_crm/features/leads/my_leads_screen.dart';
 import 'package:nimmys_crm/features/leads/new_lead_screen.dart';
 import 'package:nimmys_crm/features/leads/todays_follow_up_screen.dart';
@@ -271,6 +273,18 @@ class AppRoutes {
         path: AppRouteName.closedLeads,
         builder: (BuildContext context, GoRouterState state) {
           return ClosedLeadsScreen();
+        },
+      ),
+       GoRoute(
+        path: AppRouteName.viewAllLeads,
+        builder: (BuildContext context, GoRouterState state) {
+          return LeadListGlobalScreen();
+        },
+      ),
+       GoRoute(
+        path: AppRouteName.viewAllDuties,
+        builder: (BuildContext context, GoRouterState state) {
+          return DutyListGlobalScreen();
         },
       ),
     ],
