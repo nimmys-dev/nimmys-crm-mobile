@@ -193,7 +193,8 @@ class _DashboardContentState extends State<DashboardContent> {
         counts?.data?.counts?.myTasks?.upcomingDuty?.toString() ?? '0';
     final approval =
         counts?.data?.counts?.myTasks?.approvalPending?.toString() ?? '0';
-
+    final sendingApproval =
+        counts?.data?.counts?.myTasks?.sendingApproval?.toString() ?? '0';
     return [
       StatItem(
         label: "Today's My Duty",
@@ -227,7 +228,7 @@ class _DashboardContentState extends State<DashboardContent> {
       if (role.canAccessApprovals)
         StatItem(
           label: 'Sending Approval',
-          value: upcoming,
+          value: sendingApproval,
           icon: Icons.schedule_rounded,
           tone: StatTone.red,
           route: AppRouteName.dutiesFiltered('sendingApproval', 'my_tasks'),
