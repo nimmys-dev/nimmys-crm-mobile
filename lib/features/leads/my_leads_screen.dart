@@ -52,7 +52,7 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
       if (mounted) {
         context.read<DashboardCubit>().getLeads(
           refresh: true,
-          filter: widget.status, 
+          filter: widget.status,
           scope: widget.scope,
         );
       }
@@ -71,7 +71,7 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
     _searchDebounce = Timer(const Duration(milliseconds: 350), () {
       if (mounted) {
         context.read<DashboardCubit>().getLeads(
-          refresh: true, 
+          refresh: true,
           filter: value,
           scope: widget.scope,
         );

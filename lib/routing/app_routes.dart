@@ -216,7 +216,8 @@ class AppRoutes {
       GoRoute(
         path: AppRouteName.approvals,
         builder: (BuildContext context, GoRouterState state) {
-          return const ApprovalsScreen();
+          final String? scope = state.uri.queryParameters['scope'];
+          return ApprovalsScreen(scope: scope.toString());
         },
       ),
 
