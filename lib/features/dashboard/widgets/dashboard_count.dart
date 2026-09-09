@@ -201,21 +201,21 @@ class _DashboardContentState extends State<DashboardContent> {
         value: today,
         icon: Icons.fact_check_outlined,
         tone: StatTone.red,
-        route: AppRouteName.dutiesFiltered('todayDuty', 'my_tasks'),
+        route: AppRouteName.dutiesFiltered('todayDuty', 'myTasks'),
       ),
       StatItem(
         label: 'Overdue Duty',
         value: overdue,
         icon: Icons.event_busy_outlined,
         tone: StatTone.ink,
-        route: AppRouteName.dutiesFiltered('overdueDuty', 'my_tasks'),
+        route: AppRouteName.dutiesFiltered('overdueDuty', 'myTasks'),
       ),
       StatItem(
         label: 'Upcoming Duty',
         value: upcoming,
         icon: Icons.schedule_rounded,
         tone: StatTone.red,
-        route: AppRouteName.dutiesFiltered('upcomingDuty', 'my_tasks'),
+        route: AppRouteName.dutiesFiltered('upcomingDuty', 'myTasks'),
       ),
       if (role.canAccessApprovals)
         StatItem(
@@ -223,7 +223,7 @@ class _DashboardContentState extends State<DashboardContent> {
           value: approval,
           icon: Icons.assignment_turned_in_outlined,
           tone: StatTone.ink,
-          route: '${AppRouteName.approvals}?scope=my_tasks',
+          route: '${AppRouteName.approvals}?scope=myTasks',
         ),
       if (role.canAccessApprovals)
         StatItem(
@@ -231,7 +231,7 @@ class _DashboardContentState extends State<DashboardContent> {
           value: sendingApproval,
           icon: Icons.schedule_rounded,
           tone: StatTone.red,
-          route: AppRouteName.dutiesFiltered('sendingApproval', 'my_tasks'),
+          route: AppRouteName.dutiesFiltered('sendingApproval', 'myTasks'),
         ),
     ];
   }
@@ -252,21 +252,21 @@ class _DashboardContentState extends State<DashboardContent> {
         value: today,
         icon: Icons.fact_check_outlined,
         tone: StatTone.red,
-        route: AppRouteName.dutiesFiltered('todayDuty', 'all_tasks'),
+        route: AppRouteName.dutiesFiltered('todayDuty', 'allTasks'),
       ),
       StatItem(
         label: 'Overdue Duty',
         value: overdue,
         icon: Icons.event_busy_outlined,
         tone: StatTone.ink,
-        route: AppRouteName.dutiesFiltered('overdueDuty', 'all_tasks'),
+        route: AppRouteName.dutiesFiltered('overdueDuty', 'allTasks'),
       ),
       StatItem(
         label: 'Upcoming Duty',
         value: upcoming,
         icon: Icons.schedule_rounded,
         tone: StatTone.red,
-        route: AppRouteName.dutiesFiltered('upcomingDuty', 'all_tasks'),
+        route: AppRouteName.dutiesFiltered('upcomingDuty', 'allTasks'),
       ),
       if (role.canAccessApprovals)
         StatItem(
@@ -274,7 +274,7 @@ class _DashboardContentState extends State<DashboardContent> {
           value: approval,
           icon: Icons.assignment_turned_in_outlined,
           tone: StatTone.ink,
-          route: '${AppRouteName.approvals}?scope=all_tasks',
+          route: '${AppRouteName.approvals}?scope=allTasks',
         ),
     ];
   }

@@ -98,7 +98,9 @@ class DashboardCubit extends BaseCubit<DashboardState> {
     emit(
       state.copyWith(
         taskCountsUIState: UIState.loading(),
-        taskList: shouldReplace ? null : state.taskList,
+        // An empty list must replace old rows. Passing null to DashboardState's
+        // copyWith keeps the previous value and leaves stale tasks on screen.
+        taskList: shouldReplace ? const <Task>[] : state.taskList,
         taskPagination: shouldReplace ? null : state.taskPagination,
       ),
     );
@@ -122,7 +124,7 @@ class DashboardCubit extends BaseCubit<DashboardState> {
       emit(
         state.copyWith(
           taskCountsUIState: UIState.success(data),
-          taskList: updatedTasks.isEmpty ? null : updatedTasks,
+          taskList: updatedTasks,
           taskPagination: pagination,
           lastFetchedTaskFilter: filter,
           lastFetchedTaskScope: scope,
@@ -212,7 +214,8 @@ class DashboardCubit extends BaseCubit<DashboardState> {
 
     emit(state.copyWith(
       leadListUIState: UIState.loading(),
-      leadList: shouldReplace ? null : state.leadList,
+      // As above, explicitly clear stale rows while the replacement page loads.
+      leadList: shouldReplace ? const <LeadItemData>[] : state.leadList,
       leadPagination: shouldReplace ? null : state.leadPagination,
     ));
 
@@ -234,7 +237,7 @@ class DashboardCubit extends BaseCubit<DashboardState> {
 
       emit(state.copyWith(
         leadListUIState: UIState.success(data),
-        leadList: updatedLeads.isEmpty ? null : updatedLeads,
+        leadList: updatedLeads,
         leadPagination: pagination,
         lastFetchedLeadFilter: filter,
         lastFetchedLeadScope: scope,

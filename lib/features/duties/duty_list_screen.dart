@@ -19,7 +19,11 @@ import '../../shared/widgets/app_section_card.dart';
 class DutyListScreen extends StatefulWidget {
   final String? taskStatus; // e.g. 'overdue_duty', 'today_duty', etc.
   final String? scope;
-  const DutyListScreen({super.key, required this.taskStatus,required this.scope});
+  const DutyListScreen({
+    super.key,
+    required this.taskStatus,
+    required this.scope,
+  });
 
   @override
   State<DutyListScreen> createState() => _DutyListScreenState();
@@ -37,10 +41,10 @@ class _DutyListScreenState extends State<DutyListScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Initial fetch: page 1, using the given taskStatus as filter
       context.read<DashboardCubit>().getTaskCounts(
-            filter: widget.taskStatus ?? '',
-            scope: widget.scope,
-            page: 1,
-          );
+        filter: widget.taskStatus ?? '',
+        scope: widget.scope,
+        page: 1,
+      );
     });
   }
 
@@ -79,11 +83,11 @@ class _DutyListScreenState extends State<DutyListScreen> {
     // When search changes, we re‑fetch page 1 with the current filter.
     // The cubit will replace the list because refresh is true.
     context.read<DashboardCubit>().getTaskCounts(
-          refresh: true,
-          filter: widget.taskStatus ?? '',
-          scope: widget.scope,
-          page: 1,
-        );
+      refresh: true,
+      filter: widget.taskStatus ?? '',
+      scope: widget.scope,
+      page: 1,
+    );
   }
 
   List<Task> _visibleDuties(List<Task> allTasks) {
@@ -113,9 +117,8 @@ class _DutyListScreenState extends State<DutyListScreen> {
               final allTasks = state.taskList ?? [];
               final isLoading =
                   state.taskCountsUIState?.status == Status.LOADING &&
-                      allTasks.isEmpty;
-              final hasError =
-                  state.taskCountsUIState?.status == Status.ERROR;
+                  allTasks.isEmpty;
+              final hasError = state.taskCountsUIState?.status == Status.ERROR;
               final error = state.taskCountsUIState?.errorType;
               final total = state.taskPagination?.total ?? allTasks.length;
               final hasMore = state.taskPagination?.hasNextPage ?? false;
@@ -277,11 +280,11 @@ class _AlwaysScrollableBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) => ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: <Widget>[SizedBox(height: constraints.maxHeight, child: child)],
-        ),
-      );
+    builder: (BuildContext context, BoxConstraints constraints) => ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: <Widget>[SizedBox(height: constraints.maxHeight, child: child)],
+    ),
+  );
 }
 
 class _ErrorRetry extends StatelessWidget {

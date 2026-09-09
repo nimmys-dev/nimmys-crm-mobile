@@ -96,21 +96,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     value: '12',
     icon: Icons.fact_check_outlined,
     tone: StatTone.red,
-    route: AppRouteName.dutiesFiltered('today', 'my_tasks'),
+    route: AppRouteName.dutiesFiltered('today', 'myTasks'),
   );
   static final StatItem _overdueDuty = StatItem(
     label: 'Overdue Duty',
     value: '5',
     icon: Icons.event_busy_outlined,
     tone: StatTone.ink,
-    route: AppRouteName.dutiesFiltered('overdue', 'my_tasks'),
+    route: AppRouteName.dutiesFiltered('overdue', 'myTasks'),
   );
   static final StatItem _upcomingDuty = StatItem(
     label: 'Upcoming Duty',
     value: '8',
     icon: Icons.schedule_rounded,
     tone: StatTone.red,
-    route: AppRouteName.dutiesFiltered('upcoming', 'my_tasks'),
+    route: AppRouteName.dutiesFiltered('upcoming', 'myTasks'),
   );
   static final StatItem _approvalPending = StatItem(
     label: 'Approval Pending',
@@ -190,7 +190,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // return _buildDashboardContent(context, role);
         return DashboardContent(role: role);
       case 1:
-        return const MyLeadsScreen(isAppHeaderRequired: false,scope: 'my_leads',);
+        return const MyLeadsScreen(
+          isAppHeaderRequired: false,
+          scope: 'my_leads',
+        );
       case 2:
         return const StaffListScreen();
       case 3:
