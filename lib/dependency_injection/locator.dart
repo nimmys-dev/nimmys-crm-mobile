@@ -3,6 +3,7 @@ import 'package:nimmys_crm/data/network/api_service.dart';
 import 'package:nimmys_crm/data/storage/secured_shared_preferences.dart';
 import 'package:nimmys_crm/features/authentication/cubit/login/login_cubit.dart';
 import 'package:nimmys_crm/features/authentication/cubit/logout/logout_cubit.dart';
+import 'package:nimmys_crm/features/authentication/cubit/change_password/change_password_cubit.dart';
 import 'package:nimmys_crm/features/authentication/cubit/session/session_cubit.dart';
 import 'package:nimmys_crm/features/authentication/repository/auth_repository.dart';
 import 'package:nimmys_crm/features/authentication/repository/login_repository.dart';
@@ -113,6 +114,9 @@ Future<void> initLocator() async {
       () => LoginCubit(locator<LoginRepository>(), locator<AuthRepository>()),
     );
     locator.registerLazySingleton(() => LogoutCubit(locator<AuthRepository>()));
+    locator.registerLazySingleton(
+      () => ChangePasswordCubit(locator<AuthRepository>()),
+    );
     locator.registerLazySingleton(
       () => SessionCubit(locator<UserInformationRepository>()),
     );

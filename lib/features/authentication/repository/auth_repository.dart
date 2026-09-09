@@ -3,6 +3,7 @@ import 'package:nimmys_crm/data/storage/secured_shared_preferences.dart';
 import 'package:nimmys_crm/features/authentication/model/forgot_password_response.dart';
 import 'package:nimmys_crm/features/authentication/model/login_model.dart';
 import 'package:nimmys_crm/features/authentication/model/logout_model.dart';
+import 'package:nimmys_crm/features/authentication/model/change_password_response.dart';
 import 'package:nimmys_crm/features/authentication/service/auth_service.dart';
 import 'package:nimmys_crm/service/push_notification/notification_service.dart';
 import 'package:nimmys_crm/utils/app_string.dart';
@@ -112,4 +113,14 @@ class AuthRepository {
       return Error(GenericError());
     }
   }
+
+  Future<Result<ChangePasswordResponse>> changePassword({
+    required String currentPassword,
+    required String password,
+    required String passwordConfirmation,
+  }) => _authService.changePassword(
+    currentPassword: currentPassword,
+    password: password,
+    passwordConfirmation: passwordConfirmation,
+  );
 }

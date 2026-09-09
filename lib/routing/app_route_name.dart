@@ -30,6 +30,7 @@ class AppRouteName {
   static const String companyDetails = "/companyDetails";
   static const String taskDetails = "/taskDetails";
   static const String closedLeads = "/closedLeads";
+  static const String changePassword = "/changePassword";
 
   /// Where the router sends anyone who asks for a route their role does not
   /// carry the permission for.

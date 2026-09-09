@@ -279,6 +279,34 @@ class ApiService {
     }
   }
 
+  /// Sends sensitive form fields without writing them to the debug log.
+  Future<Result<dynamic>> secureMultipart(
+    String url, {
+    required Map<String, String> fields,
+  }) async {
+    try {
+      if (!HasInternetConnection.isInternet) {
+        return Error(InternetNetworkError());
+      }
+      CustomLog.debug(this, '\nMethod: Secure multipart\nURL: $url');
+      final response = await _dio.post(
+        url,
+        data: FormData.fromMap(fields),
+        options: Options(
+          headers: await _getHeaders(isMultipart: true),
+          sendTimeout: _timeout,
+          receiveTimeout: _timeout,
+        ),
+      );
+      return _handleBodyResponse(response);
+    } on DioException catch (dioError) {
+      return _handleDioError(dioError);
+    } catch (exception) {
+      CustomLog.error(this, 'HTTP call error during secure multipart', exception);
+      return Error(GenericError());
+    }
+  }
+
   // Handle Body Response
   Result<dynamic> _handleBodyResponse(Response response) {
     final prettyBodyString = const JsonEncoder.withIndent(

@@ -204,6 +204,23 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                     ),
                     _buildDrawerItem(
                       context,
+                      icon: Icons.lock_outline_rounded,
+                      activeIcon: Icons.lock_rounded,
+                      title: 'Change Password',
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.push(AppRouteName.changePassword);
+                      },
+                    ),
+                    Divider(
+                      height: AppSpacing.md,
+                      thickness: 0.5,
+                      indent: AppSpacing.md,
+                      endIndent: AppSpacing.md,
+                      color: palette.line,
+                    ),
+                    _buildDrawerItem(
+                      context,
                       icon: Icons.settings_outlined,
                       activeIcon: Icons.settings_rounded,
                       title: 'Settings',

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nimmys_crm/dependency_injection/locator.dart';
 import 'package:nimmys_crm/features/authentication/cubit/login/login_cubit.dart';
 import 'package:nimmys_crm/features/authentication/cubit/logout/logout_cubit.dart';
+import 'package:nimmys_crm/features/authentication/cubit/change_password/change_password_cubit.dart';
 import 'package:nimmys_crm/features/authentication/cubit/session/session_cubit.dart';
 import 'package:nimmys_crm/features/dashboard/cubit/dashboard_cubit.dart';
 import 'package:nimmys_crm/features/duties/cubit/tasks_cubit.dart';
@@ -21,6 +22,9 @@ class MultiBlocWrapper extends StatelessWidget {
       providers: [
         BlocProvider<LoginCubit>(create: (_) => locator<LoginCubit>()),
         BlocProvider<LogoutCubit>(create: (_) => locator<LogoutCubit>()),
+        BlocProvider<ChangePasswordCubit>(
+          create: (_) => locator<ChangePasswordCubit>(),
+        ),
         BlocProvider<SessionCubit>(create: (_) => locator<SessionCubit>()),
         BlocProvider<ProfileCubit>(create: (_) => locator<ProfileCubit>()),
         BlocProvider<StaffCubit>(create: (_) => locator<StaffCubit>()),

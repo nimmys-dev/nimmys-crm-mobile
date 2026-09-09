@@ -3,6 +3,7 @@ import 'package:nimmys_crm/data/network/api_service.dart';
 import 'package:nimmys_crm/data/network/api_urls.dart';
 import 'package:nimmys_crm/features/authentication/model/forgot_password_response.dart';
 import 'package:nimmys_crm/features/authentication/model/logout_model.dart';
+import 'package:nimmys_crm/features/authentication/model/change_password_response.dart';
 
 class AuthService {
   final ApiService _apiService;
@@ -57,6 +58,33 @@ class AuthService {
         return Error(GenericError());
       }
     } catch (e) {
+      return Error(DeserializationError());
+    }
+  }
+
+  Future<Result<ChangePasswordResponse>> changePassword({
+    required String currentPassword,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    try {
+      final result = await _apiService.secureMultipart(
+        ApiUrls.changePassword,
+        fields: <String, String>{
+          'current_password': currentPassword,
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+        },
+      );
+      if (result is Success) {
+        return _apiService.getResponseStatus<ChangePasswordResponse>(
+          result.value,
+          (json) => ChangePasswordResponse.fromJson(json),
+        );
+      }
+      if (result is Error) return Error(result.type);
+      return Error(GenericError());
+    } catch (_) {
       return Error(DeserializationError());
     }
   }

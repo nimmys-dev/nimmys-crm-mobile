@@ -4,6 +4,7 @@ import 'package:nimmys_crm/core/auth/user_role.dart';
 import 'package:nimmys_crm/dependency_injection/locator.dart';
 import 'package:nimmys_crm/features/approvals/approvals_screen.dart';
 import 'package:nimmys_crm/features/authentication/access_denied_screen.dart';
+import 'package:nimmys_crm/features/authentication/change_password_screen.dart';
 import 'package:nimmys_crm/features/authentication/cubit/session/session_cubit.dart';
 import 'package:nimmys_crm/features/authentication/login_screen.dart';
 import 'package:nimmys_crm/features/dashboard/dashboard_screen.dart';
@@ -109,6 +110,11 @@ class AppRoutes {
         builder: (BuildContext context, GoRouterState state) {
           return const AccessDeniedScreen();
         },
+      ),
+      GoRoute(
+        path: AppRouteName.changePassword,
+        builder: (BuildContext context, GoRouterState state) =>
+            const ChangePasswordScreen(),
       ),
 
       // Staff
