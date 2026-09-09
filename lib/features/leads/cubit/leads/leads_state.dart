@@ -23,6 +23,9 @@ class LeadsState extends Equatable {
   /// Last status that was successfully fetched. Used to detect status changes.
   final String? lastFetchedStatus;
 
+  /// Whether the current list is the universal lead list (all leads) or just my leads.
+  final bool isUniversalLeadList;
+
   // ---------------------------------------------------------------------------
   // Lead Assignees
   // ---------------------------------------------------------------------------
@@ -90,6 +93,7 @@ class LeadsState extends Equatable {
     this.leadSearchQuery = '',
     this.currentLeadStatus,
     this.lastFetchedStatus,
+    this.isUniversalLeadList = false, // default to false
     this.leadAssigneesUIState,
     this.leadSourcesUIState,
     this.createLeadUIState,
@@ -109,6 +113,7 @@ class LeadsState extends Equatable {
     String? leadSearchQuery,
     String? currentLeadStatus,
     String? lastFetchedStatus,
+    bool? isUniversalLeadList,
     UIState<LeadAssigneeSuccess>? leadAssigneesUIState,
     UIState<LeadSourceModel>? leadSourcesUIState,
     UIState<dynamic>? createLeadUIState,
@@ -127,6 +132,7 @@ class LeadsState extends Equatable {
       leadSearchQuery: leadSearchQuery ?? this.leadSearchQuery,
       currentLeadStatus: currentLeadStatus ?? this.currentLeadStatus,
       lastFetchedStatus: lastFetchedStatus ?? this.lastFetchedStatus,
+      isUniversalLeadList: isUniversalLeadList ?? this.isUniversalLeadList,
       leadAssigneesUIState: leadAssigneesUIState ?? this.leadAssigneesUIState,
       leadSourcesUIState: leadSourcesUIState ?? this.leadSourcesUIState,
       createLeadUIState: createLeadUIState ?? this.createLeadUIState,
@@ -153,6 +159,7 @@ class LeadsState extends Equatable {
     leadSearchQuery,
     currentLeadStatus,
     lastFetchedStatus,
+    isUniversalLeadList, // added here
 
     // Assignees
     leadAssigneesUIState,

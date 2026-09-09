@@ -24,14 +24,20 @@ import 'widgets/lead_contact_actions.dart';
 
 /// Leads List screen — displays leads retrieved from `GET /api/leads` with
 /// server-side pagination.
-class ClosedLeadsScreen extends StatefulWidget {
-  const ClosedLeadsScreen({super.key});
+class LeadListGlobalScreen extends StatefulWidget {
+  final String? status;
+  final bool isAppHeaderRequired;
+  const LeadListGlobalScreen({
+    super.key,
+    required this.isAppHeaderRequired,
+    this.status,
+  });
 
   @override
-  State<ClosedLeadsScreen> createState() => _ClosedLeadsScreenState();
+  State<LeadListGlobalScreen> createState() => _LeadListGlobalScreenState();
 }
 
-class _ClosedLeadsScreenState extends State<ClosedLeadsScreen> {
+class _LeadListGlobalScreenState extends State<LeadListGlobalScreen> {
   final TextEditingController _searchController = TextEditingController();
   Timer? _searchDebounce;
 
@@ -40,7 +46,11 @@ class _ClosedLeadsScreenState extends State<ClosedLeadsScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<LeadsCubit>().getLeads(isUniversalLeadList: true,refresh: true,);
+        context.read<LeadsCubit>().getLeads(
+          status: widget.status.toString(),
+          isUniversalLeadList: true,
+          refresh: true,
+        );
       }
     });
   }
@@ -56,7 +66,11 @@ class _ClosedLeadsScreenState extends State<ClosedLeadsScreen> {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 350), () {
       if (mounted) {
-        context.read<LeadsCubit>().getLeads(search: value,  isUniversalLeadList: true,);
+        context.read<LeadsCubit>().getLeads(
+          search: value,
+          status: widget.status.toString(),
+          isUniversalLeadList: true,
+        );
       }
     });
   }
@@ -68,7 +82,11 @@ class _ClosedLeadsScreenState extends State<ClosedLeadsScreen> {
   Future<void> _openCreateLead() async {
     final dynamic result = await context.push(AppRouteName.leadNew);
     if (result == true && mounted) {
-      await context.read<LeadsCubit>().getLeads(refresh: true,  isUniversalLeadList: true,);
+      await context.read<LeadsCubit>().getLeads(
+        refresh: true,
+        status: widget.status.toString(),
+        isUniversalLeadList: true,
+      );
     }
   }
 
@@ -93,7 +111,7 @@ class _ClosedLeadsScreenState extends State<ClosedLeadsScreen> {
         body: Column(
           children: <Widget>[
             Visibility(
-              visible: true,
+              visible: widget.isAppHeaderRequired,
               child: const AppGradientHeader(
                 title: 'My Leads',
                 eyebrow: 'LEAD MANAGEMENT',

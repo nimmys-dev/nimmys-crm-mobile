@@ -25,9 +25,12 @@ class LeadService {
     int perPage = 10,
     String? search,
     String? status,
+    required bool isUniversalLeadList,
   }) async {
     try {
-      final String url = ApiUrls.closedLeads;
+      final String url = isUniversalLeadList
+          ? ApiUrls.leads
+          : ApiUrls.closedLeads;
       final Map<String, dynamic> queryParams = <String, dynamic>{
         "page": page,
         "per_page": perPage,

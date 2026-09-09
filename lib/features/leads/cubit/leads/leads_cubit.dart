@@ -34,9 +34,13 @@ class LeadsCubit extends BaseCubit<LeadsState> {
     bool refresh = false,
     String? search,
     String? status,
+    required bool isUniversalLeadList,
   }) async {
-    // Store the current status in state
-    emit(state.copyWith(currentLeadStatus: status));
+    // Update the state with the new universal flag and current status
+    emit(state.copyWith(
+      currentLeadStatus: status,
+      isUniversalLeadList: isUniversalLeadList,
+    ));
     await _fetchLeadsPage(
       page: 1,
       search: search,
@@ -47,7 +51,11 @@ class LeadsCubit extends BaseCubit<LeadsState> {
 
   Future<void> refreshLeads() async {
     final status = state.currentLeadStatus ?? '';
-    await _fetchLeadsPage(page: 1, skipIfCached: false, status: status);
+    await _fetchLeadsPage(
+      page: 1,
+      skipIfCached: false,
+      status: status,
+    );
   }
 
   Future<void> goToLeadsPage(int page) async {
@@ -55,7 +63,11 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       return;
     }
     final status = state.currentLeadStatus ?? '';
-    await _fetchLeadsPage(page: page, skipIfCached: false, status: status);
+    await _fetchLeadsPage(
+      page: page,
+      skipIfCached: false,
+      status: status,
+    );
   }
 
   Future<void> _fetchLeadsPage({
@@ -71,11 +83,11 @@ class LeadsCubit extends BaseCubit<LeadsState> {
     final String query = (search ?? state.leadSearchQuery).trim();
 
     final bool searchChanged = query != state.leadSearchQuery;
-    final bool statusChanged = status != state.lastFetchedStatus; // <-- NEW
+    final bool statusChanged = status != state.lastFetchedStatus;
 
     // Only skip if status hasn't changed, search hasn't changed, and we're allowed to cache.
     if (!searchChanged &&
-        !statusChanged && // <-- Added check
+        !statusChanged &&
         skipIfCached &&
         state.leadList.isNotEmpty &&
         page == (state.leadPagination?.currentPage ?? 1)) {
@@ -92,11 +104,13 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       ),
     );
 
+    // Use the stored isUniversalLeadList from state
     final Result<LeadListResponse> result = await _repository.getLeads(
       page: page,
       perPage: _pageSize,
       search: query,
       status: status,
+      isUniversalLeadList: state.isUniversalLeadList,
     );
 
     if (result is Success<LeadListResponse>) {
@@ -111,7 +125,7 @@ class LeadsCubit extends BaseCubit<LeadsState> {
           leadListUIState: UIState.success(result.value),
           leadList: updatedLeads,
           leadPagination: result.value.pagination,
-          lastFetchedStatus: status, // <-- Remember this status
+          lastFetchedStatus: status,
         ),
       );
     } else if (result is Error<LeadListResponse>) {
@@ -194,9 +208,14 @@ class LeadsCubit extends BaseCubit<LeadsState> {
     if (result is Success<dynamic>) {
       _setCreateLeadUIState(UIState.success(result.value));
 
-      // Refresh with the current status (which is stored in state)
+      // Refresh with the current status and the stored universal flag
       final status = state.currentLeadStatus ?? '';
-      unawaited(getLeads(refresh: true, status: status));
+      final isUniversalLeadList = state.isUniversalLeadList;
+      unawaited(getLeads(
+        refresh: true,
+        status: status,
+        isUniversalLeadList: isUniversalLeadList,
+      ));
     } else if (result is Error<dynamic>) {
       _setCreateLeadUIState(UIState.error(result.type));
     }
@@ -262,7 +281,13 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       }
 
       final status = state.currentLeadStatus ?? '';
-      unawaited(getLeads(refresh: true, status: status));
+      unawaited(
+        getLeads(
+          refresh: true,
+          status: status,
+          isUniversalLeadList: state.isUniversalLeadList,
+        ),
+      );
     } else if (result is Error<LeadDetailsSuccess>) {
       _setUpdateLeadUIState(UIState.error(result.type));
     }
@@ -352,9 +377,7 @@ class LeadsCubit extends BaseCubit<LeadsState> {
     if (result is Success<TeleCallDetailResponseModel>) {
       _setAddCallLogUIState(UIState.success(result.value));
 
-      // Refresh the lead details after successfully
-      // adding the call log so the newly-created call
-      // is available when the details are displayed.
+      // Refresh the lead details after successfully adding the call log
       unawaited(getLeadDetails(leadId));
     } else if (result is Error<TeleCallDetailResponseModel>) {
       _setAddCallLogUIState(UIState.error(result.type));
@@ -429,7 +452,13 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       // Refresh the lead details and the list after closing
       unawaited(getLeadDetails(leadId));
       final currentStatus = state.currentLeadStatus ?? '';
-      unawaited(getLeads(refresh: true, status: currentStatus));
+      unawaited(
+        getLeads(
+          refresh: true,
+          status: currentStatus,
+          isUniversalLeadList: state.isUniversalLeadList,
+        ),
+      );
     } else if (result is Error<CloseLeadResponse>) {
       _setCloseLeadUIState(UIState.error(result.type));
     }

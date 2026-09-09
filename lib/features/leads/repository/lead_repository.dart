@@ -21,14 +21,16 @@ class LeadRepository {
     int page = 1,
     int perPage = 10,
     String? search,
-    String? status
+    String? status,
+    required bool isUniversalLeadList
   }) async {
     try {
       return await _service.getLeads(
         page: page,
         perPage: perPage,
         search: search,
-        status: status
+        status: status,
+        isUniversalLeadList: isUniversalLeadList,
       );
     } catch (e) {
       return Error<LeadListResponse>(ErrorWithMessage(message: e.toString()));
