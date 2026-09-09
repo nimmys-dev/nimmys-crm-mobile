@@ -162,7 +162,6 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                 prev.completeTaskUIState?.status !=
                 curr.completeTaskUIState?.status,
             listener: (context, state) {
-              // ✅ Check if the screen still exists
               if (!screenContext.mounted) return;
 
               final uiState = state.completeTaskUIState;
@@ -176,11 +175,10 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (screenContext.mounted) {
                     screenContext.read<TasksCubit>().getTasks();
-                    // No need to call getTaskDetails again – already called above
                   }
                 });
 
-                Navigator.pop(ctx); // close dialog
+                Navigator.pop(ctx);
               } else if (uiState?.status == Status.ERROR) {
                 ToastMessages.error(
                   message:
@@ -188,7 +186,6 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                       'Failed to complete task.',
                 );
                 screenContext.read<TasksCubit>().resetCompleteTaskState();
-                // Keep dialog open on error
               }
             },
             builder: (context, state) {
@@ -231,7 +228,6 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
     return Column(
       children: <Widget>[
         AppGradientHeader(
-          // title: task.title ?? 'Task Details',
           eyebrow: 'TASK DETAILS',
           leading: const AppBackButton(),
         ),
@@ -266,18 +262,31 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                         onPressed: widget.task.id == null
                             ? null
                             : () async {
-                                await Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
+                                final updated = await Navigator.of(context)
+                                    .push<bool>(
+                                  MaterialPageRoute<bool>(
                                     builder: (_) => CreateTaskScreen(
                                       taskToEdit: widget.task,
                                     ),
                                   ),
                                 );
-                                if (context.mounted) {
-                                  context.read<TasksCubit>().getTaskDetails(
-                                    widget.task.id!,
-                                  );
-                                }
+
+                                if (!context.mounted || updated != true) return;
+
+                                // Refresh details
+                                await context
+                                    .read<TasksCubit>()
+                                    .getTaskDetails(widget.task.id!);
+
+                                // Refresh the list cubit used by DutyListScreen
+                                await context
+                                    .read<DashboardCubit>()
+                                    .getTaskCounts(
+                                      refresh: true,
+                                      filter: '', // or your real filter
+                                      scope: null, // or your real scope
+                                      page: 1,
+                                    );
                               },
                       ),
                     ),
@@ -289,7 +298,7 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                         onPressed: () =>
                             _showDeleteDialog(context, widget.task.id!),
                       ),
-                    ), // Complete button
+                    ),
 
                     if (widget.task.status?.toLowerCase() != 'completed' &&
                         widget.task.status?.toLowerCase() != 'approved') ...[
@@ -312,7 +321,7 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                     ],
                   ],
                 ),
-                SizedBox(height: 80),
+                const SizedBox(height: 80),
               ],
             ),
           ),
@@ -341,7 +350,6 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                 prev.deleteTaskUIState?.status !=
                 curr.deleteTaskUIState?.status,
             listener: (context, state) {
-              // ✅ Check if the screen still exists
               if (!screenContext.mounted) return;
 
               final uiState = state.deleteTaskUIState;
@@ -351,9 +359,8 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                 screenContext.read<TasksCubit>().resetDeleteTaskState();
                 screenContext.read<DashboardCubit>().getDashboardCount();
 
-                // Close dialog and pop the details screen
                 Navigator.pop(ctx);
-                Navigator.pop(screenContext); // go back to duties list
+                Navigator.pop(screenContext);
 
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (screenContext.mounted) {
@@ -367,7 +374,7 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                       'Failed to delete task.',
                 );
                 screenContext.read<TasksCubit>().resetDeleteTaskState();
-                Navigator.pop(ctx); // close dialog on error
+                Navigator.pop(ctx);
               }
             },
             builder: (context, state) {

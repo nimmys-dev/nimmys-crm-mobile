@@ -285,6 +285,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
               listener: (context, state) {
                 final createState = state.createTaskUIState;
                 final updateState = state.updateTaskUIState;
+
                 if (!_isEditing && createState?.status == Status.SUCCESS) {
                   context.read<TasksCubit>().resetCreateTaskState();
                   context.read<DashboardCubit>().getDashboardCount();
@@ -293,7 +294,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     updateState?.status == Status.SUCCESS) {
                   context.read<TasksCubit>().resetUpdateTaskState();
                   context.read<DashboardCubit>().getDashboardCount();
-                  context.go(AppRouteName.duties);
+
+                  // Pop with true so TaskDetailsScreen can refresh the list cubit
+                  Navigator.of(context).pop(true);
                 } else {
                   final requestStatus = _isEditing
                       ? updateState?.status
@@ -367,7 +370,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     // ------------------------------------------------------------
                     AppSectionCard(
                       child: Column(
-                        mainAxisSize: MainAxisSize.min, // <-- FIX OVERFLOW
+                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
                           AppFormField(
@@ -520,7 +523,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     // ------------------------------------------------------------
                     AppSectionCard(
                       child: Column(
-                        mainAxisSize: MainAxisSize.min, // <-- FIX OVERFLOW
+                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
                           AppToggleRow(
@@ -566,7 +569,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     if (isYearly)
                       AppSectionCard(
                         child: Column(
-                          mainAxisSize: MainAxisSize.min, // <-- FIX OVERFLOW
+                          mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: <Widget>[
                             Row(
@@ -619,7 +622,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     // ------------------------------------------------------------
                     AppSectionCard(
                       child: Column(
-                        mainAxisSize: MainAxisSize.min, // <-- FIX OVERFLOW
+                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
                           AppFormField(

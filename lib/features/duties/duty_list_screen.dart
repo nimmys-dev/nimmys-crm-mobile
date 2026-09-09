@@ -42,11 +42,11 @@ class _DutyListScreenState extends State<DutyListScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Initial fetch: page 1, using the given taskStatus as filter
       await context.read<DashboardCubit>().getTaskCounts(
-        refresh: true,
-        filter: widget.taskStatus ?? '',
-        scope: widget.scope,
-        page: 1,
-      );
+            refresh: true,
+            filter: widget.taskStatus ?? '',
+            scope: widget.scope,
+            page: 1,
+          );
       if (mounted) setState(() => _isInitialLoading = false);
     });
   }
@@ -86,11 +86,11 @@ class _DutyListScreenState extends State<DutyListScreen> {
     // When search changes, we re‑fetch page 1 with the current filter.
     // The cubit will replace the list because refresh is true.
     context.read<DashboardCubit>().getTaskCounts(
-      refresh: true,
-      filter: widget.taskStatus ?? '',
-      scope: widget.scope,
-      page: 1,
-    );
+          refresh: true,
+          filter: widget.taskStatus ?? '',
+          scope: widget.scope,
+          page: 1,
+        );
   }
 
   List<Task> _visibleDuties(List<Task> all_tasks) {
@@ -230,6 +230,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
       );
     }
 
+    // FIX: itemCount = tasks.length + 2 so footer is reachable
     return RefreshIndicator(
       onRefresh: _refreshTasks,
       child: ListView.builder(
@@ -240,24 +241,18 @@ class _DutyListScreenState extends State<DutyListScreen> {
           right: AppSpacing.gutter,
           bottom: AppSpacing.xl,
         ),
-        itemCount: tasks.length + 1, // +1 for footer
+        itemCount: tasks.length + 2,
         itemBuilder: (BuildContext context, int index) {
           if (index == 0) {
             return DutyListCount(count: tasks.length, total: totalTaskCount);
           }
+
           if (index <= tasks.length) {
             final task = tasks[index - 1];
-            return InkWell(
-              onTap: () {
-                if (task.id != null) {
-                  context.push(AppRouteName.taskDetailsFor(task.id!));
-                } else {
-                  context.push(AppRouteName.taskDetails);
-                }
-              },
-              child: DutyListTile(task: task),
-            );
+            // FIX: remove outer InkWell, let DutyListTile handle navigation
+            return DutyListTile(task: task);
           }
+
           // Footer: loading or end message
           return _buildFooter(hasMore, isLoadingMore);
         },
@@ -293,7 +288,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// Supporting widgets (unchanged)
+// Supporting widgets (unchanged except where noted)
 // ---------------------------------------------------------------------------
 
 class _AlwaysScrollableBody extends StatelessWidget {
@@ -302,11 +297,13 @@ class _AlwaysScrollableBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-    builder: (BuildContext context, BoxConstraints constraints) => ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: <Widget>[SizedBox(height: constraints.maxHeight, child: child)],
-    ),
-  );
+        builder: (BuildContext context, BoxConstraints constraints) => ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: <Widget>[
+            SizedBox(height: constraints.maxHeight, child: child),
+          ],
+        ),
+      );
 }
 
 class _ErrorRetry extends StatelessWidget {
@@ -392,6 +389,7 @@ class _DutyListTileState extends State<DutyListTile> {
     final assignee = widget.task.assignedUser?.name ?? 'Unassigned';
     final status = widget.task.status ?? 'unknown';
 
+    // FIX: this is now the ONLY navigation trigger for a tile
     return InkWell(
       onTap: () {
         if (widget.task.id != null) {
