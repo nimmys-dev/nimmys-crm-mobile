@@ -33,18 +33,21 @@ class _DutyListScreenState extends State<DutyListScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   String _query = '';
+  bool _isInitialLoading = true;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Initial fetch: page 1, using the given taskStatus as filter
-      context.read<DashboardCubit>().getTaskCounts(
+      await context.read<DashboardCubit>().getTaskCounts(
+        refresh: true,
         filter: widget.taskStatus ?? '',
         scope: widget.scope,
         page: 1,
       );
+      if (mounted) setState(() => _isInitialLoading = false);
     });
   }
 
@@ -116,8 +119,9 @@ class _DutyListScreenState extends State<DutyListScreen> {
             builder: (context, state) {
               final allTasks = state.taskList ?? [];
               final isLoading =
-                  state.taskCountsUIState?.status == Status.LOADING &&
-                  allTasks.isEmpty;
+                  _isInitialLoading ||
+                  (state.taskCountsUIState?.status == Status.LOADING &&
+                      allTasks.isEmpty);
               final hasError = state.taskCountsUIState?.status == Status.ERROR;
               final error = state.taskCountsUIState?.errorType;
               final total = state.taskPagination?.total ?? allTasks.length;
@@ -146,15 +150,33 @@ class _DutyListScreenState extends State<DutyListScreen> {
                     ),
                   ),
                   Expanded(
-                    child: _buildBody(
-                      context,
-                      isLoading: isLoading,
-                      hasError: hasError,
-                      error: error,
-                      allTasks: allTasks,
-                      totalTaskCount: total,
-                      hasMore: hasMore,
-                      isLoadingMore: isLoadingMore,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 180),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      transitionBuilder: (child, animation) =>
+                          FadeTransition(opacity: animation, child: child),
+                      child: KeyedSubtree(
+                        key: ValueKey<String>(
+                          isLoading
+                              ? 'loading'
+                              : hasError && allTasks.isEmpty
+                              ? 'error'
+                              : allTasks.isEmpty
+                              ? 'empty'
+                              : 'list',
+                        ),
+                        child: _buildBody(
+                          context,
+                          isLoading: isLoading,
+                          hasError: hasError,
+                          error: error,
+                          allTasks: allTasks,
+                          totalTaskCount: total,
+                          hasMore: hasMore,
+                          isLoadingMore: isLoadingMore,
+                        ),
+                      ),
                     ),
                   ),
                 ],

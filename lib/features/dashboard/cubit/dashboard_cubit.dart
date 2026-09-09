@@ -11,7 +11,6 @@ import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
 
 part 'dashboard_state.dart';
 
-
 class DashboardCubit extends BaseCubit<DashboardState> {
   final DashboardRepository _repository;
   static const int _pageSize = 10;
@@ -166,7 +165,9 @@ class DashboardCubit extends BaseCubit<DashboardState> {
   void resetTaskCountsState() {
     emit(
       state.copyWith(
-        taskCountsUIState: resetUIState<DashboardCount>(state.taskCountsUIState),
+        taskCountsUIState: resetUIState<DashboardCount>(
+          state.taskCountsUIState,
+        ),
         taskList: null,
         taskPagination: null,
         lastFetchedTaskFilter: null,
@@ -194,10 +195,7 @@ class DashboardCubit extends BaseCubit<DashboardState> {
       emit(state.copyWith(isLoadingMoreLeads: true));
     }
 
-    emit(state.copyWith(
-      currentLeadFilter: filter,
-      currentLeadScope: scope,
-    ));
+    emit(state.copyWith(currentLeadFilter: filter, currentLeadScope: scope));
 
     final filterChanged = filter != state.lastFetchedLeadFilter;
     final scopeChanged = scope != state.lastFetchedLeadScope;
@@ -212,12 +210,14 @@ class DashboardCubit extends BaseCubit<DashboardState> {
       return;
     }
 
-    emit(state.copyWith(
-      leadListUIState: UIState.loading(),
-      // As above, explicitly clear stale rows while the replacement page loads.
-      leadList: shouldReplace ? const <LeadItemData>[] : state.leadList,
-      leadPagination: shouldReplace ? null : state.leadPagination,
-    ));
+    emit(
+      state.copyWith(
+        leadListUIState: UIState.loading(),
+        // As above, explicitly clear stale rows while the replacement page loads.
+        leadList: shouldReplace ? const <LeadItemData>[] : state.leadList,
+        leadPagination: shouldReplace ? null : state.leadPagination,
+      ),
+    );
 
     final result = await _repository.getLeadCount(
       filter: filter ?? state.currentLeadFilter ?? '',
@@ -235,19 +235,23 @@ class DashboardCubit extends BaseCubit<DashboardState> {
           ? newLeads
           : [...?state.leadList, ...newLeads];
 
-      emit(state.copyWith(
-        leadListUIState: UIState.success(data),
-        leadList: updatedLeads,
-        leadPagination: pagination,
-        lastFetchedLeadFilter: filter,
-        lastFetchedLeadScope: scope,
-        isLoadingMoreLeads: false,
-      ));
+      emit(
+        state.copyWith(
+          leadListUIState: UIState.success(data),
+          leadList: updatedLeads,
+          leadPagination: pagination,
+          lastFetchedLeadFilter: filter,
+          lastFetchedLeadScope: scope,
+          isLoadingMoreLeads: false,
+        ),
+      );
     } else if (result is Error<LeadCountModel>) {
-      emit(state.copyWith(
-        leadListUIState: UIState.error(result.type),
-        isLoadingMoreLeads: false,
-      ));
+      emit(
+        state.copyWith(
+          leadListUIState: UIState.error(result.type),
+          isLoadingMoreLeads: false,
+        ),
+      );
     }
   }
 
@@ -274,14 +278,16 @@ class DashboardCubit extends BaseCubit<DashboardState> {
   }
 
   void resetLeadListState() {
-    emit(state.copyWith(
-      leadListUIState: resetUIState<LeadCountModel>(state.leadListUIState),
-      leadList: null,
-      leadPagination: null,
-      lastFetchedLeadFilter: null,
-      lastFetchedLeadScope: null,
-      isLoadingMoreLeads: false,
-    ));
+    emit(
+      state.copyWith(
+        leadListUIState: resetUIState<LeadCountModel>(state.leadListUIState),
+        leadList: null,
+        leadPagination: null,
+        lastFetchedLeadFilter: null,
+        lastFetchedLeadScope: null,
+        isLoadingMoreLeads: false,
+      ),
+    );
   }
 
   // ────────────────────────────────────────────────────────────────────────────

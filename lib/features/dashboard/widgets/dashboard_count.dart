@@ -294,7 +294,7 @@ class _DashboardContentState extends State<DashboardContent> {
         value: unattended,
         icon: Icons.groups_outlined,
         tone: StatTone.red,
-        route: AppRouteName.leadsWithStatus('open_followup', 'my_leads'),
+        route: AppRouteName.leadsWithStatus('unattended', 'my_leads'),
       ),
       StatItem(
         label: "Today's Follow Up",
@@ -335,7 +335,7 @@ class _DashboardContentState extends State<DashboardContent> {
         value: unattended,
         icon: Icons.groups_outlined,
         tone: StatTone.red,
-        route: AppRouteName.leadsWithStatus('open_followup', 'all_leads'),
+        route: AppRouteName.leadsWithStatus('unattended', 'all_leads'),
       ),
       StatItem(
         label: "Today's Follow Up",

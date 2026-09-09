@@ -44,17 +44,19 @@ class MyLeadsScreen extends StatefulWidget {
 class _MyLeadsScreenState extends State<MyLeadsScreen> {
   final TextEditingController _searchController = TextEditingController();
   Timer? _searchDebounce;
+  bool _isInitialLoading = true;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
-        context.read<DashboardCubit>().getLeads(
+        await context.read<DashboardCubit>().getLeads(
           refresh: true,
           filter: widget.status,
           scope: widget.scope,
         );
+        if (mounted) setState(() => _isInitialLoading = false);
       }
     });
   }
@@ -144,28 +146,59 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
                     current.leadListUIState?.status,
                 listener: _onLeadsStateChanged,
                 builder: (context, state) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 50),
-                    child: _MyLeadsBody(
-                      state: state,
-                      onRefresh: _onRefresh,
-                      onRetry: _onRefresh,
-                      onPreviousPage: () {
-                        final pagination = state.leadPagination;
-                        if (pagination != null && pagination.hasPreviousPage) {
-                          context.read<DashboardCubit>().goToLeadPage(
-                            pagination.previousPage,
-                          );
-                        }
-                      },
-                      onNextPage: () {
-                        final pagination = state.leadPagination;
-                        if (pagination != null && pagination.hasNextPage) {
-                          context.read<DashboardCubit>().goToLeadPage(
-                            pagination.nextPage,
-                          );
-                        }
-                      },
+                  final leads = state.leadList ?? <LeadItemData>[];
+                  final status = state.leadListUIState?.status;
+                  final viewKey = _isInitialLoading
+                      ? 'loading'
+                      : status == Status.LOADING && leads.isEmpty
+                      ? 'loading'
+                      : status == Status.ERROR && leads.isEmpty
+                      ? 'error'
+                      : leads.isEmpty
+                      ? 'empty'
+                      : 'list';
+                  return AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    switchInCurve: Curves.easeOut,
+                    switchOutCurve: Curves.easeIn,
+                    transitionBuilder: (child, animation) =>
+                        FadeTransition(opacity: animation, child: child),
+                    child: KeyedSubtree(
+                      key: ValueKey<String>(viewKey),
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 50),
+                        child: _isInitialLoading
+                            ? const Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.red,
+                                  ),
+                                ),
+                              )
+                            : _MyLeadsBody(
+                                state: state,
+                                onRefresh: _onRefresh,
+                                onRetry: _onRefresh,
+                                onPreviousPage: () {
+                                  final pagination = state.leadPagination;
+                                  if (pagination != null &&
+                                      pagination.hasPreviousPage) {
+                                    context.read<DashboardCubit>().goToLeadPage(
+                                      pagination.previousPage,
+                                    );
+                                  }
+                                },
+                                onNextPage: () {
+                                  final pagination = state.leadPagination;
+                                  if (pagination != null &&
+                                      pagination.hasNextPage) {
+                                    context.read<DashboardCubit>().goToLeadPage(
+                                      pagination.nextPage,
+                                    );
+                                  }
+                                },
+                              ),
+                      ),
                     ),
                   );
                 },
