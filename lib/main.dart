@@ -47,14 +47,12 @@ class _MyAppState extends State<MyApp> {
     _themeController.dispose();
     super.dispose();
   }
-
+//------------------------------
   @override
   Widget build(BuildContext context) {
     return MultiBlocWrapper(
       child: ThemeScope(
         controller: _themeController,
-        // Rebuilds on every notifyListeners, which is what re-themes the app the
-        // instant the selector changes rather than on the next route push.
         child: AnimatedBuilder(
           animation: _themeController,
           builder: (BuildContext context, Widget? _) {
@@ -72,3 +70,4 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
+//--------------------------------
