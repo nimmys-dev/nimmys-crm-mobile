@@ -17,7 +17,6 @@ import '../../shared/widgets/app_search_field.dart';
 import '../../shared/widgets/app_section_card.dart';
 
 class DutyListGlobalScreen extends StatefulWidget {
- 
   const DutyListGlobalScreen({super.key});
 
   @override
@@ -40,7 +39,6 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
         context.read<TasksCubit>().getTasksByStaffId(
           staffId: _staffId!,
           refresh: true,
-       
         );
       }
     });
@@ -76,7 +74,6 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
       staffId: _staffId!,
       refresh: true,
       search: _searchController.text.trim(),
-      
     );
   }
 
@@ -86,7 +83,6 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
     context.read<TasksCubit>().getTasksByStaffId(
       staffId: _staffId!,
       search: value.trim(),
-
     );
   }
 
@@ -133,7 +129,7 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
                     title: 'Duties',
                     eyebrow: 'MY DUTIES',
                     leading: const AppBackButton(),
-                    actions: const <Widget>[AppAvatar(initials: 'AB')],
+                    actions: const <Widget>[],
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(

@@ -42,11 +42,11 @@ class _DutyListScreenState extends State<DutyListScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Initial fetch: page 1, using the given taskStatus as filter
       await context.read<DashboardCubit>().getTaskCounts(
-            refresh: true,
-            filter: widget.taskStatus ?? '',
-            scope: widget.scope,
-            page: 1,
-          );
+        refresh: true,
+        filter: widget.taskStatus ?? '',
+        scope: widget.scope,
+        page: 1,
+      );
       if (mounted) setState(() => _isInitialLoading = false);
     });
   }
@@ -86,11 +86,11 @@ class _DutyListScreenState extends State<DutyListScreen> {
     // When search changes, we re‑fetch page 1 with the current filter.
     // The cubit will replace the list because refresh is true.
     context.read<DashboardCubit>().getTaskCounts(
-          refresh: true,
-          filter: widget.taskStatus ?? '',
-          scope: widget.scope,
-          page: 1,
-        );
+      refresh: true,
+      filter: widget.taskStatus ?? '',
+      scope: widget.scope,
+      page: 1,
+    );
   }
 
   List<Task> _visibleDuties(List<Task> all_tasks) {
@@ -134,7 +134,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
                     title: 'Duties',
                     eyebrow: 'MY DUTIES',
                     leading: const AppBackButton(),
-                    actions: const <Widget>[AppAvatar(initials: 'AB')],
+                    actions: const <Widget>[],
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
@@ -297,13 +297,11 @@ class _AlwaysScrollableBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) => ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: <Widget>[
-            SizedBox(height: constraints.maxHeight, child: child),
-          ],
-        ),
-      );
+    builder: (BuildContext context, BoxConstraints constraints) => ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: <Widget>[SizedBox(height: constraints.maxHeight, child: child)],
+    ),
+  );
 }
 
 class _ErrorRetry extends StatelessWidget {

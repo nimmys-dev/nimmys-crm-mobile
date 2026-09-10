@@ -151,7 +151,7 @@ class _LeadListGlobalScreenState extends State<LeadListGlobalScreen>
                 title: 'My Leads',
                 eyebrow: 'LEAD MANAGEMENT',
                 leading: AppBackButton(),
-                actions: <Widget>[AppAvatar(initials: 'AB')],
+                actions: <Widget>[],
               ),
             ),
             Padding(

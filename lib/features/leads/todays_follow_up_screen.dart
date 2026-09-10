@@ -109,7 +109,7 @@ class _TodaysFollowUpScreenState extends State<TodaysFollowUpScreen> {
               actions: <Widget>[
                 AppHeaderIconButton(icon: Icons.sync_rounded),
                 SizedBox(width: AppSpacing.xs),
-                AppAvatar(initials: 'AB'),
+           
               ],
             ),
             Expanded(

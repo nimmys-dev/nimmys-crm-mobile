@@ -597,7 +597,7 @@ class _StaffCreationScreenState extends State<StaffCreationScreen> {
                       icon: Icons.local_fire_department_rounded,
                     ),
                     SizedBox(width: AppSpacing.xs),
-                    AppAvatar(initials: 'AB'),
+                  
                   ],
                 ),
                 Expanded(

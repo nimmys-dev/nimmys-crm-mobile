@@ -123,7 +123,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 title: 'My Reports',
                 eyebrow: 'REPORTS',
                 leading: AppBackButton(),
-                actions: <Widget>[AppAvatar(initials: 'AB')],
+                actions: <Widget>[],
               ),
             ),
             Expanded(

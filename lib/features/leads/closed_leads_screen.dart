@@ -107,7 +107,7 @@ class _ClosedLeadsScreenState extends State<ClosedLeadsScreen> {
                 title: 'My Leads',
                 eyebrow: 'LEAD MANAGEMENT',
                 leading: AppBackButton(),
-                actions: <Widget>[AppAvatar(initials: 'AB')],
+                actions: <Widget>[],
               ),
             ),
             Padding(

@@ -210,7 +210,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                       title: 'Approvals',
                       eyebrow: 'TEAM',
                       leading: AppBackButton(),
-                      actions: <Widget>[AppAvatar(initials: 'AB')],
+                      actions: <Widget>[],
                     ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(

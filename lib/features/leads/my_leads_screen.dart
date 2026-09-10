@@ -123,7 +123,7 @@ class _MyLeadsScreenState extends State<MyLeadsScreen> {
                 title: 'My Leads',
                 eyebrow: 'LEAD MANAGEMENT',
                 leading: AppBackButton(),
-                actions: <Widget>[AppAvatar(initials: 'AB')],
+                actions: <Widget>[],
               ),
             ),
             Padding(
