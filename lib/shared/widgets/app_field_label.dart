@@ -27,7 +27,7 @@ class AppFieldLabel extends StatelessWidget {
             child: Text(
               text,
               style: context.type.label,
-              maxLines: 1,
+              maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
           ),

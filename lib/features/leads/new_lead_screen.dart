@@ -281,11 +281,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
                   title: 'New Lead',
                   eyebrow: 'CAPTURE ENQUIRY',
                   leading: AppBackButton(),
-                  actions: [
-                    AppHeaderIconButton(icon: Icons.upload_file_rounded),
-                    SizedBox(width: AppSpacing.xs),
-                    AppAvatar(initials: 'AB'),
-                  ],
+                  actions: [SizedBox(width: AppSpacing.xs)],
                 ),
                 Expanded(
                   child: ListView(
@@ -333,7 +329,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
                       ),
                       AppSectionCard(
                         child: AppFormField(
-                          label: 'Lead Details / Requirements',
+                          label: 'Lead Details',
                           bottomSpacing: 0,
                           child: AppTextField(
                             hint: 'Which products is the customer asking for?',
