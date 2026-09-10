@@ -1,15 +1,16 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:in_app_update_flutter/in_app_update_flutter.dart';
 import 'package:nimmys_crm/features/dashboard/widgets/dashboard_count.dart';
 import 'package:nimmys_crm/features/dashboard/widgets/dashboard_drawer.dart';
+import 'package:nimmys_crm/features/leads/lead_list_global_screen.dart';
 import 'package:nimmys_crm/features/leads/my_leads_screen.dart';
 import 'package:nimmys_crm/features/reports/reports_screen.dart';
 import 'package:nimmys_crm/features/staff/staff_list_screen.dart';
 import '../../core/theme/app_theme.dart';
-import 'package:flutter/services.dart';
 import '../../core/auth/app_permission.dart';
 import '../../core/auth/user_role.dart';
 import '../../core/theme/app_dimens.dart';
@@ -103,7 +104,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     value: '5',
     icon: Icons.event_busy_outlined,
     tone: StatTone.ink,
-    route: AppRouteName.dutiesFiltered(taskStatus: 'overdue', scope: 'my_tasks'),
+    route: AppRouteName.dutiesFiltered(
+      taskStatus: 'overdue',
+      scope: 'my_tasks',
+    ),
   );
   static final StatItem _upcomingDuty = StatItem(
     label: 'Upcoming Duty',
@@ -187,15 +191,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ---- Tab content builders ----
 
-  Widget _buildTabContent(int index, UserRole role) {
+  /// [activeIndex] is the currently selected bottom-nav index. It is passed
+  /// down so tab widgets kept alive by [IndexedStack] can react when their
+  /// tab becomes visible (e.g. Leads refetches on every visit).
+  Widget _buildTabContent(int index, UserRole role, int activeIndex) {
     switch (index) {
       case 0:
-        // return _buildDashboardContent(context, role);
         return DashboardContent(role: role);
       case 1:
-        return const MyLeadsScreen(
+        return LeadListGlobalScreen(
           isAppHeaderRequired: false,
-          scope: 'my_leads',
+          isActive: activeIndex == index,
         );
       case 2:
         return const StaffListScreen();
@@ -258,7 +264,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     index: navIndex,
                     children: navItems.map((item) {
                       final int idx = navItems.indexOf(item);
-                      return _buildTabContent(idx, role);
+                      return _buildTabContent(idx, role, navIndex);
                     }).toList(),
                   ),
                 ),
@@ -267,7 +273,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             bottomNavigationBar: AppBottomNav(
               items: navItems,
               currentIndex: navIndex,
-              onTap: _onNavTap, // <-- now just updates index
+              onTap: _onNavTap,
               centerAction: role.canCreateLead
                   ? const AppNavItem(label: 'Add Lead', icon: Icons.add_rounded)
                   : null,
@@ -314,9 +320,7 @@ class DashboardLeadsSection extends StatelessWidget {
           AppSectionHeader(
             title: title,
             actionLabel: 'View All',
-            onAction: () =>
-                // context.push('${AppRouteName.leads}?isAppHeaderRequired=true'),
-               context.push(AppRouteName.viewAllLeads) ,
+            onAction: () => context.push(AppRouteName.viewAllLeads),
           ),
           const SizedBox(height: AppSpacing.sm),
           GridView.builder(

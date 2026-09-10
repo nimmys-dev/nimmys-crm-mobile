@@ -76,6 +76,7 @@ class AppRoutes {
     initialLocation: AppRouteName.splash,
     navigatorKey: navigatorKey,
     redirect: _permissionGuard,
+    observers: <NavigatorObserver>[routeObserver],
     routes: <RouteBase>[
       // Splash
       // Decides between home and signIn once the session check completes.
@@ -275,13 +276,13 @@ class AppRoutes {
           return ClosedLeadsScreen();
         },
       ),
-       GoRoute(
+      GoRoute(
         path: AppRouteName.viewAllLeads,
         builder: (BuildContext context, GoRouterState state) {
           return LeadListGlobalScreen();
         },
       ),
-       GoRoute(
+      GoRoute(
         path: AppRouteName.viewAllDuties,
         builder: (BuildContext context, GoRouterState state) {
           return DutyListGlobalScreen();
@@ -290,3 +291,8 @@ class AppRoutes {
     ],
   );
 }
+
+/// App-wide observer. Register on GoRouter:
+///   GoRouter(observers: [routeObserver], ...)
+final RouteObserver<PageRoute<dynamic>> routeObserver =
+    RouteObserver<PageRoute<dynamic>>();
