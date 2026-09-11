@@ -42,8 +42,7 @@ class MyLeadListScreen extends StatefulWidget {
   State<MyLeadListScreen> createState() => _MyLeadListScreenState();
 }
 
-class _MyLeadListScreenState extends State<MyLeadListScreen>
-    with RouteAware {
+class _MyLeadListScreenState extends State<MyLeadListScreen> with RouteAware {
   final TextEditingController _searchController = TextEditingController();
   Timer? _searchDebounce;
 
@@ -96,10 +95,7 @@ class _MyLeadListScreenState extends State<MyLeadListScreen>
   }
 
   void _refetch() {
-    context.read<LeadsCubit>().getLeads(
-      refresh: true,
-      isUniversalLeadList: 3,
-    );
+    context.read<LeadsCubit>().getLeads(refresh: true, isUniversalLeadList: 3);
   }
 
   void _onSearchChanged(String value) {

@@ -36,11 +36,12 @@ class LeadsCubit extends BaseCubit<LeadsState> {
     String? status,
     required int isUniversalLeadList,
   }) async {
-    // Update the state with the new universal flag and current status
-    emit(state.copyWith(
-      currentLeadStatus: status,
-      isUniversalLeadList: isUniversalLeadList,
-    ));
+    emit(
+      state.copyWith(
+        currentLeadStatus: status,
+        isUniversalLeadList: isUniversalLeadList,
+      ),
+    );
     await _fetchLeadsPage(
       page: 1,
       search: search,
@@ -51,11 +52,7 @@ class LeadsCubit extends BaseCubit<LeadsState> {
 
   Future<void> refreshLeads() async {
     final status = state.currentLeadStatus ?? '';
-    await _fetchLeadsPage(
-      page: 1,
-      skipIfCached: false,
-      status: status,
-    );
+    await _fetchLeadsPage(page: 1, skipIfCached: false, status: status);
   }
 
   Future<void> goToLeadsPage(int page) async {
@@ -63,11 +60,7 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       return;
     }
     final status = state.currentLeadStatus ?? '';
-    await _fetchLeadsPage(
-      page: page,
-      skipIfCached: false,
-      status: status,
-    );
+    await _fetchLeadsPage(page: page, skipIfCached: false, status: status);
   }
 
   Future<void> _fetchLeadsPage({
@@ -94,13 +87,16 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       return;
     }
 
+    // Always clear the list + pagination when starting a fresh page-1 fetch
+    // so the user never sees stale data while the new request is in flight.
+    final bool shouldClear = page == 1 || searchChanged || statusChanged;
+
     emit(
       state.copyWith(
         leadListUIState: UIState.loading(),
         leadSearchQuery: query,
-        leadList: (searchChanged || statusChanged)
-            ? <LeadItemData>[]
-            : state.leadList,
+        leadList: shouldClear ? <LeadItemData>[] : state.leadList,
+        leadPagination: shouldClear ? null : state.leadPagination,
       ),
     );
 
@@ -132,7 +128,6 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       emit(state.copyWith(leadListUIState: UIState.error(result.type)));
     }
   }
-
   // ---------------------------------------------------------------------------
   // Lead Assignees
   // ---------------------------------------------------------------------------
@@ -211,11 +206,13 @@ class LeadsCubit extends BaseCubit<LeadsState> {
       // Refresh with the current status and the stored universal flag
       final status = state.currentLeadStatus ?? '';
       final isUniversalLeadList = state.isUniversalLeadList;
-      unawaited(getLeads(
-        refresh: true,
-        status: status,
-        isUniversalLeadList: isUniversalLeadList,
-      ));
+      unawaited(
+        getLeads(
+          refresh: true,
+          status: status,
+          isUniversalLeadList: isUniversalLeadList,
+        ),
+      );
     } else if (result is Error<dynamic>) {
       _setCreateLeadUIState(UIState.error(result.type));
     }
