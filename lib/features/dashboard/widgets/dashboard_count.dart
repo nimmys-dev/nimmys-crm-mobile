@@ -236,7 +236,10 @@ class _DashboardContentState extends State<DashboardContent> {
           value: approval,
           icon: Icons.assignment_turned_in_outlined,
           tone: StatTone.ink,
-          route: '${AppRouteName.approvals}?scope=my_tasks',
+          route: AppRouteName.dutiesFiltered(
+            taskStatus: 'approvalPending',
+            scope: 'my_tasks',
+          ),
         ),
       if (role.canAccessApprovals)
         StatItem(
@@ -254,13 +257,13 @@ class _DashboardContentState extends State<DashboardContent> {
 
   // Helper to build duty stat items (from DashboardCount)
   List<StatItem> _buildAllDutyStats(UserRole role, DashboardCount? counts) {
-    final today = counts?.data?.counts?.all_tasks?.todayDuty?.toString() ?? '0';
+    final today = counts?.data?.counts?.allTasks?.todayDuty?.toString() ?? '0';
     final overdue =
-        counts?.data?.counts?.all_tasks?.overdueDuty?.toString() ?? '0';
+        counts?.data?.counts?.allTasks?.overdueDuty?.toString() ?? '0';
     final upcoming =
-        counts?.data?.counts?.all_tasks?.upcomingDuty?.toString() ?? '0';
+        counts?.data?.counts?.allTasks?.upcomingDuty?.toString() ?? '0';
     final approval =
-        counts?.data?.counts?.all_tasks?.approvalPending?.toString() ?? '0';
+        counts?.data?.counts?.allTasks?.approvalPending?.toString() ?? '0';
 
     return [
       StatItem(
@@ -299,7 +302,10 @@ class _DashboardContentState extends State<DashboardContent> {
           value: approval,
           icon: Icons.assignment_turned_in_outlined,
           tone: StatTone.ink,
-          route: '${AppRouteName.approvals}?scope=all_tasks',
+          route: AppRouteName.dutiesFiltered(
+            taskStatus: 'approvalPending',
+            scope: 'all_tasks',
+          ),
         ),
     ];
   }

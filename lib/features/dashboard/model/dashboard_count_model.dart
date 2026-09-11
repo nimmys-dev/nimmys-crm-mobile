@@ -7,19 +7,16 @@ class DashboardCount {
   String? message;
   Data? data;
 
-  DashboardCount({
-    this.status,
-    this.statusCode,
-    this.message,
-    this.data,
-  });
+  DashboardCount({this.status, this.statusCode, this.message, this.data});
 
   factory DashboardCount.fromJson(Map<String, dynamic> json) {
     return DashboardCount(
       status: json['status'] as bool?,
       statusCode: json['status_code'] as int?,
       message: json['message'] as String?,
-      data: json['data'] != null ? Data.fromJson(json['data'] as Map<String, dynamic>) : null,
+      data: json['data'] != null
+          ? Data.fromJson(json['data'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -40,21 +37,25 @@ class Data {
   List<Task>? tasks; // empty list, but can hold task objects if needed
   LeadPagination? pagination; // nullable
 
-  Data({
-    this.filter,
-    this.scope,
-    this.counts,
-    this.tasks,
-    this.pagination,
-  });
+  Data({this.filter, this.scope, this.counts, this.tasks, this.pagination});
 
   factory Data.fromJson(Map<String, dynamic> json) {
     return Data(
       filter: json['filter'] as String?,
       scope: json['scope'] as String?,
-      counts: json['counts'] != null ? Counts.fromJson(json['counts'] as Map<String, dynamic>) : null,
-      tasks: json['tasks'] != null ? List<Task>.from((json['tasks'] as List<dynamic>).map((e) => Task.fromJson(e as Map<String, dynamic>))) : null,
-      pagination: json['pagination'] != null ? LeadPagination.fromJson(json['pagination'] as Map<String, dynamic>) : null,
+      counts: json['counts'] != null
+          ? Counts.fromJson(json['counts'] as Map<String, dynamic>)
+          : null,
+      tasks: json['tasks'] != null
+          ? List<Task>.from(
+              (json['tasks'] as List<dynamic>).map(
+                (e) => Task.fromJson(e as Map<String, dynamic>),
+              ),
+            )
+          : null,
+      pagination: json['pagination'] != null
+          ? LeadPagination.fromJson(json['pagination'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -71,25 +72,23 @@ class Data {
 
 class Counts {
   MyTasks? myTasks;
-  AllTasks? all_tasks;
+  AllTasks? allTasks;
 
-  Counts({
-    this.myTasks,
-    this.all_tasks,
-  });
+  Counts({this.myTasks, this.allTasks});
 
   factory Counts.fromJson(Map<String, dynamic> json) {
     return Counts(
-      myTasks: json['myTasks'] != null ? MyTasks.fromJson(json['myTasks'] as Map<String, dynamic>) : null,
-      all_tasks: json['all_tasks'] != null ? AllTasks.fromJson(json['all_tasks'] as Map<String, dynamic>) : null,
+      myTasks: json['myTasks'] != null
+          ? MyTasks.fromJson(json['myTasks'] as Map<String, dynamic>)
+          : null,
+      allTasks: json['allTasks'] != null
+          ? AllTasks.fromJson(json['allTasks'] as Map<String, dynamic>)
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'myTasks': myTasks?.toJson(),
-      'all_tasks': all_tasks?.toJson(),
-    };
+    return {'myTasks': myTasks?.toJson(), 'allTasks': allTasks?.toJson()};
   }
 }
 
