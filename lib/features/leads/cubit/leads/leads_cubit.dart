@@ -34,7 +34,7 @@ class LeadsCubit extends BaseCubit<LeadsState> {
     bool refresh = false,
     String? search,
     String? status,
-    required bool isUniversalLeadList,
+    required int isUniversalLeadList,
   }) async {
     // Update the state with the new universal flag and current status
     emit(state.copyWith(

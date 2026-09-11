@@ -16,6 +16,7 @@ import '../../core/utils/phone_dialer.dart';
 import '../../data/ui_state/ui_state.dart';
 import '../../enum/status.dart';
 import '../../routing/app_route_name.dart';
+import '../../routing/app_routes.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/app_buttons.dart';
 import '../../shared/widgets/app_search_field.dart';
@@ -24,35 +25,81 @@ import 'widgets/lead_contact_actions.dart';
 
 /// Leads List screen — displays leads retrieved from `GET /api/leads` with
 /// server-side pagination.
-class ClosedLeadsScreen extends StatefulWidget {
-  const ClosedLeadsScreen({super.key});
+class MyLeadListScreen extends StatefulWidget {
+  final bool isAppHeaderRequired;
+
+  /// Set to `true` only while this screen's host tab is the selected one.
+  /// The leads API is refetched every time this flips `false → true`.
+  final bool isActive;
+
+  const MyLeadListScreen({
+    super.key,
+    this.isAppHeaderRequired = true,
+    this.isActive = true,
+  });
 
   @override
-  State<ClosedLeadsScreen> createState() => _ClosedLeadsScreenState();
+  State<MyLeadListScreen> createState() => _MyLeadListScreenState();
 }
 
-class _ClosedLeadsScreenState extends State<ClosedLeadsScreen> {
+class _MyLeadListScreenState extends State<MyLeadListScreen>
+    with RouteAware {
   final TextEditingController _searchController = TextEditingController();
   Timer? _searchDebounce;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        context.read<LeadsCubit>().getLeads(
-          isUniversalLeadList: 2,
-          refresh: true,
-        );
-      }
-    });
+    // Only auto-load if we start active. If hosted in a tab that isn't
+    // selected yet, we'll load when it becomes active (didUpdateWidget).
+    if (widget.isActive) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _refetch();
+      });
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final ModalRoute<dynamic>? route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
   }
 
   @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// Tab became visible via bottom-nav.
+  @override
+  void didUpdateWidget(covariant MyLeadListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _refetch();
+    }
+  }
+
+  /// A route on top of us was popped (ClosedLeadsScreen, lead details,
+  /// create-lead, etc.). If our tab is the active one, reload so we don't
+  /// render stale data written by the other screen.
+  @override
+  void didPopNext() {
+    if (widget.isActive) {
+      _refetch();
+    }
+  }
+
+  void _refetch() {
+    context.read<LeadsCubit>().getLeads(
+      refresh: true,
+      isUniversalLeadList: 3,
+    );
   }
 
   void _onSearchChanged(String value) {
@@ -61,7 +108,7 @@ class _ClosedLeadsScreenState extends State<ClosedLeadsScreen> {
       if (mounted) {
         context.read<LeadsCubit>().getLeads(
           search: value,
-          isUniversalLeadList: 2,
+          isUniversalLeadList: 3,
         );
       }
     });
@@ -74,10 +121,7 @@ class _ClosedLeadsScreenState extends State<ClosedLeadsScreen> {
   Future<void> _openCreateLead() async {
     final dynamic result = await context.push(AppRouteName.leadNew);
     if (result == true && mounted) {
-      await context.read<LeadsCubit>().getLeads(
-        refresh: true,
-        isUniversalLeadList: 2,
-      );
+      _refetch();
     }
   }
 
@@ -102,7 +146,7 @@ class _ClosedLeadsScreenState extends State<ClosedLeadsScreen> {
         body: Column(
           children: <Widget>[
             Visibility(
-              visible: true,
+              visible: widget.isAppHeaderRequired,
               child: const AppGradientHeader(
                 title: 'My Leads',
                 eyebrow: 'LEAD MANAGEMENT',
@@ -209,7 +253,7 @@ class _MyLeadsBodyState extends State<_MyLeadsBody> {
     if (currentState.leadListUIState?.status == Status.LOADING) return;
     final pagination = currentState.leadPagination;
     if (pagination == null || !pagination.hasNextPage) return;
-    final threshold = 200.0;
+    const threshold = 200.0;
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - threshold) {
       cubit.goToLeadsPage(pagination.nextPage);

@@ -15,6 +15,7 @@ import 'package:nimmys_crm/features/duties/task_detail_screen.dart';
 import 'package:nimmys_crm/features/leads/closed_leads_screen.dart';
 import 'package:nimmys_crm/features/leads/lead_details_screen.dart';
 import 'package:nimmys_crm/features/leads/lead_list_global_screen.dart';
+import 'package:nimmys_crm/features/leads/my_lead_list_screen.dart';
 import 'package:nimmys_crm/features/leads/my_leads_screen.dart';
 import 'package:nimmys_crm/features/leads/new_lead_screen.dart';
 import 'package:nimmys_crm/features/leads/todays_follow_up_screen.dart';
@@ -286,6 +287,12 @@ class AppRoutes {
         path: AppRouteName.viewAllDuties,
         builder: (BuildContext context, GoRouterState state) {
           return DutyListGlobalScreen();
+        },
+      ),
+      GoRoute(
+        path: AppRouteName.viewMyLeads,
+        builder: (BuildContext context, GoRouterState state) {
+          return MyLeadListScreen();
         },
       ),
     ],

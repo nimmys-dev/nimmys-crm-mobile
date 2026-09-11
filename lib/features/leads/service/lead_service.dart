@@ -25,12 +25,16 @@ class LeadService {
     int perPage = 10,
     String? search,
     String? status,
-    required bool isUniversalLeadList,
+    required int isUniversalLeadList,
   }) async {
     try {
-      final String url = isUniversalLeadList
+      final String url = isUniversalLeadList == 1
           ? ApiUrls.leads
-          : ApiUrls.closedLeads;
+          : isUniversalLeadList == 2
+          ? ApiUrls.closedLeads
+          : isUniversalLeadList == 3
+          ? ApiUrls.myLeads
+          : ApiUrls.leads;
       final Map<String, dynamic> queryParams = <String, dynamic>{
         "page": page,
         "per_page": perPage,

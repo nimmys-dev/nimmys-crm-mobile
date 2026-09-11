@@ -320,7 +320,14 @@ class DashboardLeadsSection extends StatelessWidget {
           AppSectionHeader(
             title: title,
             actionLabel: 'View All',
-            onAction: () => context.push(AppRouteName.viewAllLeads),
+            // onAction: () => context.push(AppRouteName.viewAllLeads),
+            onAction: () {
+              if (scope == 'my_leads') {
+                context.push(AppRouteName.viewMyLeads);
+              } else if (scope == 'all_leads') {
+                context.push(AppRouteName.viewAllLeads);
+              }
+            },
           ),
           const SizedBox(height: AppSpacing.sm),
           GridView.builder(

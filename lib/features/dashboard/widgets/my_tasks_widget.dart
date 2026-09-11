@@ -15,7 +15,7 @@ class DashboardDutySection extends StatelessWidget {
     super.key,
     required this.items,
     required this.taskTitle,
-   required this.scope,
+    required this.scope,
   });
 
   final List<StatItem> items;
@@ -26,12 +26,7 @@ class DashboardDutySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          AppSectionHeader(
-            title: taskTitle,
-            actionLabel: 'View All',
-            onAction: () =>
-                context.push(AppRouteName.viewAllDuties),
-          ),
+          AppSectionHeader(title: taskTitle),
           const SizedBox(height: AppSpacing.sm),
 
           LayoutBuilder(

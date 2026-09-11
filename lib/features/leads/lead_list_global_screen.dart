@@ -98,7 +98,7 @@ class _LeadListGlobalScreenState extends State<LeadListGlobalScreen>
   void _refetch() {
     context.read<LeadsCubit>().getLeads(
       refresh: true,
-      isUniversalLeadList: true,
+      isUniversalLeadList: 1,
     );
   }
 
@@ -108,7 +108,7 @@ class _LeadListGlobalScreenState extends State<LeadListGlobalScreen>
       if (mounted) {
         context.read<LeadsCubit>().getLeads(
           search: value,
-          isUniversalLeadList: true,
+          isUniversalLeadList: 1,
         );
       }
     });

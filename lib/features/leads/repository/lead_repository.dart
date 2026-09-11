@@ -22,7 +22,7 @@ class LeadRepository {
     int perPage = 10,
     String? search,
     String? status,
-    required bool isUniversalLeadList
+    required int isUniversalLeadList
   }) async {
     try {
       return await _service.getLeads(
