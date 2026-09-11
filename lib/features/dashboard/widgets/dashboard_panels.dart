@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:nimmys_crm/routing/app_route_name.dart';
 import '../../../core/theme/app_theme.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -13,7 +15,6 @@ class DashboardTotalsCard extends StatelessWidget {
     super.key,
     required this.yourLeads,
     required this.totalLeads,
-    this.onTap,
   });
 
   final String yourLeads;
@@ -21,22 +22,9 @@ class DashboardTotalsCard extends StatelessWidget {
   /// Null hides the second half of the panel entirely.
   final String? totalLeads;
 
-  /// Opens the leads list. Null leaves the panel as a read-only summary, which
-  /// is how the reports screen uses it.
-  final VoidCallback? onTap;
-
-
   @override
   Widget build(BuildContext context) {
-    final Widget panel = _buildPanel(context);
-    if (onTap == null) {
-      return panel;
-    }
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.lg),
-      child: panel,
-    );
+    return _buildPanel(context);
   }
 
   Widget _buildPanel(BuildContext context) {
@@ -58,14 +46,23 @@ class DashboardTotalsCard extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
+          // Your Leads
           Expanded(
-            child: DashboardTotalsTile(
-              icon: Icons.person_outline_rounded,
-              label: 'Your Leads',
-              value: yourLeads,
-              isAccent: true,
+            child: InkWell(
+              onTap: () {
+                context.push(AppRouteName.viewMyLeads);
+              },
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              child: DashboardTotalsTile(
+                icon: Icons.person_outline_rounded,
+                label: 'Your Leads',
+                value: yourLeads,
+                isAccent: true,
+              ),
             ),
           ),
+
+          // Total Leads
           if (totalLeads != null) ...<Widget>[
             Container(
               width: 1,
@@ -74,11 +71,17 @@ class DashboardTotalsCard extends StatelessWidget {
               color: AppColors.white.withValues(alpha: 0.14),
             ),
             Expanded(
-              child: DashboardTotalsTile(
-                icon: Icons.layers_outlined,
-                label: 'Total Leads',
-                value: totalLeads!,
-                isAccent: false,
+              child: InkWell(
+                onTap: () {
+                  context.push(AppRouteName.viewAllLeads);
+                },
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                child: DashboardTotalsTile(
+                  icon: Icons.layers_outlined,
+                  label: 'Total Leads',
+                  value: totalLeads!,
+                  isAccent: false,
+                ),
               ),
             ),
           ],

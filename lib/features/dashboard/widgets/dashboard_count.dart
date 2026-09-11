@@ -150,9 +150,6 @@ class _DashboardContentState extends State<DashboardContent> {
                           child: DashboardTotalsCard(
                             yourLeads: yourLeads,
                             totalLeads: totalLeads,
-                            onTap: () => context.push(
-                              '${AppRouteName.leads}?isAppHeaderRequired=true',
-                            ),
                           ),
                         ),
                         if (widget.role.hasFullDashboard)
