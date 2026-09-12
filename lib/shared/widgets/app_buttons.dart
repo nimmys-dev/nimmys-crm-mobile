@@ -267,9 +267,7 @@ class AppBackButton extends StatelessWidget {
             width: 40,
             height: 40,
             child: Icon(
-              isCupertino
-                  ? Icons.arrow_back_ios_new_rounded
-                  : Icons.arrow_back_rounded,
+              Icons.arrow_back_ios_new_rounded,
               size: isCupertino ? 18 : 20,
               color: onDark ? AppColors.white : context.palette.ink,
             ),

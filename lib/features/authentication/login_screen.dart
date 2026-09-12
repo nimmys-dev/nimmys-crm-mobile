@@ -37,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _rememberMe = true;
   String? _emailError;
   String? _passwordError;
-  String? _fcmToken;
+  String? _fcmToken = 'pppppp';
 
   @override
   void initState() {
@@ -68,8 +68,39 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _getFcmToken() async {
     try {
-      final token = await FirebaseMessaging.instance.getToken();
-      if (mounted) setState(() => _fcmToken = token);
+      final FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+      if (Platform.isIOS) {
+        await messaging.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+
+        String? apnsToken;
+
+        for (int i = 0; i < 10; i++) {
+          apnsToken = await messaging.getAPNSToken();
+
+          if (apnsToken != null) {
+            break;
+          }
+
+          await Future.delayed(const Duration(seconds: 1));
+        }
+
+        debugPrint('APNs Token: $apnsToken');
+      }
+
+      final String? token = await messaging.getToken();
+
+      debugPrint('FCM Token: $token');
+
+      if (token != null && token.isNotEmpty && mounted) {
+        setState(() {
+          _fcmToken = token;
+        });
+      }
     } catch (e) {
       debugPrint('Failed to get FCM token: $e');
     }
@@ -88,7 +119,8 @@ class _LoginScreenState extends State<LoginScreen> {
       final updater = InAppUpdateFlutter();
       if (Platform.isAndroid) {
         final info = await updater.checkUpdateAndroid();
-        if (info.updateAvailability == UpdateAvailabilityAndroid.updateAvailable &&
+        if (info.updateAvailability ==
+                UpdateAvailabilityAndroid.updateAvailable &&
             info.isImmediateUpdateAllowed) {
           await updater.startImmediateUpdateAndroid();
         }
@@ -110,11 +142,24 @@ class _LoginScreenState extends State<LoginScreen> {
       _emailError = Validator.email(email);
       _passwordError = Validator.fieldRequired(password, fieldName: 'Password');
     });
+
     if (_emailError != null || _passwordError != null) return;
+
+    if (_fcmToken == null || _fcmToken!.isEmpty) {
+      await _getFcmToken();
+    }
+
+    if (_fcmToken == null || _fcmToken!.isEmpty) {
+      ToastMessages.error(
+        message: 'Unable to get notification token. Please try again.',
+      );
+      return;
+    }
 
     if (AppPreferences.isReady) {
       final AppPreferences prefs = AppPreferences.instance;
       await prefs.setRememberMe(_rememberMe);
+
       if (_rememberMe) {
         await prefs.setSavedEmail(email);
       } else {
@@ -123,13 +168,10 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     if (!mounted) return;
+
     await context.read<LoginCubit>().login(
-          LoginApiRequest(
-            email: email,
-            password: password,
-            fcm_token: _fcmToken ?? '',
-          ),
-        );
+      LoginApiRequest(email: email, password: password, fcm_token: _fcmToken!),
+    );
   }
 
   Future<void> _handleForgotPassword() async {
@@ -159,7 +201,8 @@ class _LoginScreenState extends State<LoginScreen> {
         break;
       case Status.ERROR:
         ToastMessages.error(
-          message: forgotState.errorType?.getText(context) ??
+          message:
+              forgotState.errorType?.getText(context) ??
               'Failed to send reset link. Please try again.',
         );
         context.read<LoginCubit>().resetForgotPasswordState();
@@ -185,7 +228,8 @@ class _LoginScreenState extends State<LoginScreen> {
         break;
       case Status.ERROR:
         ToastMessages.error(
-          message: state.loginUIState?.errorType?.getText(context) ??
+          message:
+              state.loginUIState?.errorType?.getText(context) ??
               'Login attempt unsuccessful, Please try again later',
         );
         break;
@@ -200,15 +244,19 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light.copyWith(statusBarColor: Colors.transparent),
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: Colors.transparent,
+      ),
       child: Scaffold(
         backgroundColor: context.palette.canvas,
         resizeToAvoidBottomInset: true,
         body: BlocConsumer<LoginCubit, LoginState>(
           listener: _onLoginStateChanged,
           builder: (BuildContext context, LoginState state) {
-            final bool isLoginLoading = state.loginUIState?.status == Status.LOADING;
-            final bool isForgotLoading = state.forgotPasswordUIState?.status == Status.LOADING;
+            final bool isLoginLoading =
+                state.loginUIState?.status == Status.LOADING;
+            final bool isForgotLoading =
+                state.forgotPasswordUIState?.status == Status.LOADING;
 
             return Column(
               children: [
@@ -219,7 +267,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       left: AppSpacing.lg,
                       right: AppSpacing.lg,
                       top: AppSpacing.xl,
-                      bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl,
+                      bottom:
+                          MediaQuery.of(context).viewInsets.bottom +
+                          AppSpacing.xl,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -264,7 +314,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           label: 'LOGIN',
                           icon: Icons.login_rounded,
                           isLoading: isLoginLoading,
-                          onPressed: (isLoginLoading || isForgotLoading) ? null : _handleLogin,
+                          onPressed: (isLoginLoading || isForgotLoading)
+                              ? null
+                              : _handleLogin,
                         ),
                         const SizedBox(height: AppSpacing.xl),
 
@@ -297,7 +349,11 @@ class LoginFieldError extends StatelessWidget {
       padding: const EdgeInsets.only(top: 6, left: 4),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded, size: 14, color: AppColors.red),
+          const Icon(
+            Icons.error_outline_rounded,
+            size: 14,
+            color: AppColors.red,
+          ),
           const SizedBox(width: 4),
           Expanded(
             child: Text(
@@ -349,15 +405,23 @@ class LoginBrandStage extends StatelessWidget {
                 const AppLogo(height: 52),
                 const SizedBox(height: AppSpacing.md),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.white.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(AppRadius.pill),
-                    border: Border.all(color: AppColors.white.withValues(alpha: 0.14)),
+                    border: Border.all(
+                      color: AppColors.white.withValues(alpha: 0.14),
+                    ),
                   ),
                   child: Text(
                     'CRM WORKSPACE',
-                    style: context.type.splashTagline.copyWith(fontSize: 10, letterSpacing: 2.4),
+                    style: context.type.splashTagline.copyWith(
+                      fontSize: 10,
+                      letterSpacing: 2.4,
+                    ),
                   ),
                 ),
               ],
@@ -375,11 +439,17 @@ class LoginStageClipper extends CustomClipper<Path> {
   Path getClip(Size size) {
     final Path path = Path()
       ..lineTo(0, size.height - 46)
-      ..quadraticBezierTo(size.width * 0.5, size.height + 26, size.width, size.height - 46)
+      ..quadraticBezierTo(
+        size.width * 0.5,
+        size.height + 26,
+        size.width,
+        size.height - 46,
+      )
       ..lineTo(size.width, 0)
       ..close();
     return path;
   }
+
   @override
   bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
@@ -397,7 +467,10 @@ class LoginWelcomeText extends StatelessWidget {
               width: 4,
               height: 22,
               margin: const EdgeInsets.only(right: AppSpacing.xs),
-              decoration: BoxDecoration(color: AppColors.red, borderRadius: BorderRadius.circular(AppRadius.pill)),
+              decoration: BoxDecoration(
+                color: AppColors.red,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
             ),
             Text('Welcome back', style: context.type.pageHeading),
           ],
@@ -440,7 +513,9 @@ class LoginOptionsRow extends StatelessWidget {
             activeColor: AppColors.red,
             checkColor: AppColors.white,
             side: BorderSide(color: context.palette.inkBorder, width: 1.6),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(5),
+            ),
             visualDensity: VisualDensity.compact,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
@@ -486,7 +561,11 @@ class LoginSecurityNote extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.verified_user_outlined, size: 20, color: AppColors.red),
+          const Icon(
+            Icons.verified_user_outlined,
+            size: 20,
+            color: AppColors.red,
+          ),
           const SizedBox(width: AppSpacing.xs),
           Expanded(
             child: Text(
@@ -506,11 +585,13 @@ class LoginFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-
         const SizedBox(height: AppSpacing.sm),
         Text(
           '© nimmys camera centre',
-          style: context.type.caption.copyWith(fontSize: 11, color: context.palette.faint),
+          style: context.type.caption.copyWith(
+            fontSize: 11,
+            color: context.palette.faint,
+          ),
         ),
       ],
     );
