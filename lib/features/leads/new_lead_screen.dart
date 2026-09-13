@@ -233,6 +233,24 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
     }
   }
 
+  void autoSelectCallSource(List<LeadSourceData> sources) {
+    if (_source != null || sources.isEmpty) return;
+
+    final matched = sources
+        .where((source) => source.label?.trim().toLowerCase() == 'call')
+        .firstOrNull;
+
+    if (matched == null) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _source != null) return;
+
+      setState(() {
+        _source = matched;
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -262,6 +280,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
           // Convert API LeadSourceData to enum LeadSource
           final sources =
               state.leadSourcesUIState?.data?.data ?? <LeadSourceData>[];
+          autoSelectCallSource(sources);
           final isLoadingSources =
               state.leadSourcesUIState?.status == Status.LOADING ||
               state.leadSourcesUIState?.status == null ||
