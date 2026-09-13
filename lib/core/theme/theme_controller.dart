@@ -12,7 +12,7 @@ class ThemeController extends ChangeNotifier {
           initialMode ??
           (AppPreferences.isReady
               ? AppPreferences.instance.themeMode
-              : ThemeMode.system);
+              : ThemeMode.light);
 
   ThemeMode _themeMode;
 

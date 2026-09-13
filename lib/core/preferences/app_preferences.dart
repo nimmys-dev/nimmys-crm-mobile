@@ -47,9 +47,9 @@ class AppPreferences {
       case 'light':
         return ThemeMode.light;
       case 'dark':
-        return ThemeMode.dark;
+        return ThemeMode.light;
       default:
-        return ThemeMode.system;
+        return ThemeMode.light;
     }
   }
 
