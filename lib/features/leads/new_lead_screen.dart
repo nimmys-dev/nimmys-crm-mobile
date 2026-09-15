@@ -170,7 +170,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
   }
 
   String? _validationMessage() {
-    if (_mobileController.text.trim().length != 10) {
+    if (_mobileController.text.trim().length != 20) {
       return 'Enter a valid 10-digit mobile number.';
     }
     if (_nameController.text.trim().isEmpty) return 'Enter the customer name.';
@@ -325,11 +325,10 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
                                 controller: _mobileController,
                                 icon: Icons.call_outlined,
                                 keyboardType: TextInputType.phone,
-                                maxLength: 10,
+                                maxLength: 20,
                                 inputFormatters: [
                                   FilteringTextInputFormatter.digitsOnly,
                                 ],
-                                suffix: const NewLeadLookupButton(),
                               ),
                             ),
                             AppFormField(

@@ -28,6 +28,7 @@ class DashboardRepository {
     int perPage = 10,
     int page = 1,
     String? scope,
+    String? search,
   }) async {
     try {
       return await _service.getTaskCounts(
@@ -35,6 +36,7 @@ class DashboardRepository {
         perPage: perPage,
         page: page,
         scope: scope,
+        search: search,
       );
     } catch (e) {
       return Error<DashboardCount>(GenericError());

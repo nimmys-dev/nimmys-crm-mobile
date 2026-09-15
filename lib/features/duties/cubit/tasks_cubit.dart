@@ -478,11 +478,15 @@ class TasksCubit extends BaseCubit<TasksState> {
     bool replace = true,
     String? status,
   }) async {
-    if (state.tasksByStaffIdUIState?.status == Status.LOADING) return;
-
     final query = (search ?? state.tasksByStaffIdSearchQuery).trim();
     final searchChanged = query != state.tasksByStaffIdSearchQuery;
     final staffChanged = staffId != state.currentStaffIdForTasks;
+
+    if (state.tasksByStaffIdUIState?.status == Status.LOADING &&
+        !searchChanged &&
+        !staffChanged) {
+      return;
+    }
 
     // Skip if same staff, same search, and we already have data.
     if (!replace &&
@@ -598,6 +602,12 @@ class TasksCubit extends BaseCubit<TasksState> {
       status: status,
       replace: false,
     );
+  }
+
+  /// Clears the persisted staff-tasks search query without refetching.
+  void clearTasksByStaffIdSearch() {
+    if (state.tasksByStaffIdSearchQuery.isEmpty) return;
+    emit(state.copyWith(tasksByStaffIdSearchQuery: ''));
   }
 
   /// Clear the tasks‑by‑staff state.

@@ -41,6 +41,7 @@ class DashboardCountService {
     int perPage = 10,
     int page = 1,
     String? scope,
+    String? search,
   }) async {
     try {
       // Build query map, omitting null values
@@ -56,6 +57,9 @@ class DashboardCountService {
       if (scope != null&& scope != 'null' && scope.isNotEmpty) {
         query['scope'] = scope;
       } else {}
+      if (search != null && search.trim().isNotEmpty) {
+        query['search'] = search.trim();
+      }
       // Use a dedicated URL for the task‑counts endpoint
       final String url =
           ApiUrls.getTaskCounts; // define as '/dashboard/task-counts'

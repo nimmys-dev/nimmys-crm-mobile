@@ -1,8 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nimmys_crm/core/preferences/app_preferences.dart';
 import 'package:nimmys_crm/enum/status.dart';
 import 'package:nimmys_crm/features/dashboard/cubit/dashboard_cubit.dart';
 import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
@@ -32,19 +33,23 @@ class DutyListScreen extends StatefulWidget {
 class _DutyListScreenState extends State<DutyListScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  Timer? _searchDebounce;
   String _query = '';
   bool _isInitialLoading = true;
+  late final DashboardCubit _dashboardCubit;
 
   @override
   void initState() {
     super.initState();
+    _dashboardCubit = context.read<DashboardCubit>();
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Initial fetch: page 1, using the given taskStatus as filter
-      await context.read<DashboardCubit>().getTaskCounts(
+      // Always start with a cleared search when opening this screen.
+      await _dashboardCubit.getTaskCounts(
         refresh: true,
         filter: widget.taskStatus ?? '',
         scope: widget.scope,
+        search: '',
         page: 1,
       );
       if (mounted) setState(() => _isInitialLoading = false);
@@ -53,6 +58,9 @@ class _DutyListScreenState extends State<DutyListScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    // Drop persisted search so the next visit does not reuse it.
+    _dashboardCubit.clearTaskSearch();
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -78,32 +86,36 @@ class _DutyListScreenState extends State<DutyListScreen> {
   }
 
   Future<void> _refreshTasks() async {
-    await context.read<DashboardCubit>().refreshTaskCounts();
+    await context.read<DashboardCubit>().getTaskCounts(
+      refresh: true,
+      filter: widget.taskStatus ?? '',
+      scope: widget.scope,
+      search: _searchController.text.trim(),
+      page: 1,
+    );
   }
 
   void _onSearchChanged(String value) {
-    _query = value;
-    // When search changes, we re‑fetch page 1 with the current filter.
-    // The cubit will replace the list because refresh is true.
+    setState(() => _query = value);
+    _searchDebounce?.cancel();
+    // Clearing the field should restore the full list immediately.
+    if (value.trim().isEmpty) {
+      _submitSearch();
+      return;
+    }
+    _searchDebounce = Timer(const Duration(milliseconds: 350), _submitSearch);
+  }
+
+  void _submitSearch() {
+    _searchDebounce?.cancel();
+    if (!mounted) return;
     context.read<DashboardCubit>().getTaskCounts(
+      search: _searchController.text.trim(),
       refresh: true,
       filter: widget.taskStatus ?? '',
       scope: widget.scope,
       page: 1,
     );
-  }
-
-  List<Task> _visibleDuties(List<Task> all_tasks) {
-    final needle = _query.trim().toLowerCase();
-    if (needle.isEmpty) return all_tasks;
-    return all_tasks.where((task) {
-      final title = task.title?.toLowerCase() ?? '';
-      final description = task.description?.toLowerCase() ?? '';
-      final assignee = task.assignedUser?.name?.toLowerCase() ?? '';
-      return title.contains(needle) ||
-          description.contains(needle) ||
-          assignee.contains(needle);
-    }).toList();
   }
 
   @override
@@ -147,6 +159,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
                       hint: 'Search duties, people…',
                       controller: _searchController,
                       onChanged: _onSearchChanged,
+                      onSubmit: _submitSearch,
                     ),
                   ),
                   Expanded(
@@ -219,7 +232,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
       );
     }
 
-    final tasks = _visibleDuties(all_tasks);
+    final tasks = all_tasks;
 
     if (tasks.isEmpty) {
       return RefreshIndicator(

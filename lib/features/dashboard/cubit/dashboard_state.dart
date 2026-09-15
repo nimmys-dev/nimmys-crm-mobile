@@ -13,6 +13,7 @@ class DashboardState extends Equatable {
   final String? currentTaskScope;
   final String? lastFetchedTaskFilter;
   final String? lastFetchedTaskScope;
+  final String currentTaskSearch;
   final bool isLoadingMoreTasks;
 
   // ─── Lead list (paginated) ──────────────────────────────────
@@ -35,6 +36,7 @@ class DashboardState extends Equatable {
     this.currentTaskScope,
     this.lastFetchedTaskFilter,
     this.lastFetchedTaskScope,
+    this.currentTaskSearch = '',
     this.isLoadingMoreTasks = false,
     this.leadListUIState,
     this.leadList,
@@ -56,6 +58,7 @@ class DashboardState extends Equatable {
     String? currentTaskScope,
     String? lastFetchedTaskFilter,
     String? lastFetchedTaskScope,
+    String? currentTaskSearch,
     bool? isLoadingMoreTasks,
     UIState<LeadCountModel>? leadListUIState,
     List<LeadItemData>? leadList,
@@ -76,6 +79,7 @@ class DashboardState extends Equatable {
       currentTaskScope: currentTaskScope ?? this.currentTaskScope,
       lastFetchedTaskFilter: lastFetchedTaskFilter ?? this.lastFetchedTaskFilter,
       lastFetchedTaskScope: lastFetchedTaskScope ?? this.lastFetchedTaskScope,
+      currentTaskSearch: currentTaskSearch ?? this.currentTaskSearch,
       isLoadingMoreTasks: isLoadingMoreTasks ?? this.isLoadingMoreTasks,
       leadListUIState: leadListUIState ?? this.leadListUIState,
       leadList: leadList ?? this.leadList,
@@ -108,6 +112,7 @@ class DashboardState extends Equatable {
         currentTaskScope,
         lastFetchedTaskFilter,
         lastFetchedTaskScope,
+        currentTaskSearch,
         isLoadingMoreTasks,
         leadListUIState,
         leadListUIState?.status,

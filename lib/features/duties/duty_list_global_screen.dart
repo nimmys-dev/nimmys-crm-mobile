@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -26,19 +28,24 @@ class DutyListGlobalScreen extends StatefulWidget {
 class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  Timer? _searchDebounce;
   String _query = '';
   int? _staffId;
+  late final TasksCubit _tasksCubit;
 
   @override
   void initState() {
     super.initState();
+    _tasksCubit = context.read<TasksCubit>();
     _staffId = AppPreferences.instance.userId;
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_staffId != null) {
-        context.read<TasksCubit>().getTasksByStaffId(
+        // Always start with a cleared search when opening this screen.
+        _tasksCubit.getTasksByStaffId(
           staffId: _staffId!,
           refresh: true,
+          search: '',
         );
       }
     });
@@ -46,6 +53,9 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    // Drop persisted search so the next visit does not reuse it.
+    _tasksCubit.clearTasksByStaffIdSearch();
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -78,26 +88,25 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
   }
 
   void _onSearchChanged(String value) {
-    _query = value;
+    setState(() => _query = value);
     if (_staffId == null) return;
-    context.read<TasksCubit>().getTasksByStaffId(
-      staffId: _staffId!,
-      search: value.trim(),
-    );
+    _searchDebounce?.cancel();
+    // Clearing the field should restore the full list immediately.
+    if (value.trim().isEmpty) {
+      _submitSearch();
+      return;
+    }
+    _searchDebounce = Timer(const Duration(milliseconds: 350), _submitSearch);
   }
 
-  List<Task> _visibleDuties(List<Task> all_tasks) {
-    final needle = _query.trim().toLowerCase();
-    if (needle.isEmpty) return all_tasks;
-
-    return all_tasks.where((task) {
-      final title = task.title?.toLowerCase() ?? '';
-      final description = task.description?.toLowerCase() ?? '';
-      final assignee = task.assignedUser?.name?.toLowerCase() ?? '';
-      return title.contains(needle) ||
-          description.contains(needle) ||
-          assignee.contains(needle);
-    }).toList();
+  void _submitSearch() {
+    _searchDebounce?.cancel();
+    if (!mounted || _staffId == null) return;
+    context.read<TasksCubit>().getTasksByStaffId(
+      staffId: _staffId!,
+      search: _searchController.text.trim(),
+      refresh: true,
+    );
   }
 
   @override
@@ -142,6 +151,7 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
                       hint: 'Search duties, people…',
                       controller: _searchController,
                       onChanged: _onSearchChanged,
+                      onSubmit: _submitSearch,
                     ),
                   ),
                   Expanded(
@@ -196,7 +206,7 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
       );
     }
 
-    final tasks = _visibleDuties(all_tasks);
+    final tasks = all_tasks;
 
     if (tasks.isEmpty) {
       return RefreshIndicator(

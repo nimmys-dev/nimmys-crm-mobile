@@ -72,6 +72,7 @@ class DashboardCubit extends BaseCubit<DashboardState> {
     bool refresh = false,
     String? filter,
     String? scope,
+    String? search,
     int page = 1,
     bool isLoadMore = false,
   }) async {
@@ -79,17 +80,27 @@ class DashboardCubit extends BaseCubit<DashboardState> {
       emit(state.copyWith(isLoadingMoreTasks: true));
     }
 
-    emit(state.copyWith(currentTaskFilter: filter, currentTaskScope: scope));
-
+    final query = (search ?? state.currentTaskSearch).trim();
     final filterChanged = filter != state.lastFetchedTaskFilter;
     final scopeChanged = scope != state.lastFetchedTaskScope;
-    final shouldReplace = page == 1 || refresh || filterChanged || scopeChanged;
+    final searchChanged = query != state.currentTaskSearch;
+    final shouldReplace =
+        page == 1 || refresh || filterChanged || scopeChanged || searchChanged;
+
+    emit(
+      state.copyWith(
+        currentTaskFilter: filter,
+        currentTaskScope: scope,
+        currentTaskSearch: query,
+      ),
+    );
 
     if (!refresh &&
         state.taskCountsUIState?.data != null &&
         page == (state.taskPagination?.currentPage ?? 1) &&
         !filterChanged &&
         !scopeChanged &&
+        !searchChanged &&
         !isLoadMore) {
       return;
     }
@@ -109,6 +120,7 @@ class DashboardCubit extends BaseCubit<DashboardState> {
       perPage: _pageSize,
       page: page,
       scope: scope ?? state.currentTaskScope,
+      search: query,
     );
 
     if (result is Success<DashboardCount>) {
@@ -145,6 +157,7 @@ class DashboardCubit extends BaseCubit<DashboardState> {
       refresh: true,
       filter: state.currentTaskFilter,
       scope: state.currentTaskScope,
+      search: state.currentTaskSearch,
       page: 1,
     );
   }
@@ -157,9 +170,16 @@ class DashboardCubit extends BaseCubit<DashboardState> {
     await getTaskCounts(
       filter: state.currentTaskFilter,
       scope: state.currentTaskScope,
+      search: state.currentTaskSearch,
       page: page,
       isLoadMore: isLoadMore,
     );
+  }
+
+  /// Clears the persisted task search query without refetching.
+  void clearTaskSearch() {
+    if (state.currentTaskSearch.isEmpty) return;
+    emit(state.copyWith(currentTaskSearch: ''));
   }
 
   void resetTaskCountsState() {
@@ -172,6 +192,7 @@ class DashboardCubit extends BaseCubit<DashboardState> {
         taskPagination: null,
         lastFetchedTaskFilter: null,
         lastFetchedTaskScope: null,
+        currentTaskSearch: '',
         isLoadingMoreTasks: false,
       ),
     );
