@@ -1,4 +1,4 @@
-package com.nimmyscrm.app
+package com.nimmyscrmios.app
 
 import io.flutter.embedding.android.FlutterActivity
 

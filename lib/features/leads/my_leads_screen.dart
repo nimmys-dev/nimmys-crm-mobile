@@ -556,7 +556,7 @@ class MyLeadTile extends StatelessWidget {
                           if (lead.assignedTo != null &&
                               lead.assignedTo!.trim().isNotEmpty)
                             AppTag(
-                              label: 'Assigned: ${lead.assignedTo!.trim()}',
+                              label: 'Assigned: ${lead.assignedTo}',
                               icon: Icons.badge_outlined,
                               isAccent: false,
                             ),

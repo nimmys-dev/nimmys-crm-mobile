@@ -142,6 +142,7 @@ class _MyLeadListScreenState extends State<MyLeadListScreen> with RouteAware {
         body: Column(
           children: <Widget>[
             Visibility(
+            
               visible: widget.isAppHeaderRequired,
               child: const AppGradientHeader(
                 title: 'My Leads',

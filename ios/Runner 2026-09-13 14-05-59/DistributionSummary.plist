@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>nimmys_crm.ipa</key>
+	<array>
+		<dict>
+			<key>architectures</key>
+			<array>
+				<string>arm64</string>
+			</array>
+			<key>buildNumber</key>
+			<string>31</string>
+			<key>certificate</key>
+			<dict>
+				<key>SHA1</key>
+				<string>3798AF57A9F36FF5FFC66DDC7C506C6AB3D4312F</string>
+				<key>dateExpires</key>
+				<string>13/09/27</string>
+				<key>type</key>
+				<string>Cloud Managed Apple Distribution</string>
+			</dict>
+			<key>embeddedBinaries</key>
+			<array>
+				<dict>
+					<key>architectures</key>
+					<array>
+						<string>arm64</string>
+					</array>
+					<key>buildNumber</key>
+					<string>1.0</string>
+					<key>certificate</key>
+					<dict>
+						<key>SHA1</key>
+						<string>3798AF57A9F36FF5FFC66DDC7C506C6AB3D4312F</string>
+						<key>dateExpires</key>
+						<string>13/09/27</string>
+						<key>type</key>
+						<string>Cloud Managed Apple Distribution</string>
+					</dict>
+					<key>name</key>
+					<string>App.framework</string>
+					<key>symbols</key>
+					<true/>
+					<key>team</key>
+					<dict>
+						<key>id</key>
+						<string>5K8MQ5ZW2B</string>
+						<key>name</key>
+						<string>Sojan MS</string>
+					</dict>
+					<key>versionNumber</key>
+					<string>1.0</string>
+				</dict>
+				<dict>
+					<key>architectures</key>
+					<array>
+						<string>arm64</string>
+					</array>
+					<key>buildNumber</key>
+					<string>1.0</string>
+					<key>certificate</key>
+					<dict>
+						<key>SHA1</key>
+						<string>3798AF57A9F36FF5FFC66DDC7C506C6AB3D4312F</string>
+						<key>dateExpires</key>
+						<string>13/09/27</string>
+						<key>type</key>
+						<string>Cloud Managed Apple Distribution</string>
+					</dict>
+					<key>name</key>
+					<string>Flutter.framework</string>
+					<key>symbols</key>
+					<true/>
+					<key>team</key>
+					<dict>
+						<key>id</key>
+						<string>5K8MQ5ZW2B</string>
+						<key>name</key>
+						<string>Sojan MS</string>
+					</dict>
+					<key>versionNumber</key>
+					<string>1.0</string>
+				</dict>
+				<dict>
+					<key>architectures</key>
+					<array>
+						<string>arm64</string>
+					</array>
+					<key>buildNumber</key>
+					<string>1.0</string>
+					<key>certificate</key>
+					<dict>
+						<key>SHA1</key>
+						<string>3798AF57A9F36FF5FFC66DDC7C506C6AB3D4312F</string>
+						<key>dateExpires</key>
+						<string>13/09/27</string>
+						<key>type</key>
+						<string>Cloud Managed Apple Distribution</string>
+					</dict>
+					<key>name</key>
+					<string>objective_c.framework</string>
+					<key>symbols</key>
+					<true/>
+					<key>team</key>
+					<dict>
+						<key>id</key>
+						<string>5K8MQ5ZW2B</string>
+						<key>name</key>
+						<string>Sojan MS</string>
+					</dict>
+					<key>versionNumber</key>
+					<string>1.0</string>
+				</dict>
+			</array>
+			<key>entitlements</key>
+			<dict>
+				<key>application-identifier</key>
+				<string>5K8MQ5ZW2B.com.nimmyscrmios.app</string>
+				<key>beta-reports-active</key>
+				<true/>
+				<key>com.apple.developer.team-identifier</key>
+				<string>5K8MQ5ZW2B</string>
+				<key>get-task-allow</key>
+				<false/>
+			</dict>
+			<key>name</key>
+			<string>Runner.app</string>
+			<key>profile</key>
+			<dict>
+				<key>UUID</key>
+				<string>c5d87f8a-d9fb-4632-9c97-25646d37d6e5</string>
+				<key>dateExpires</key>
+				<string>13/09/27</string>
+				<key>name</key>
+				<string>iOS Team Store Provisioning Profile: com.nimmyscrmios.app</string>
+			</dict>
+			<key>symbols</key>
+			<true/>
+			<key>team</key>
+			<dict>
+				<key>id</key>
+				<string>5K8MQ5ZW2B</string>
+				<key>name</key>
+				<string>Sojan MS</string>
+			</dict>
+			<key>versionNumber</key>
+			<string>1.0.31</string>
+		</dict>
+	</array>
+</dict>
+</plist>

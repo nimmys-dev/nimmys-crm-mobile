@@ -79,12 +79,20 @@ class LeadItemData {
       // The dashboard endpoint returns user IDs here (for example `1`),
       // whereas other lead endpoints can return display names.  Do not use an
       // `as String?` cast: an integer ID would throw during deserialization.
-      assignedTo: _asString(json["assigned_to"]),
-      createdBy: _asString(json["created_by"]),
+      assignedTo:
+          _asName(json["assigned_user"]) ?? _asString(json["assigned_to"]),
+      createdBy: _asName(json["created_user"]) ?? _asString(json["created_by"]),
       description: json["description"] as String?,
       has_quotation: json["has_quotation"] as bool?,
-      status : json["status"] as String?
+      status: json["status"] as String?,
     );
+  }
+  static String? _asName(dynamic value) {
+    if (value is Map) {
+      final dynamic name = value["name"];
+      if (name != null) return name.toString();
+    }
+    return null;
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -97,7 +105,7 @@ class LeadItemData {
     if (createdBy != null) "created_by": createdBy,
     if (description != null) "description": description,
     if (has_quotation != null) "has_quotation": has_quotation,
-     if (status != null) "status": status,
+    if (status != null) "status": status,
   };
 
   static int? _asInt(dynamic value) {
