@@ -26,9 +26,15 @@ class DashboardDutySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          AppSectionHeader(title: taskTitle),
+        AppSectionHeader(
+            title: taskTitle,
+            actionLabel: 'View All',
+            // onAction: () => context.push(AppRouteName.viewAllLeads),
+            onAction: () {
+                context.push(AppRouteName.viewAllDuties);
+            },
+          ),
           const SizedBox(height: AppSpacing.sm),
-
           LayoutBuilder(
             builder: (context, constraints) {
               const double minCardWidth = 80;

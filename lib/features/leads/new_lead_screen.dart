@@ -170,9 +170,6 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
   }
 
   String? _validationMessage() {
-    if (_mobileController.text.trim().length != 20) {
-      return 'Enter a valid 10-digit mobile number.';
-    }
     if (_nameController.text.trim().isEmpty) return 'Enter the customer name.';
     if (_source == null) return 'Select a lead source.';
     if (_selectedAssignee == null) return 'Select an assignee.';
