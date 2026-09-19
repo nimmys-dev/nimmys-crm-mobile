@@ -46,7 +46,9 @@ class ApiUrls {
       "$_baseUrl/lead-call-history/$leadId/calls";
   static String completeTask(int id) => "$_baseUrl/complete-task/$id";
   static String getAllApprovalPendingList = "$_baseUrl/approval-task";
-  static String markTasksAsCompleted(int id) => "$_baseUrl/tasks/$id/approve";
+  static String approveTask(int id) => "$_baseUrl/tasks/$id/approve";
+  @Deprecated('Use approveTask instead')
+  static String markTasksAsCompleted(int id) => approveTask(id);
   static String notInterestedReason = "$_baseUrl/call-reasons";
   static String forgotPasswordReset = "$_baseUrl/forgot-password";
   // In api_urls.dart

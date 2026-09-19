@@ -75,8 +75,8 @@ class TasksState extends Equatable {
   // Approve Task
   // ---------------------------------------------------------------------------
 
-  /// POST /api/approve-task/{id} state.
-  final UIState<TaskCompleteResponse>? approveTaskUIState;
+  /// POST /api/tasks/{id}/approve state.
+  final UIState<ApproveTaskSuccessResponse>? approveTaskUIState;
 
   final UIState<TaskListResponse>? tasksByStaffIdUIState;
   final List<Task> tasksByStaffIdList;
@@ -132,7 +132,7 @@ class TasksState extends Equatable {
     LeadPagination? approvalPendingTasksPagination,
     String? approvalPendingTasksSearchQuery,
     bool? isLoadingMoreApprovalTasks,
-    UIState<TaskCompleteResponse>? approveTaskUIState,
+    UIState<ApproveTaskSuccessResponse>? approveTaskUIState,
     UIState<TaskListResponse>? tasksByStaffIdUIState,
     List<Task>? tasksByStaffIdList,
     LeadPagination? tasksByStaffIdPagination,

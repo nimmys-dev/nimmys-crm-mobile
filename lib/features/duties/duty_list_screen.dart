@@ -6,7 +6,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nimmys_crm/enum/status.dart';
 import 'package:nimmys_crm/features/dashboard/cubit/dashboard_cubit.dart';
+import 'package:nimmys_crm/features/duties/cubit/tasks_cubit.dart';
 import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
+import 'package:nimmys_crm/utils/toast_messages.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
@@ -16,6 +18,8 @@ import '../../shared/widgets/app_buttons.dart';
 import '../../shared/widgets/app_gradient_header.dart';
 import '../../shared/widgets/app_search_field.dart';
 import '../../shared/widgets/app_section_card.dart';
+import 'widgets/approve_task_dialog.dart';
+import 'widgets/complete_task_dialog.dart';
 
 class DutyListScreen extends StatefulWidget {
   final String? taskStatus; // e.g. 'overdue_duty', 'today_duty', etc.
@@ -263,7 +267,10 @@ class _DutyListScreenState extends State<DutyListScreen> {
           if (index <= tasks.length) {
             final task = tasks[index - 1];
             // FIX: remove outer InkWell, let DutyListTile handle navigation
-            return DutyListTile(task: task);
+            return DutyListTile(
+              task: task,
+              onUpdated: _refreshTasks,
+            );
           }
 
           // Footer: loading or end message
@@ -368,8 +375,9 @@ class DutyListCount extends StatelessWidget {
 }
 
 class DutyListTile extends StatefulWidget {
-  const DutyListTile({super.key, required this.task});
+  const DutyListTile({super.key, required this.task, this.onUpdated});
   final Task task;
+  final VoidCallback? onUpdated;
 
   @override
   State<DutyListTile> createState() => _DutyListTileState();
@@ -395,6 +403,49 @@ class _DutyListTileState extends State<DutyListTile> {
     }
   }
 
+  bool get _canComplete {
+    final status = widget.task.status?.toLowerCase();
+    return widget.task.id != null &&
+        status != 'completed' &&
+        status != 'approved';
+  }
+
+  bool get _canApprove {
+    return widget.task.id != null &&
+        widget.task.status?.toLowerCase() == 'completed';
+  }
+
+  Future<void> _onCompletePressed() async {
+    final taskId = widget.task.id;
+    if (taskId == null) return;
+    final completed = await showCompleteTaskDialog(context, taskId: taskId);
+    if (!completed || !mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onUpdated?.call();
+    });
+  }
+
+  Future<void> _onApprovePressed() async {
+    final taskId = widget.task.id;
+    if (taskId == null) return;
+
+    final bool? result = await showApproveTaskDialog(
+      context,
+      taskId: taskId,
+    );
+    if (result == null || !mounted) return;
+
+    if (result) {
+      ToastMessages.success(message: 'Task approved successfully!');
+      context.read<TasksCubit>().resetApproveTaskState();
+      unawaited(context.read<DashboardCubit>().refreshDashboardTasks());
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onUpdated?.call();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final assignee = widget.task.assignedUser?.name ?? 'Unassigned';
@@ -418,7 +469,7 @@ class _DutyListTileState extends State<DutyListTile> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               AppIconChip(
-                icon: status == 'completed'
+                icon: status == 'completed' || status == 'approved'
                     ? Icons.check_circle_outline_rounded
                     : Icons.fact_check_outlined,
                 size: 38,
@@ -469,6 +520,28 @@ class _DutyListTileState extends State<DutyListTile> {
                   ],
                 ),
               ),
+              if (_canComplete) ...[
+                const SizedBox(width: AppSpacing.xs),
+                IconButton(
+                  tooltip: 'Complete',
+                  onPressed: _onCompletePressed,
+                  icon: const Icon(
+                    Icons.check_circle_outline_rounded,
+                    color: AppColors.red,
+                  ),
+                ),
+              ],
+              if (_canApprove) ...[
+                const SizedBox(width: AppSpacing.xs),
+                IconButton(
+                  tooltip: 'Approve',
+                  onPressed: _onApprovePressed,
+                  icon: const Icon(
+                    Icons.verified_outlined,
+                    color: AppColors.red,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

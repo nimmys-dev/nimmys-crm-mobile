@@ -4,6 +4,7 @@ import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/network/api_service.dart';
 import 'package:nimmys_crm/data/network/api_urls.dart';
 import 'package:nimmys_crm/features/duties/model/get_all_pending_task_model.dart';
+import 'package:nimmys_crm/features/duties/model/approve_task_success_response.dart';
 import 'package:nimmys_crm/features/duties/model/task_completed_model.dart';
 import 'package:nimmys_crm/features/duties/model/task_details_model.dart';
 import 'package:nimmys_crm/features/duties/model/task_type_model.dart';
@@ -230,27 +231,30 @@ class TasksService {
   }
   // Mark Tasks as Approved
 
-  /// POST /api/approval-task/{id}
-  /// Marks a task as completed with optional remarks.
-  Future<Result<TaskCompleteResponse>> markTasksAsApproved(int id) async {
+  /// POST /api/tasks/{id}/approve
+  Future<Result<ApproveTaskSuccessResponse>> approveTask(int id) async {
     try {
-      final String url = ApiUrls.markTasksAsCompleted(
-        id,
-      ); // we need to add this constant
-
+      final String url = ApiUrls.approveTask(id);
       final Result<dynamic> result = await _apiService.post(url);
       if (result is Success<dynamic>) {
-        return await _apiService.getResponseStatus<TaskCompleteResponse>(
+        return await _apiService.getResponseStatus<ApproveTaskSuccessResponse>(
           result.value,
-          (json) => TaskCompleteResponse.fromJson(json as Map<String, dynamic>),
+          (json) => ApproveTaskSuccessResponse.fromJson(
+            json as Map<String, dynamic>,
+          ),
         );
       } else if (result is Error<dynamic>) {
-        return Error<TaskCompleteResponse>(result.type);
+        return Error<ApproveTaskSuccessResponse>(result.type);
       }
-      return Error<TaskCompleteResponse>(GenericError());
+      return Error<ApproveTaskSuccessResponse>(GenericError());
     } catch (_) {
-      return Error<TaskCompleteResponse>(DeserializationError());
+      return Error<ApproveTaskSuccessResponse>(DeserializationError());
     }
+  }
+
+  @Deprecated('Use approveTask instead')
+  Future<Result<ApproveTaskSuccessResponse>> markTasksAsApproved(int id) {
+    return approveTask(id);
   }
 
   // Get Tasks by staff id

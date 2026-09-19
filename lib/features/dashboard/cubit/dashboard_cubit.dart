@@ -162,6 +162,14 @@ class DashboardCubit extends BaseCubit<DashboardState> {
     );
   }
 
+  /// Refreshes dashboard summary counts and the current filtered task list.
+  Future<void> refreshDashboardTasks() async {
+    await Future.wait<void>(<Future<void>>[
+      getDashboardCount(),
+      refreshTaskCounts(),
+    ]);
+  }
+
   Future<void> goToTaskPage(int page) async {
     if (page < 1) return;
     final currentPage = state.taskPagination?.currentPage ?? 1;

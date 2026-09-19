@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nimmys_crm/enum/status.dart';
@@ -5,6 +7,7 @@ import 'package:nimmys_crm/features/dashboard/cubit/dashboard_cubit.dart';
 import 'package:nimmys_crm/features/duties/cubit/tasks_cubit.dart';
 import 'package:nimmys_crm/features/duties/create_task_screen.dart';
 import 'package:nimmys_crm/features/duties/model/task_details_model.dart';
+import 'package:nimmys_crm/features/duties/widgets/approve_task_dialog.dart';
 import 'package:nimmys_crm/features/duties/widgets/task_details_shimmer.dart';
 import 'package:nimmys_crm/helpers/date_helper.dart';
 import 'package:nimmys_crm/utils/toast_messages.dart';
@@ -129,6 +132,26 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
     await context.read<TasksCubit>().getTaskDetails(widget.task.id!);
   }
 
+  Future<void> _onApprovePressed(int taskId) async {
+    final bool? result = await showApproveTaskDialog(
+      context,
+      taskId: taskId,
+    );
+
+    // Cancelled without calling the API.
+    if (result == null) return;
+    if (!mounted) return;
+
+    if (result) {
+      ToastMessages.success(message: 'Task approved successfully!');
+      context.read<TasksCubit>().resetApproveTaskState();
+      unawaited(context.read<DashboardCubit>().refreshDashboardTasks());
+    }
+
+    // Refresh after both success and failure.
+    await _refresh();
+  }
+
   void _showCompleteDialog(BuildContext context, int taskId) {
     final TextEditingController remarksController = TextEditingController();
     final BuildContext screenContext = context;
@@ -169,7 +192,9 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                 ToastMessages.success(message: 'Task marked as completed!');
 
                 screenContext.read<TasksCubit>().resetCompleteTaskState();
-                screenContext.read<DashboardCubit>().getDashboardCount();
+                unawaited(
+                  screenContext.read<DashboardCubit>().refreshDashboardTasks(),
+                );
                 screenContext.read<TasksCubit>().getTaskDetails(taskId);
 
                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -314,6 +339,25 @@ class _TaskDetailsContentState extends State<_TaskDetailsContent> {
                                   .watch<TasksCubit>()
                                   .state
                                   .completeTaskUIState
+                                  ?.status ==
+                              Status.LOADING,
+                        ),
+                      ),
+                    ],
+                    if (widget.task.status?.toLowerCase() == 'completed') ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: AppPrimaryButton(
+                          label: 'Approve',
+                          icon: Icons.verified_outlined,
+                          onPressed: widget.task.id == null
+                              ? null
+                              : () => _onApprovePressed(widget.task.id!),
+                          isLoading:
+                              context
+                                  .watch<TasksCubit>()
+                                  .state
+                                  .approveTaskUIState
                                   ?.status ==
                               Status.LOADING,
                         ),

@@ -5,6 +5,7 @@ import 'package:nimmys_crm/core/reset_cubit_state.dart';
 import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/ui_state/ui_state.dart';
 import 'package:nimmys_crm/enum/status.dart';
+import 'package:nimmys_crm/features/duties/model/approve_task_success_response.dart';
 import 'package:nimmys_crm/features/duties/model/get_all_pending_task_model.dart';
 import 'package:nimmys_crm/features/duties/model/task_completed_model.dart';
 import 'package:nimmys_crm/features/duties/model/task_details_model.dart';
@@ -436,33 +437,33 @@ class TasksCubit extends BaseCubit<TasksState> {
   // Approve Task
   // ---------------------------------------------------------------------------
 
-  void _setApproveTaskUIState(UIState<TaskCompleteResponse>? uiState) {
+  void _setApproveTaskUIState(UIState<ApproveTaskSuccessResponse>? uiState) {
     emit(state.copyWith(approveTaskUIState: uiState));
   }
 
-  /// Marks a task as approved.
+  /// Marks a task as approved via `POST /api/tasks/{id}/approve`.
+  ///
+  /// Callers should refresh the current screen after this resolves
+  /// (success or failure).
   Future<void> approveTask(int id) async {
     if (state.approveTaskUIState?.status == Status.LOADING) return;
 
     _setApproveTaskUIState(UIState.loading());
 
-    final result = await _repository.markTasksAsApproved(id);
+    final result = await _repository.approveTask(id);
 
-    if (result is Success<TaskCompleteResponse>) {
+    if (result is Success<ApproveTaskSuccessResponse>) {
       _setApproveTaskUIState(UIState.success(result.value));
-      // Optionally refresh the task list or details after approval
       unawaited(getTasks(refresh: true));
-      if (state.taskDetailsUIState?.data?.data?.id == id) {
-        unawaited(getTaskDetails(id));
-      }
-    } else if (result is Error<TaskCompleteResponse>) {
+      unawaited(getApprovalPendingTasks(refresh: true));
+    } else if (result is Error<ApproveTaskSuccessResponse>) {
       _setApproveTaskUIState(UIState.error(result.type));
     }
   }
 
   void resetApproveTaskState() {
     _setApproveTaskUIState(
-      resetUIState<TaskCompleteResponse>(state.approveTaskUIState),
+      resetUIState<ApproveTaskSuccessResponse>(state.approveTaskUIState),
     );
   }
 

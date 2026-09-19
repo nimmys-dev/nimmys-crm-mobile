@@ -109,7 +109,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
                 );
                 context.read<TasksCubit>().resetApproveTaskState();
                 _refresh();
-                context.read<DashboardCubit>().getDashboardCount();
+                context.read<DashboardCubit>().refreshDashboardTasks();
               } else if (state.approveTaskUIState?.status == Status.ERROR) {
                 ToastMessages.error(
                   message:

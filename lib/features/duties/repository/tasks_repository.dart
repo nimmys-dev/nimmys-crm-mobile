@@ -1,4 +1,5 @@
 import 'package:nimmys_crm/data/model/result.dart';
+import 'package:nimmys_crm/features/duties/model/approve_task_success_response.dart';
 import 'package:nimmys_crm/features/duties/model/get_all_pending_task_model.dart';
 import 'package:nimmys_crm/features/duties/model/task_completed_model.dart';
 import 'package:nimmys_crm/features/duties/model/task_details_model.dart';
@@ -105,14 +106,19 @@ class TasksRepository {
     }
   }
 
-  Future<Result<TaskCompleteResponse>> markTasksAsApproved(int id) async {
+  Future<Result<ApproveTaskSuccessResponse>> approveTask(int id) async {
     try {
-      return await _service.markTasksAsApproved(id);
+      return await _service.approveTask(id);
     } catch (e) {
-      return Error<TaskCompleteResponse>(
+      return Error<ApproveTaskSuccessResponse>(
         ErrorWithMessage(message: e.toString()),
       );
     }
+  }
+
+  @Deprecated('Use approveTask instead')
+  Future<Result<ApproveTaskSuccessResponse>> markTasksAsApproved(int id) {
+    return approveTask(id);
   }
 
   Future<Result<TaskListResponse>> getTasksByStaffId({
