@@ -277,6 +277,9 @@ class LeadsCubit extends BaseCubit<LeadsState> {
         _setLeadDetailsUIState(UIState.success(result.value));
       }
 
+      // Re-fetch details so quotation items match the server after edits/removals.
+      unawaited(getLeadDetails(id));
+
       final status = state.currentLeadStatus ?? '';
       unawaited(
         getLeads(

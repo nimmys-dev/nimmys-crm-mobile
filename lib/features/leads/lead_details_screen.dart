@@ -336,6 +336,7 @@ class _EditLeadBottomSheetState extends State<EditLeadBottomSheet> {
   late List<TextEditingController> _itemControllers;
   late List<TextEditingController> _qtyControllers;
   late List<TextEditingController> _rateControllers;
+  late List<TextEditingController> _taxControllers;
   late TextEditingController _addressController;
   late TextEditingController _termsController;
 
@@ -403,12 +404,21 @@ class _EditLeadBottomSheetState extends State<EditLeadBottomSheet> {
               ?.map((item) => TextEditingController(text: item.rate ?? ''))
               .toList() ??
           [];
+
+      _taxControllers =
+          quotation.items
+              ?.map(
+                (item) => TextEditingController(text: item.taxPercent ?? '18'),
+              )
+              .toList() ??
+          [];
     } else {
       _addressController = TextEditingController();
       _termsController = TextEditingController();
       _itemControllers = [];
       _qtyControllers = [];
       _rateControllers = [];
+      _taxControllers = [];
     }
   }
 
@@ -432,6 +442,10 @@ class _EditLeadBottomSheetState extends State<EditLeadBottomSheet> {
       controller.dispose();
     }
 
+    for (final controller in _taxControllers) {
+      controller.dispose();
+    }
+
     super.dispose();
   }
 
@@ -440,20 +454,58 @@ class _EditLeadBottomSheetState extends State<EditLeadBottomSheet> {
       _itemControllers.add(TextEditingController());
       _qtyControllers.add(TextEditingController());
       _rateControllers.add(TextEditingController());
+      _taxControllers.add(TextEditingController(text: '18'));
     });
   }
 
   void _removeItem(int index) {
-    setState(() {
-      _itemControllers[index].dispose();
-      _itemControllers.removeAt(index);
+    if (index < 0 || index >= _itemControllers.length) return;
 
-      _qtyControllers[index].dispose();
-      _qtyControllers.removeAt(index);
+    // Detach from the tree first, then dispose after the frame so TextFields
+    // are not left holding disposed controllers (which can resurrect old text).
+    final TextEditingController item = _itemControllers.removeAt(index);
+    final TextEditingController qty = _qtyControllers.removeAt(index);
+    final TextEditingController rate = _rateControllers.removeAt(index);
+    final TextEditingController tax = _taxControllers.removeAt(index);
 
-      _rateControllers[index].dispose();
-      _rateControllers.removeAt(index);
+    setState(() {});
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      item.dispose();
+      qty.dispose();
+      rate.dispose();
+      tax.dispose();
     });
+  }
+
+  List<Map<String, dynamic>> _buildQuotationItems() {
+    final List<Map<String, dynamic>> items = <Map<String, dynamic>>[];
+
+    for (int i = 0; i < _itemControllers.length; i++) {
+      final String description = _itemControllers[i].text.trim();
+      if (description.isEmpty) continue;
+
+      final int quantity = int.tryParse(_qtyControllers[i].text.trim()) ?? 1;
+      final double rate =
+          double.tryParse(
+            _rateControllers[i].text.trim().replaceAll(',', ''),
+          ) ??
+          0.0;
+      final double taxPercent =
+          double.tryParse(
+            _taxControllers[i].text.trim().replaceAll(',', ''),
+          ) ??
+          18;
+
+      items.add(<String, dynamic>{
+        'description': description,
+        'quantity': quantity,
+        'rate': rate,
+        'tax_percent': taxPercent,
+      });
+    }
+
+    return items;
   }
 
   Future<void> _save() async {
@@ -469,47 +521,32 @@ class _EditLeadBottomSheetState extends State<EditLeadBottomSheet> {
       'assigned_to': _selectedAssignee?.id,
     };
 
-    // Quotation
-    final hasQuotation =
+    final List<Map<String, dynamic>> items = _buildQuotationItems();
+    final bool hadQuotation = widget.lead.quotation != null;
+    final bool hasQuotationFields =
         _addressController.text.trim().isNotEmpty ||
         _termsController.text.trim().isNotEmpty ||
-        _itemControllers.any((controller) => controller.text.trim().isNotEmpty);
+        items.isNotEmpty;
 
-    if (hasQuotation) {
-      final items = <Map<String, dynamic>>[];
+    // Always send quotation when editing an existing one (or when fields are
+    // filled) so removed items are replaced on the server — omitting `items`
+    // leaves the previous quotation unchanged.
+    if (hadQuotation || hasQuotationFields) {
+      final String? existingIssueDate = widget.lead.quotation?.issueDate;
+      final String issueDate =
+          (existingIssueDate != null && existingIssueDate.isNotEmpty)
+          ? existingIssueDate.split('T').first
+          : DateTime.now().toIso8601String().split('T').first;
 
-      for (int i = 0; i < _itemControllers.length; i++) {
-        final description = _itemControllers[i].text.trim();
-
-        if (description.isEmpty) continue;
-
-        final quantity = int.tryParse(_qtyControllers[i].text.trim()) ?? 1;
-
-        final rate =
-            double.tryParse(
-              _rateControllers[i].text.trim().replaceAll(',', ''),
-            ) ??
-            0.0;
-
-        items.add({
-          'description': description,
-          'quantity': quantity,
-          'rate': rate,
-          'tax_percent': 0,
-        });
-      }
-
-      if (items.isNotEmpty) {
-        payload['quotation'] = {
-          'customer_name': _nameController.text.trim(),
-          if (_addressController.text.trim().isNotEmpty)
-            'customer_address': _addressController.text.trim(),
-          'issue_date': DateTime.now().toIso8601String().split('T').first,
-          if (_termsController.text.trim().isNotEmpty)
-            'terms': _termsController.text.trim(),
-          'items': items,
-        };
-      }
+      payload['quotation'] = <String, dynamic>{
+        'customer_name': _nameController.text.trim(),
+        if (_addressController.text.trim().isNotEmpty)
+          'customer_address': _addressController.text.trim(),
+        'issue_date': issueDate,
+        if (_termsController.text.trim().isNotEmpty)
+          'terms': _termsController.text.trim(),
+        'items': items,
+      };
     }
 
     await context.read<LeadsCubit>().updateLead(id, payload);
@@ -768,7 +805,10 @@ class _EditLeadBottomSheetState extends State<EditLeadBottomSheet> {
                         const SizedBox(height: 8),
 
                         for (int i = 0; i < _itemControllers.length; i++)
-                          _buildItemRow(i),
+                          KeyedSubtree(
+                            key: ObjectKey(_itemControllers[i]),
+                            child: _buildItemRow(i),
+                          ),
                       ],
 
                       // --------------------------------------------------
@@ -808,6 +848,38 @@ class _EditLeadBottomSheetState extends State<EditLeadBottomSheet> {
   Widget _buildItemRow(int index) {
     final palette = context.palette;
 
+    InputDecoration compactDecoration({
+      required String hint,
+      String? prefixText,
+    }) {
+      return InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(fontSize: 12, color: palette.faint),
+        prefixText: prefixText,
+        prefixStyle: TextStyle(
+          fontSize: 12,
+          color: palette.slate,
+          fontWeight: FontWeight.w500,
+        ),
+        filled: true,
+        fillColor: palette.inkWash,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(6),
+          borderSide: BorderSide(color: palette.inkBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(6),
+          borderSide: BorderSide(color: palette.inkBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(6),
+          borderSide: const BorderSide(color: AppColors.red, width: 1.2),
+        ),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
@@ -816,143 +888,92 @@ class _EditLeadBottomSheetState extends State<EditLeadBottomSheet> {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: palette.line),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
         children: [
-          // ------------------------------------------------------------
-          // Description
-          // ------------------------------------------------------------
-          Expanded(
-            child: TextField(
-              controller: _itemControllers[index],
-              style: TextStyle(
-                fontSize: 13,
-                color: palette.ink,
-                fontWeight: FontWeight.w500,
-              ),
-              cursorColor: AppColors.red,
-              decoration: InputDecoration(
-                hintText: 'Item description',
-                hintStyle: TextStyle(fontSize: 13, color: palette.faint),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
-              ),
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // ------------------------------------------------------------
-          // Quantity
-          // ------------------------------------------------------------
-          SizedBox(
-            width: 52,
-            child: TextField(
-              controller: _qtyControllers[index],
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: palette.ink,
-                fontWeight: FontWeight.w600,
-              ),
-              cursorColor: AppColors.red,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                hintText: 'Qty',
-                hintStyle: TextStyle(fontSize: 12, color: palette.faint),
-                filled: true,
-                fillColor: palette.inkWash,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(6),
-                  borderSide: BorderSide(color: palette.inkBorder),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(6),
-                  borderSide: BorderSide(color: palette.inkBorder),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(6),
-                  borderSide: const BorderSide(
-                    color: AppColors.red,
-                    width: 1.2,
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _itemControllers[index],
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: palette.ink,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  cursorColor: AppColors.red,
+                  decoration: InputDecoration(
+                    hintText: 'Item description',
+                    hintStyle: TextStyle(fontSize: 13, color: palette.faint),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
                   ),
                 ),
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 4,
-                  vertical: 8,
-                ),
               ),
-            ),
+              IconButton(
+                tooltip: 'Remove item',
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  size: 20,
+                  color: AppColors.red,
+                ),
+                onPressed: () => _removeItem(index),
+              ),
+            ],
           ),
-
-          const SizedBox(width: 8),
-
-          // ------------------------------------------------------------
-          // Rate
-          // ------------------------------------------------------------
-          SizedBox(
-            width: 82,
-            child: TextField(
-              controller: _rateControllers[index],
-              textAlign: TextAlign.end,
-              style: TextStyle(
-                fontSize: 13,
-                color: palette.ink,
-                fontWeight: FontWeight.w600,
-              ),
-              cursorColor: AppColors.red,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Rate',
-                hintStyle: TextStyle(fontSize: 12, color: palette.faint),
-                prefixText: '₹ ',
-                prefixStyle: TextStyle(
-                  fontSize: 12,
-                  color: palette.slate,
-                  fontWeight: FontWeight.w500,
-                ),
-                filled: true,
-                fillColor: palette.inkWash,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(6),
-                  borderSide: BorderSide(color: palette.inkBorder),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(6),
-                  borderSide: BorderSide(color: palette.inkBorder),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(6),
-                  borderSide: const BorderSide(
-                    color: AppColors.red,
-                    width: 1.2,
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _qtyControllers[index],
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: palette.ink,
+                    fontWeight: FontWeight.w600,
                   ),
-                ),
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 8,
+                  cursorColor: AppColors.red,
+                  keyboardType: TextInputType.number,
+                  decoration: compactDecoration(hint: 'Qty'),
                 ),
               ),
-            ),
-          ),
-
-          // ------------------------------------------------------------
-          // Delete
-          // ------------------------------------------------------------
-          IconButton(
-            tooltip: 'Remove item',
-            visualDensity: VisualDensity.compact,
-            icon: Icon(
-              Icons.delete_outline_rounded,
-              size: 20,
-              color: AppColors.red,
-            ),
-            onPressed: () => _removeItem(index),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 2,
+                child: TextField(
+                  controller: _rateControllers[index],
+                  textAlign: TextAlign.end,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: palette.ink,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  cursorColor: AppColors.red,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: compactDecoration(hint: 'Rate', prefixText: '₹ '),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _taxControllers[index],
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: palette.ink,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  cursorColor: AppColors.red,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: compactDecoration(hint: 'Tax %'),
+                ),
+              ),
+            ],
           ),
         ],
       ),

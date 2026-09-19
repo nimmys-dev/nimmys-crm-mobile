@@ -129,7 +129,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
     name: _nameController.text,
     mobile: _mobileController.text,
     source:
-        _source?.value.toString() ?? 'Call', // ✅ now matches LeadSource? type
+        _source?.value?.toString() ?? 'call', // matches API wire value
     quotation: _quotation,
     requiredItems: _requirementController.text.trim().isEmpty
         ? null
@@ -146,11 +146,8 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
     return <String, dynamic>{
       'name': _nameController.text.trim(),
       'phone': _mobileController.text.trim(),
-      'source':
-          _source?.value.toString() ?? 'Call', // ✅ now matches LeadSource? type
+      'source': _source?.value?.toString() ?? 'call',
       'assigned_to': _selectedAssignee?.id,
-      // if (_nextFollowUp != null)
-      //   'next_follow_up_date': _dateOnly(_nextFollowUp!),
       if (_requirementController.text.trim().isNotEmpty)
         'description': _requirementController.text.trim(),
       if (quotation != null)
@@ -481,7 +478,7 @@ class QuotationItemControllers {
   final TextEditingController item = TextEditingController();
   final TextEditingController quantity = TextEditingController();
   final TextEditingController rate = TextEditingController();
-  final TextEditingController taxPercent = TextEditingController(text: '0');
+  final TextEditingController taxPercent = TextEditingController(text: '18');
 
   QuotationItem toItem() => QuotationItem(
     item: item.text,
@@ -496,7 +493,7 @@ class QuotationItemControllers {
     if (double.tryParse(rate.text.trim().replaceAll(',', '')) != null)
       'rate': double.parse(rate.text.trim().replaceAll(',', '')),
     'tax_percent':
-        double.tryParse(taxPercent.text.trim().replaceAll(',', '')) ?? 0,
+        double.tryParse(taxPercent.text.trim().replaceAll(',', '')) ?? 18,
   };
 
   void dispose() {
@@ -638,7 +635,7 @@ class NewLeadQuotationItemFields extends StatelessWidget {
           label: 'Tax %',
           bottomSpacing: 0,
           child: AppTextField(
-            hint: '0',
+            hint: '18',
             controller: controllers.taxPercent,
             icon: Icons.percent_rounded,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
