@@ -60,7 +60,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyD51N_hfaRamsRbiBxXxH7BoHA1LJosa4w',
-    appId: '1:44488471486:ios:f08bcef11ccd763b99bfef',
+    appId: '1:44488471486:ios:eb920e0bee642c4d99bfef',
     messagingSenderId: '44488471486',
     projectId: 'nimmyscrm',
     storageBucket: 'nimmyscrm.firebasestorage.app',
@@ -69,7 +69,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyD51N_hfaRamsRbiBxXxH7BoHA1LJosa4w',
-    appId: '1:44488471486:ios:f08bcef11ccd763b99bfef',
+    appId: '1:44488471486:ios:eb920e0bee642c4d99bfef',
     messagingSenderId: '44488471486',
     projectId: 'nimmyscrm',
     storageBucket: 'nimmyscrm.firebasestorage.app',

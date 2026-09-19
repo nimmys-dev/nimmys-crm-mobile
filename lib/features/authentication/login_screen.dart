@@ -37,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _rememberMe = true;
   String? _emailError;
   String? _passwordError;
-  String? _fcmToken = 'pppppp';
+  String? _fcmToken;
 
   @override
   void initState() {
@@ -71,29 +71,33 @@ class _LoginScreenState extends State<LoginScreen> {
       final FirebaseMessaging messaging = FirebaseMessaging.instance;
 
       if (Platform.isIOS) {
-        await messaging.requestPermission(
+        final NotificationSettings settings = await messaging.requestPermission(
           alert: true,
           badge: true,
           sound: true,
         );
+        debugPrint('iOS notification auth: ${settings.authorizationStatus}');
 
+        // APNs token can arrive a few seconds after registerForRemoteNotifications.
         String? apnsToken;
-
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 15; i++) {
           apnsToken = await messaging.getAPNSToken();
-
-          if (apnsToken != null) {
-            break;
-          }
-
+          if (apnsToken != null) break;
           await Future.delayed(const Duration(seconds: 1));
         }
-
         debugPrint('APNs Token: $apnsToken');
+
+        if (apnsToken == null) {
+          debugPrint(
+            'APNs token missing. Use a real iPhone (not Simulator), '
+            'confirm Push Notifications capability, and that the APNs key '
+            'is uploaded in Firebase Console.',
+          );
+          return;
+        }
       }
 
       final String? token = await messaging.getToken();
-
       debugPrint('FCM Token: $token');
 
       if (token != null && token.isNotEmpty && mounted) {
