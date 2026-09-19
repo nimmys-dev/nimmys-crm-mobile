@@ -102,70 +102,9 @@ class _DashboardHeaderState extends State<DashboardHeader> {
               ],
             ),
             const SizedBox(height: AppSpacing.lg),
-            DashboardGreeting(
-              greeting: widget.greeting,
-              userName: widget.userName,
-            ),
           ],
         ),
       ),
-    );
-  }
-}
-
-/// "Good morning, Abin" block inside the dashboard header.
-class DashboardGreeting extends StatelessWidget {
-  const DashboardGreeting({
-    super.key,
-    required this.greeting,
-    required this.userName,
-  });
-
-  final String greeting;
-  final String userName;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(greeting.toUpperCase(), style: context.type.headerEyebrow),
-        const SizedBox(height: 4),
-        Row(
-          children: <Widget>[
-            Flexible(
-              child: Text(
-                userName,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.white,
-                  letterSpacing: -0.4,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppColors.red,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-              ),
-              child: const Text(
-                'ONLINE',
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.white,
-                  letterSpacing: 1,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }

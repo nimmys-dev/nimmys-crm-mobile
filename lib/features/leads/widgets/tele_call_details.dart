@@ -603,15 +603,6 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
   // ======================================================
 
   Future<void> _save() async {
-    // --- Validation (unchanged) ---
-    if (_calledDateController.text.trim().isEmpty) {
-      ToastMessages.error(message: 'Called Date is required');
-      return;
-    }
-    if (_calledTimeController.text.trim().isEmpty) {
-      ToastMessages.error(message: 'Called Time is required');
-      return;
-    }
     if (_selectedCallStatus == null || _selectedCallStatus!.isEmpty) {
       ToastMessages.error(message: 'Call Status is required');
       return;
@@ -620,48 +611,63 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
       ToastMessages.error(message: 'Remarks is required');
       return;
     }
-    if (!_interest) {
+
+    final bool isAnswered = _selectedCallStatus == 'Answered';
+    final String remarks = _remarksController.text.trim();
+    final String callStatus = isAnswered ? 'answered' : 'not_answered';
+
+    // Build only the fields required for the selected outcome.
+    // API always requires is_item_sold; default false unless item sold is on.
+    final Map<String, dynamic> detail = <String, dynamic>{
+      'call_status': callStatus,
+      'call_status_label': _selectedCallStatus,
+      'remarks': remarks,
+      'is_item_sold': false,
+    };
+
+    if (!isAnswered) {
+      // 1. Not answered → call_status, next_followup_date, remarks
+      if (_nextFollowUpDateController.text.trim().isEmpty) {
+        ToastMessages.error(message: 'Next Follow-up Date is required');
+        return;
+      }
+      detail['next_followup_date'] = _nextFollowUpDateController.text.trim();
+    } else if (_isItemSold) {
+      // 4. Answered + item sold → call_status, is_item_sold, invoice_number, remarks
+      if (_invoiceNumberController.text.trim().isEmpty) {
+        ToastMessages.error(
+          message: 'Invoice Number is required when Item is sold.',
+        );
+        return;
+      }
+      detail['interest'] = true;
+      detail['is_item_sold'] = true;
+      detail['invoice_number'] = _invoiceNumberController.text.trim();
+      if (_invoiceFile != null) {
+        detail['invoice_file'] = _invoiceFile;
+      }
+    } else if (_interest) {
+      // 2. Answered + interested → call_status, interest, next_followup_date, remarks
+      if (_nextFollowUpDateController.text.trim().isEmpty) {
+        ToastMessages.error(message: 'Next Follow-up Date is required');
+        return;
+      }
+      detail['interest'] = true;
+      detail['next_followup_date'] = _nextFollowUpDateController.text.trim();
+    } else {
+      // 3. Answered + not interested → call_status, interest, reason, remarks
       if (_selectedReasonName == null || _selectedReasonName!.isEmpty) {
         ToastMessages.error(message: 'Not Interested Reason is required');
         return;
       }
+      final String? reasonValue = _reasonMap?[_selectedReasonName!];
+      if (reasonValue == null || reasonValue.isEmpty) {
+        ToastMessages.error(message: 'Not Interested Reason is required');
+        return;
+      }
+      detail['interest'] = false;
+      detail['reason'] = reasonValue;
     }
-    if (!_isItemSold &&
-        _interest &&
-        _nextFollowUpDateController.text.trim().isEmpty) {
-      ToastMessages.error(message: 'Next Follow-up Date is required');
-      return;
-    }
-    if (_isItemSold && _invoiceNumberController.text.trim().isEmpty) {
-      ToastMessages.error(
-        message: 'Invoice Number is required when Item is sold.',
-      );
-      return;
-    }
-
-    // --- Compute reason value ---
-    String? reasonValue;
-    if (!_interest) {
-      reasonValue = _reasonMap?[_selectedReasonName!];
-    }
-
-    final String callStatus = _selectedCallStatus == 'Answered'
-        ? 'answered'
-        : 'not_answered';
-
-    final Map<String, dynamic> detail = <String, dynamic>{
-      'called_date': _calledDateController.text.trim(),
-      'called_time': _calledTimeController.text.trim(),
-      'call_status': callStatus,
-      'call_status_label': _selectedCallStatus,
-      'interest': _interest,
-      'is_item_sold': _isItemSold,
-      'invoice_number': _invoiceNumberController.text.trim(),
-      'next_followup_date': _nextFollowUpDateController.text.trim(),
-      'remarks': _remarksController.text.trim(),
-      'invoice_file': _invoiceFile,
-      'reason': reasonValue ?? '', // now defined
-    };
 
     final bool success = await widget.onSave(detail);
     if (!mounted) return;
@@ -830,32 +836,36 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                         // ==================================================
                         // INTEREST
                         // ==================================================
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
+                        Visibility(
+                          visible: _selectedCallStatus == 'Answered',
+                          child: SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
 
-                          title: const Text('Interest'),
+                            title: const Text('Interest'),
 
-                          value: _interest,
+                            value: _interest,
 
-                          onChanged: (value) {
-                            setState(() {
-                              _interest = value;
+                            onChanged: (value) {
+                              setState(() {
+                                _interest = value;
 
-                              if (_interest) {
-                                _selectedReasonName = null;
-                                _reasonController.clear();
-                              }
-                            });
-                          },
+                                if (_interest) {
+                                  _selectedReasonName = null;
+                                  _reasonController.clear();
+                                }
+                              });
+                            },
 
-                          activeColor: AppColors.red,
+                            activeColor: AppColors.red,
+                          ),
                         ),
 
                         // ==================================================
                         // NOT INTERESTED REASON
                         // ==================================================
                         Visibility(
-                          visible: !_interest,
+                          visible:
+                              !_interest&& _selectedCallStatus == 'Answered',
                           child: BlocBuilder<LeadsCubit, LeadsState>(
                             buildWhen: (previous, current) =>
                                 previous.notInterestedReasonsUIState !=
@@ -900,20 +910,20 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                         // ==================================================
                         // ITEM SOLD
                         // ==================================================
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
+                        Visibility(
+                          visible: _interest && _selectedCallStatus == 'Answered',
+                          child: SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Item Sold'),
+                            value: _isItemSold,
+                            onChanged: (value) {
+                              setState(() {
+                                _isItemSold = value;
+                              });
+                            },
 
-                          title: const Text('Item Sold'),
-
-                          value: _isItemSold,
-
-                          onChanged: (value) {
-                            setState(() {
-                              _isItemSold = value;
-                            });
-                          },
-
-                          activeColor: AppColors.red,
+                            activeColor: AppColors.red,
+                          ),
                         ),
 
                         // ==================================================
@@ -940,7 +950,7 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                         // NEXT FOLLOW-UP
                         // ==================================================
                         Visibility(
-                          visible: _interest && !_isItemSold,
+                          visible: _interest && !_isItemSold || _selectedCallStatus == 'Not Answered',
                           child: AppFormField(
                             label: 'Next Follow-up Date',
                             child: AppTextField(
