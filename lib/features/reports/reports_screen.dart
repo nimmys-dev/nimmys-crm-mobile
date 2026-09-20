@@ -165,17 +165,17 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       ],
                     ),
                   ),
-                  AppSectionCard(
-                    child: DashboardTotalsCard(
-                      yourLeads: figures.first.value,
-                      totalLeads: leaderboard
-                          .fold<int>(
-                            0,
-                            (int sum, ReportRow row) => sum + row.leads,
-                          )
-                          .toString(),
-                    ),
-                  ),
+                  // AppSectionCard(
+                  //   child: DashboardTotalsCard(
+                  //     yourLeads: figures.first.value,
+                  //     totalLeads: leaderboard
+                  //         .fold<int>(
+                  //           0,
+                  //           (int sum, ReportRow row) => sum + row.leads,
+                  //         )
+                  //         .toString(),
+                  //   ),
+                  // ),
                   AppSectionCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,

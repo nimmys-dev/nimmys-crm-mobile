@@ -82,6 +82,8 @@ class _DashboardContentState extends State<DashboardContent> {
         final myLeadStats = _buildMyLeadStats(leadCounts);
         final allLeadStats = _buildAllLeadStats(leadCounts);
         final yourLeads = leadCounts?.myLeads?.yourLeads?.toString() ?? '0';
+        final overdueFollowUp =
+            leadCounts?.myLeads?.overdueFollowup?.toString() ?? '0';
         final totalLeads = widget.role.can(AppPermission.viewAllLeads)
             ? leadCounts?.myLeads?.totalLeads?.toString() ?? '0'
             : null;
@@ -150,6 +152,7 @@ class _DashboardContentState extends State<DashboardContent> {
                           child: DashboardTotalsCard(
                             yourLeads: yourLeads,
                             totalLeads: totalLeads,
+                            overdueFollowUp: overdueFollowUp,
                           ),
                         ),
                         if (widget.role.hasFullDashboard)

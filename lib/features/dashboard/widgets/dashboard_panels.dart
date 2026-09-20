@@ -15,9 +15,11 @@ class DashboardTotalsCard extends StatelessWidget {
     super.key,
     required this.yourLeads,
     required this.totalLeads,
+    required this.overdueFollowUp,
   });
 
   final String yourLeads;
+  final String overdueFollowUp;
 
   /// Null hides the second half of the panel entirely.
   final String? totalLeads;
@@ -28,42 +30,55 @@ class DashboardTotalsCard extends StatelessWidget {
   }
 
   Widget _buildPanel(BuildContext context) {
-    return Row(
+    return Column(
       children: <Widget>[
-        // Your Leads
-        Expanded(
-          child: InkWell(
-            onTap: () {
-              context.push(AppRouteName.viewMyLeads);
-            },
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            child: DashboardTotalsTile(
-              icon: Icons.person_outline_rounded,
-              label: 'Your Leads',
-              value: yourLeads,
-              isAccent: true,
-            ),
-          ),
-        ),
-
-        // Total Leads
-        if (totalLeads != null) ...<Widget>[
-          const SizedBox(width: AppSpacing.xs),
-          Expanded(
-            child: InkWell(
-              onTap: () {
-                context.push(AppRouteName.viewAllLeads);
-              },
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              child: DashboardTotalsTile(
-                icon: Icons.layers_outlined,
-                label: 'Total Leads',
-                value: totalLeads!,
-                isAccent: false,
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: InkWell(
+                onTap: () => context.push(AppRouteName.viewMyLeads),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                child: DashboardTotalsTile(
+                  icon: Icons.person_outline_rounded,
+                  label: 'Your Leads',
+                  value: yourLeads,
+                  tone: DashboardTotalsTileTone.yourLeads,
+                ),
               ),
             ),
+            if (totalLeads != null) ...<Widget>[
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: InkWell(
+                  onTap: () => context.push(AppRouteName.viewAllLeads),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  child: DashboardTotalsTile(
+                    icon: Icons.layers_outlined,
+                    label: 'Total Leads',
+                    value: totalLeads!,
+                    tone: DashboardTotalsTileTone.totalLeads,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        InkWell(
+          onTap: () => context.push(
+            AppRouteName.leadsWithStatus(
+              status: 'overdue_followup',
+              scope: 'my_leads',
+            ),
           ),
-        ],
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          child: DashboardTotalsTile(
+            icon: Icons.history_toggle_off_rounded,
+            label: 'Overdue Follow Up',
+            value: overdueFollowUp,
+            tone: DashboardTotalsTileTone.overdue,
+          ),
+        ),
       ],
     );
   }
@@ -76,22 +91,32 @@ class DashboardTotalsTile extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
-    required this.isAccent,
+    this.tone = DashboardTotalsTileTone.yourLeads,
   });
 
   final IconData icon;
   final String label;
   final String value;
-  final bool isAccent;
+  final DashboardTotalsTileTone tone;
 
   @override
   Widget build(BuildContext context) {
-    final Color tint = isAccent
-        ? const Color(0xFFF3A900)
-        : const Color(0xFF09AE50);
-    final Color background = isAccent
-        ? const Color(0xFFFFF6D9)
-        : const Color(0xFFDFFBEA);
+    final (Color tint, Color background) colors = switch (tone) {
+      DashboardTotalsTileTone.yourLeads => (
+        const Color(0xFFF3A900),
+        const Color(0xFFFFF6D9),
+      ),
+      DashboardTotalsTileTone.totalLeads => (
+        const Color(0xFF09AE50),
+        const Color(0xFFDFFBEA),
+      ),
+      DashboardTotalsTileTone.overdue => (
+        AppColors.red,
+        const Color(0xFFFFE8EC),
+      ),
+    };
+    final Color tint = colors.$1;
+    final Color background = colors.$2;
     return Container(
       height: 78,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
@@ -136,6 +161,8 @@ class DashboardTotalsTile extends StatelessWidget {
     );
   }
 }
+
+enum DashboardTotalsTileTone { yourLeads, totalLeads, overdue }
 
 /// Performance report entry point.
 class DashboardReportCard extends StatelessWidget {
