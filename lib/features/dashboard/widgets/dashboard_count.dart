@@ -78,7 +78,7 @@ class _DashboardContentState extends State<DashboardContent> {
 
         // Build stat items
         final myDutyStats = _buildMyDutyStats(widget.role, counts);
-        final all_taskstats = _buildAllDutyStats(widget.role, counts);
+        final allTaskStats = _buildAllDutyStats(widget.role, counts);
         final myLeadStats = _buildMyLeadStats(leadCounts);
         final allLeadStats = _buildAllLeadStats(leadCounts);
         final yourLeads = leadCounts?.myLeads?.yourLeads?.toString() ?? '0';
@@ -118,7 +118,7 @@ class _DashboardContentState extends State<DashboardContent> {
                       else ...[
                         DashboardDutySection(
                           items: myDutyStats,
-                          taskTitle: 'My Tasks',
+                          taskTitle: 'My Task',
                           scope: 'my_tasks',
                         ),
                         Visibility(
@@ -126,7 +126,7 @@ class _DashboardContentState extends State<DashboardContent> {
                               UserRole.admin == widget.role ||
                               UserRole.manager == widget.role,
                           child: DashboardDutySection(
-                            items: all_taskstats,
+                            items: allTaskStats,
                             taskTitle: 'All Tasks',
                             scope: 'all_tasks',
                           ),
@@ -198,22 +198,22 @@ class _DashboardContentState extends State<DashboardContent> {
         counts?.data?.counts?.myTasks?.sendingApproval?.toString() ?? '0';
     return [
       StatItem(
-        label: "Today's My Duty",
-        value: today,
-        icon: Icons.fact_check_outlined,
+        label: 'Overdue Duty',
+        value: overdue,
+        icon: Icons.event_busy_outlined,
         tone: StatTone.red,
         route: AppRouteName.dutiesFiltered(
-          taskStatus: 'todayDuty',
+          taskStatus: 'overdueDuty',
           scope: 'my_tasks',
         ),
       ),
       StatItem(
-        label: 'Overdue Duty',
-        value: overdue,
-        icon: Icons.event_busy_outlined,
+        label: "Today's My Duty",
+        value: today,
+        icon: Icons.fact_check_outlined,
         tone: StatTone.ink,
         route: AppRouteName.dutiesFiltered(
-          taskStatus: 'overdueDuty',
+          taskStatus: 'todayDuty',
           scope: 'my_tasks',
         ),
       ),
@@ -227,28 +227,26 @@ class _DashboardContentState extends State<DashboardContent> {
           scope: 'my_tasks',
         ),
       ),
-      if (role.canAccessApprovals)
-        StatItem(
-          label: 'Approval Pending',
-          value: approval,
-          icon: Icons.assignment_turned_in_outlined,
-          tone: StatTone.ink,
-          route: AppRouteName.dutiesFiltered(
-            taskStatus: 'approvalPending',
-            scope: 'my_tasks',
-          ),
+      StatItem(
+        label: 'Approval Pending',
+        value: approval,
+        icon: Icons.assignment_turned_in_outlined,
+        tone: StatTone.ink,
+        route: AppRouteName.dutiesFiltered(
+          taskStatus: 'approvalPending',
+          scope: 'my_tasks',
         ),
-      if (role.canAccessApprovals)
-        StatItem(
-          label: 'Sending Approval',
-          value: sendingApproval,
-          icon: Icons.schedule_rounded,
-          tone: StatTone.red,
-          route: AppRouteName.dutiesFiltered(
-            taskStatus: 'sendingApproval',
-            scope: 'my_tasks',
-          ),
+      ),
+      StatItem(
+        label: 'Sending Approval',
+        value: sendingApproval,
+        icon: Icons.schedule_rounded,
+        tone: StatTone.red,
+        route: AppRouteName.dutiesFiltered(
+          taskStatus: 'sendingApproval',
+          scope: 'my_tasks',
         ),
+      ),
     ];
   }
 
@@ -264,22 +262,22 @@ class _DashboardContentState extends State<DashboardContent> {
 
     return [
       StatItem(
-        label: "Today's All Duty",
-        value: today,
-        icon: Icons.fact_check_outlined,
+        label: 'Overdue Duty',
+        value: overdue,
+        icon: Icons.event_busy_outlined,
         tone: StatTone.red,
         route: AppRouteName.dutiesFiltered(
-          taskStatus: 'todayDuty',
+          taskStatus: 'overdueDuty',
           scope: 'all_tasks',
         ),
       ),
       StatItem(
-        label: 'Overdue Duty',
-        value: overdue,
-        icon: Icons.event_busy_outlined,
+        label: "Today's All Duty",
+        value: today,
+        icon: Icons.fact_check_outlined,
         tone: StatTone.ink,
         route: AppRouteName.dutiesFiltered(
-          taskStatus: 'overdueDuty',
+          taskStatus: 'todayDuty',
           scope: 'all_tasks',
         ),
       ),
@@ -293,17 +291,16 @@ class _DashboardContentState extends State<DashboardContent> {
           scope: 'all_tasks',
         ),
       ),
-      if (role.canAccessApprovals)
-        StatItem(
-          label: 'Approval Pending',
-          value: approval,
-          icon: Icons.assignment_turned_in_outlined,
-          tone: StatTone.ink,
-          route: AppRouteName.dutiesFiltered(
-            taskStatus: 'approvalPending',
-            scope: 'all_tasks',
-          ),
+      StatItem(
+        label: 'Approval Pending',
+        value: approval,
+        icon: Icons.assignment_turned_in_outlined,
+        tone: StatTone.ink,
+        route: AppRouteName.dutiesFiltered(
+          taskStatus: 'approvalPending',
+          scope: 'all_tasks',
         ),
+      ),
     ];
   }
 
@@ -328,22 +325,22 @@ class _DashboardContentState extends State<DashboardContent> {
         ),
       ),
       StatItem(
-        label: "Today's Follow Up",
-        value: todayFollow,
-        icon: Icons.person_add_alt_1_outlined,
-        tone: StatTone.ink,
-        route: AppRouteName.leadsWithStatus(
-          status: 'today_followup',
-          scope: 'my_leads',
-        ),
-      ),
-      StatItem(
         label: 'Overdue Follow Up',
         value: overdueFollow,
         icon: Icons.history_toggle_off_rounded,
         tone: StatTone.ink,
         route: AppRouteName.leadsWithStatus(
           status: 'overdue_followup',
+          scope: 'my_leads',
+        ),
+      ),
+      StatItem(
+        label: "Today's Follow Up",
+        value: todayFollow,
+        icon: Icons.person_add_alt_1_outlined,
+        tone: StatTone.ink,
+        route: AppRouteName.leadsWithStatus(
+          status: 'today_followup',
           scope: 'my_leads',
         ),
       ),
@@ -381,22 +378,22 @@ class _DashboardContentState extends State<DashboardContent> {
         ),
       ),
       StatItem(
-        label: "Today's Follow Up",
-        value: todayFollow,
-        icon: Icons.person_add_alt_1_outlined,
-        tone: StatTone.ink,
-        route: AppRouteName.leadsWithStatus(
-          status: 'today_followup',
-          scope: 'all_leads',
-        ),
-      ),
-      StatItem(
         label: 'Overdue Follow Up',
         value: overdueFollow,
         icon: Icons.history_toggle_off_rounded,
         tone: StatTone.ink,
         route: AppRouteName.leadsWithStatus(
           status: 'overdue_followup',
+          scope: 'all_leads',
+        ),
+      ),
+      StatItem(
+        label: "Today's Follow Up",
+        value: todayFollow,
+        icon: Icons.person_add_alt_1_outlined,
+        tone: StatTone.ink,
+        route: AppRouteName.leadsWithStatus(
+          status: 'today_followup',
           scope: 'all_leads',
         ),
       ),

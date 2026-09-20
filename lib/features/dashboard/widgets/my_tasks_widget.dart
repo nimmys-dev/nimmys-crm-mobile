@@ -26,49 +26,28 @@ class DashboardDutySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-        AppSectionHeader(
+          AppSectionHeader(
             title: taskTitle,
             actionLabel: 'View All',
             // onAction: () => context.push(AppRouteName.viewAllLeads),
             onAction: () {
-                context.push(AppRouteName.viewAllDuties);
+              context.push(AppRouteName.viewAllDuties);
             },
           ),
           const SizedBox(height: AppSpacing.sm),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              const double minCardWidth = 80;
-              const double spacing = 7;
-
-              final int columns =
-                  ((constraints.maxWidth + spacing) / (minCardWidth + spacing))
-                      .floor()
-                      .clamp(1, items.length);
-
-              final double cardWidth =
-                  (constraints.maxWidth - ((columns - 1) * spacing)) / columns;
-
-              return Align(
-                alignment: Alignment.centerLeft,
-                child: Wrap(
-                  alignment: WrapAlignment.start,
-                  runAlignment: WrapAlignment.start,
-                  crossAxisAlignment: WrapCrossAlignment.start,
-                  spacing: spacing,
-                  runSpacing: spacing,
-                  children: <Widget>[
-                    for (int index = 0; index < items.length; index++)
-                      SizedBox(
-                        width: cardWidth,
-                        child: DutyStatCard(
-                          item: items[index],
-                          onTap: openStatRoute(context, items[index]),
-                        ),
-                      ),
-                  ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              for (int index = 0; index < items.length; index++) ...<Widget>[
+                if (index > 0) const SizedBox(width: 7),
+                Expanded(
+                  child: DutyStatCard(
+                    item: items[index],
+                    onTap: openStatRoute(context, items[index]),
+                  ),
                 ),
-              );
-            },
+              ],
+            ],
           ),
         ],
       ),

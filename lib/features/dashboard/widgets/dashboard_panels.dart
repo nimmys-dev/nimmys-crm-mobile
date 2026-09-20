@@ -28,65 +28,43 @@ class DashboardTotalsCard extends StatelessWidget {
   }
 
   Widget _buildPanel(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.md,
-      ),
-      decoration: BoxDecoration(
-        gradient: context.palette.inkGradient,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.22),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
+    return Row(
+      children: <Widget>[
+        // Your Leads
+        Expanded(
+          child: InkWell(
+            onTap: () {
+              context.push(AppRouteName.viewMyLeads);
+            },
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            child: DashboardTotalsTile(
+              icon: Icons.person_outline_rounded,
+              label: 'Your Leads',
+              value: yourLeads,
+              isAccent: true,
+            ),
           ),
-        ],
-      ),
-      child: Row(
-        children: <Widget>[
-          // Your Leads
+        ),
+
+        // Total Leads
+        if (totalLeads != null) ...<Widget>[
+          const SizedBox(width: AppSpacing.xs),
           Expanded(
             child: InkWell(
               onTap: () {
-                context.push(AppRouteName.viewMyLeads);
+                context.push(AppRouteName.viewAllLeads);
               },
               borderRadius: BorderRadius.circular(AppRadius.lg),
               child: DashboardTotalsTile(
-                icon: Icons.person_outline_rounded,
-                label: 'Your Leads',
-                value: yourLeads,
-                isAccent: true,
+                icon: Icons.layers_outlined,
+                label: 'Total Leads',
+                value: totalLeads!,
+                isAccent: false,
               ),
             ),
           ),
-
-          // Total Leads
-          if (totalLeads != null) ...<Widget>[
-            Container(
-              width: 1,
-              height: 44,
-              margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-              color: AppColors.white.withValues(alpha: 0.14),
-            ),
-            Expanded(
-              child: InkWell(
-                onTap: () {
-                  context.push(AppRouteName.viewAllLeads);
-                },
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-                child: DashboardTotalsTile(
-                  icon: Icons.layers_outlined,
-                  label: 'Total Leads',
-                  value: totalLeads!,
-                  isAccent: false,
-                ),
-              ),
-            ),
-          ],
         ],
-      ),
+      ],
     );
   }
 }
@@ -108,45 +86,53 @@ class DashboardTotalsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            gradient: isAccent ? AppColors.actionGradient : null,
-            color: isAccent ? null : AppColors.white.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(13),
+    final Color tint = isAccent
+        ? const Color(0xFFF3A900)
+        : const Color(0xFF09AE50);
+    final Color background = isAccent
+        ? const Color(0xFFFFF6D9)
+        : const Color(0xFFDFFBEA);
+    return Container(
+      height: 78,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: tint.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Icon(icon, size: 26, color: tint),
           ),
-          child: Icon(icon, size: 19, color: AppColors.white),
-        ),
-        const SizedBox(width: AppSpacing.xs),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                value,
-                style: context.type.statValue.copyWith(
-                  color: AppColors.white,
-                  fontSize: 23,
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  label,
+                  style: context.type.cardTitle.copyWith(fontSize: 12.5),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: context.type.caption.copyWith(
-                  color: AppColors.white.withValues(alpha: 0.68),
-                  fontSize: 11.5,
+                Text(
+                  value,
+                  style: context.type.statValue.copyWith(
+                    fontSize: 28,
+                    color: context.palette.ink,
+                  ),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+          Icon(Icons.chevron_right_rounded, color: tint, size: 26),
+        ],
+      ),
     );
   }
 }

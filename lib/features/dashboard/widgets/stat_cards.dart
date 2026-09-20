@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_dimens.dart';
 
 /// Visual weight of a stat tile. Kept to red / ink so the dashboard stays on
 /// brand while still separating urgent counts from routine ones.
@@ -38,77 +37,59 @@ class DutyStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isRed = item.tone == StatTone.red;
-    final Color tint = isRed ? AppColors.red : context.palette.ink;
+    final _DashboardCardScheme scheme = _DashboardCardScheme.forItem(item);
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      child: Container(
-        height: 116,
-        decoration: BoxDecoration(
-          color: isRed
-              ? context.palette.redWashSoft
-              : context.palette.surfaceAlt,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(
-            color: isRed
-                ? context.palette.redBorder
-                : context.palette.inkBorder,
+    return _AttentionTwinkle(
+      enabled: _shouldTwinkle(item),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          height: 142,
+          decoration: BoxDecoration(
+            color: scheme.background,
+            borderRadius: BorderRadius.circular(8),
           ),
-        ),
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              height: 34,
-              child: CustomPaint(painter: StatCardWavePainter(tint: tint)),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 6,
-                vertical: AppSpacing.xs,
+          child: Stack(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 10, 4, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    Icon(item.icon, size: 37, color: scheme.tint),
+                    const SizedBox(height: 2),
+                    Text(
+                      item.value,
+                      style: context.type.statValue.copyWith(
+                        fontSize: 25,
+                        color: context.palette.ink,
+                        height: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _shortDutyLabel(item.label),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                        color: scheme.tint,
+                        height: 1.12,
+                      ),
+                    ),
+                    const Spacer(),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: _ArrowBadge(color: scheme.tint),
+                    ),
+                  ],
+                ),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(
-                      color: context.palette.surface,
-                      borderRadius: BorderRadius.circular(9),
-                      border: Border.all(color: tint.withValues(alpha: 0.20)),
-                    ),
-                    child: Icon(item.icon, size: 16, color: tint),
-                  ),
-                  Text(
-                    item.label,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w600,
-                      color: context.palette.slate,
-                      height: 1.2,
-                    ),
-                  ),
-                  Text(
-                    item.value,
-                    style: context.type.statValue.copyWith(
-                      fontSize: 22,
-                      color: tint,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -124,66 +105,175 @@ class LeadStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isRed = item.tone == StatTone.red;
-    final Color tint = isRed ? AppColors.red : context.palette.ink;
+    final _DashboardCardScheme scheme = _DashboardCardScheme.forItem(item);
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: isRed
-              ? context.palette.redWashSoft
-              : context.palette.surfaceAlt,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(
-            color: isRed
-                ? context.palette.redBorder
-                : context.palette.inkBorder,
+    return _AttentionTwinkle(
+      enabled: _shouldTwinkle(item),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(6, 10, 6, 8),
+          decoration: BoxDecoration(
+            color: scheme.background,
+            borderRadius: BorderRadius.circular(8),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: tint.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(11),
-                  ),
-                  child: Icon(item.icon, size: 17, color: tint),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Icon(item.icon, size: 37, color: scheme.tint),
+              const SizedBox(height: 2),
+              Text(
+                item.value,
+                style: context.type.statValue.copyWith(
+                  fontSize: 25,
+                  color: context.palette.ink,
+                  height: 1,
                 ),
-                const Spacer(),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  size: 18,
-                  color: tint.withValues(alpha: 0.6),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _shortLeadLabel(item.label),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                  color: scheme.tint,
+                  height: 1.12,
                 ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              item.label,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: context.type.statLabel,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              item.value,
-              style: context.type.statValue.copyWith(color: tint),
-            ),
-          ],
+              ),
+              const Spacer(),
+              Align(
+                alignment: Alignment.centerRight,
+                child: _ArrowBadge(color: scheme.tint),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
+
+bool _shouldTwinkle(StatItem item) {
+  final bool isOverdue = item.label.toLowerCase().contains('overdue');
+  return isOverdue && (int.tryParse(item.value) ?? 0) > 0;
+}
+
+/// A gentle repeating fade used to draw attention to actionable overdue work.
+class _AttentionTwinkle extends StatefulWidget {
+  const _AttentionTwinkle({required this.enabled, required this.child});
+
+  final bool enabled;
+  final Widget child;
+
+  @override
+  State<_AttentionTwinkle> createState() => _AttentionTwinkleState();
+}
+
+class _AttentionTwinkleState extends State<_AttentionTwinkle>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    if (widget.enabled) _controller.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant _AttentionTwinkle oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.enabled == oldWidget.enabled) return;
+    if (widget.enabled) {
+      _controller.repeat(reverse: true);
+    } else {
+      _controller
+        ..stop()
+        ..value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.enabled) return widget.child;
+    return FadeTransition(
+      opacity: Tween<double>(begin: 1, end: 0.45).animate(_controller),
+      child: widget.child,
+    );
+  }
+}
+
+class _ArrowBadge extends StatelessWidget {
+  const _ArrowBadge({required this.color});
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 29,
+    height: 29,
+    decoration: const BoxDecoration(
+      color: AppColors.white,
+      shape: BoxShape.circle,
+    ),
+    child: Icon(Icons.arrow_forward_rounded, size: 18, color: color),
+  );
+}
+
+class _DashboardCardScheme {
+  const _DashboardCardScheme(this.background, this.tint);
+  final Color background;
+  final Color tint;
+
+  factory _DashboardCardScheme.forItem(StatItem item) {
+    final String label = item.label.toLowerCase();
+    if (label.contains('overdue')) {
+      return const _DashboardCardScheme(Color(0xFFFFE8EC), AppColors.red);
+    }
+    if (label.contains('today')) {
+      return const _DashboardCardScheme(Color(0xFFE4F4FF), Color(0xFF1297E8));
+    }
+    if (label.contains('upcoming')) {
+      return const _DashboardCardScheme(Color(0xFFF0E8FF), Color(0xFF8B27F0));
+    }
+    if (label.contains('approval pending')) {
+      return const _DashboardCardScheme(Color(0xFFFFF5D9), Color(0xFFFFAA00));
+    }
+    if (label.contains('sending')) {
+      return const _DashboardCardScheme(Color(0xFFDFFBEA), Color(0xFF08AB4B));
+    }
+    if (label.contains('unattended')) {
+      return const _DashboardCardScheme(Color(0xFFFFF1DD), Color(0xFFB87300));
+    }
+    return const _DashboardCardScheme(Color(0xFFE4F4FF), Color(0xFF1297E8));
+  }
+}
+
+String _shortDutyLabel(String label) => label
+    .replaceAll("Today's My Duty", "Today's\nDuty")
+    .replaceAll("Today's All Duty", "Today's\nDuty")
+    .replaceAll('Overdue Duty', 'Overdue\nDuty')
+    .replaceAll('Upcoming Duty', 'Upcoming\nDuty')
+    .replaceAll('Approval Pending', 'Approval\nPending')
+    .replaceAll('Sending Approval', 'Sending\nApproval');
+
+String _shortLeadLabel(String label) => label
+    .replaceAll('Unattended Leads', 'Unattended\nLeads')
+    .replaceAll('Overdue Follow Up', 'Overdue\nFollow Up')
+    .replaceAll("Today's Follow Up", "Today's\nFollow Up")
+    .replaceAll('Upcoming Follow Up', 'Upcoming\nFollow Up');
 
 /// Soft wave printed along the bottom of a [DutyStatCard].
 class StatCardWavePainter extends CustomPainter {

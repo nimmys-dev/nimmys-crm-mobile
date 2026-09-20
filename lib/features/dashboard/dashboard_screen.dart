@@ -299,7 +299,7 @@ VoidCallback? openStatRoute(BuildContext context, StatItem item) {
   return () => context.push(route);
 }
 
-/// "MY LEADS" card holding the four lead counters as a 2×2 grid.
+/// Dashboard lead counters.
 class DashboardLeadsSection extends StatelessWidget {
   final String scope;
   final String title;
@@ -336,10 +336,10 @@ class DashboardLeadsSection extends StatelessWidget {
             padding: EdgeInsets.zero,
             itemCount: items.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
+              crossAxisCount: 4,
               mainAxisSpacing: AppSpacing.xs,
               crossAxisSpacing: AppSpacing.xs,
-              mainAxisExtent: 134,
+              mainAxisExtent: 152,
             ),
             itemBuilder: (BuildContext context, int index) => LeadStatCard(
               item: items[index],

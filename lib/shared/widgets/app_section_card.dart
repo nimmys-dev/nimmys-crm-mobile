@@ -78,8 +78,11 @@ class AppSectionHeader extends StatelessWidget {
         const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: Text(
-            title.toUpperCase(),
-            style: context.type.sectionTitle,
+            title,
+            style: context.type.sectionTitle.copyWith(
+              fontSize: 17,
+              letterSpacing: -0.5,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
