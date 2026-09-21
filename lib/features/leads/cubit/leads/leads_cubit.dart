@@ -15,6 +15,7 @@ import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_source_model.dart';
 import 'package:nimmys_crm/features/leads/model/not_interested_reason_model.dart';
 import 'package:nimmys_crm/features/leads/model/quotation_pdf_model.dart';
+import 'package:nimmys_crm/features/leads/model/reassign_lead_model.dart';
 import 'package:nimmys_crm/features/leads/repository/lead_repository.dart';
 
 part 'leads_state.dart';
@@ -296,6 +297,41 @@ class LeadsCubit extends BaseCubit<LeadsState> {
   void resetUpdateLeadState() {
     _setUpdateLeadUIState(
       resetUIState<LeadDetailsSuccess>(state.updateLeadUIState),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Reassign Lead
+  // ---------------------------------------------------------------------------
+
+  void _setReassignLeadUIState(UIState<ReassignLeadResponse>? uiState) {
+    emit(state.copyWith(reassignLeadUIState: uiState));
+  }
+
+  Future<void> reassignLead({
+    required int leadId,
+    required int assignedTo,
+  }) async {
+    if (state.reassignLeadUIState?.status == Status.LOADING) return;
+
+    _setReassignLeadUIState(UIState.loading());
+    final Result<ReassignLeadResponse> result = await _repository.reassignLead(
+      leadId,
+      assignedTo,
+    );
+
+    if (result is Success<ReassignLeadResponse>) {
+      _setReassignLeadUIState(UIState.success(result.value));
+      unawaited(getLeadDetails(leadId));
+      unawaited(refreshLeads());
+    } else if (result is Error<ReassignLeadResponse>) {
+      _setReassignLeadUIState(UIState.error(result.type));
+    }
+  }
+
+  void resetReassignLeadState() {
+    _setReassignLeadUIState(
+      resetUIState<ReassignLeadResponse>(state.reassignLeadUIState),
     );
   }
 

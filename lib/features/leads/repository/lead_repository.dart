@@ -10,6 +10,7 @@ import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_source_model.dart';
 import 'package:nimmys_crm/features/leads/model/not_interested_reason_model.dart';
 import 'package:nimmys_crm/features/leads/model/quotation_pdf_model.dart';
+import 'package:nimmys_crm/features/leads/model/reassign_lead_model.dart';
 import 'package:nimmys_crm/features/leads/service/lead_service.dart';
 
 class LeadRepository {
@@ -22,7 +23,7 @@ class LeadRepository {
     int perPage = 10,
     String? search,
     String? status,
-    required int isUniversalLeadList
+    required int isUniversalLeadList,
   }) async {
     try {
       return await _service.getLeads(
@@ -71,6 +72,19 @@ class LeadRepository {
       return await _service.updateLead(id, payload);
     } catch (e) {
       return Error<LeadDetailsSuccess>(ErrorWithMessage(message: e.toString()));
+    }
+  }
+
+  Future<Result<ReassignLeadResponse>> reassignLead(
+    int id,
+    int assignedTo,
+  ) async {
+    try {
+      return await _service.reassignLead(id, assignedTo);
+    } catch (e) {
+      return Error<ReassignLeadResponse>(
+        ErrorWithMessage(message: e.toString()),
+      );
     }
   }
 
@@ -162,7 +176,7 @@ class LeadRepository {
     }
   }
 
-    Future<Result<NotInterestedReasonModel>> getNotInterestedReasons() async {
+  Future<Result<NotInterestedReasonModel>> getNotInterestedReasons() async {
     try {
       return await _service.getNotInterestedReasonModel();
     } catch (e) {

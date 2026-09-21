@@ -22,6 +22,7 @@ import '../../shared/widgets/app_buttons.dart';
 import '../../shared/widgets/app_search_field.dart';
 import '../../shared/widgets/app_section_card.dart';
 import 'widgets/lead_contact_actions.dart';
+import 'widgets/lead_reassign_bottom_sheet.dart';
 
 /// Leads List screen — displays leads retrieved from `GET /api/leads` with
 /// server-side pagination.
@@ -96,10 +97,7 @@ class _LeadListGlobalScreenState extends State<LeadListGlobalScreen>
   }
 
   void _refetch() {
-    context.read<LeadsCubit>().getLeads(
-      refresh: true,
-      isUniversalLeadList: 1,
-    );
+    context.read<LeadsCubit>().getLeads(refresh: true, isUniversalLeadList: 1);
   }
 
   void _onSearchChanged(String value) {
@@ -371,6 +369,9 @@ class _MyLeadsBodyState extends State<_MyLeadsBody> {
             onCall: lead.phone != null && lead.phone!.isNotEmpty
                 ? () => PhoneDialer.call(context, lead.phone!)
                 : null,
+            onReassign: lead.id == null
+                ? null
+                : () => showLeadReassignBottomSheet(context, leadId: lead.id!),
           );
         },
       ),
@@ -428,11 +429,18 @@ class MyLeadsCount extends StatelessWidget {
 /// One lead row displaying Reference, Name, Phone, Source, Assigned To,
 /// Created By and Description.
 class MyLeadTile extends StatelessWidget {
-  const MyLeadTile({super.key, required this.lead, this.onTap, this.onCall});
+  const MyLeadTile({
+    super.key,
+    required this.lead,
+    this.onTap,
+    this.onCall,
+    this.onReassign,
+  });
 
   final LeadItemData lead;
   final VoidCallback? onTap;
   final VoidCallback? onCall;
+  final VoidCallback? onReassign;
 
   @override
   Widget build(BuildContext context) {
@@ -505,6 +513,14 @@ class MyLeadTile extends StatelessWidget {
                               child: StatusChip(status: lead.status!),
                             ),
                         ],
+                        if (onReassign != null)
+                          IconButton(
+                            tooltip: 'Reassign lead',
+                            onPressed: onReassign,
+                            icon: const Icon(Icons.person_add_alt_1_rounded),
+                            visualDensity: VisualDensity.compact,
+                            color: context.palette.muted,
+                          ),
                       ],
                     ),
 

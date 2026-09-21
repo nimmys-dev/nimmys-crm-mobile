@@ -12,6 +12,7 @@ import 'package:nimmys_crm/features/leads/model/lead_list_model.dart';
 import 'package:nimmys_crm/features/leads/model/lead_source_model.dart';
 import 'package:nimmys_crm/features/leads/model/not_interested_reason_model.dart';
 import 'package:nimmys_crm/features/leads/model/quotation_pdf_model.dart';
+import 'package:nimmys_crm/features/leads/model/reassign_lead_model.dart';
 
 /// Network access for lead reads, writes and lookups.
 class LeadService {
@@ -159,6 +160,45 @@ class LeadService {
       }
     } catch (_) {
       return Error<LeadDetailsSuccess>(DeserializationError());
+    }
+  }
+
+  /// POST /api/leads/{id}/reassign
+  Future<Result<ReassignLeadResponse>> reassignLead(
+    int id,
+    int assignedTo,
+  ) async {
+    try {
+      final Result<dynamic> result = await _apiService.post(
+        ApiUrls.reassignLead(id),
+        body: <String, dynamic>{'assigned_to': assignedTo},
+      );
+      if (result is Success<dynamic>) {
+        final Map<String, dynamic>? response =
+            result.value is Map<String, dynamic>
+            ? result.value as Map<String, dynamic>
+            : null;
+        if (response == null) {
+          return Error<ReassignLeadResponse>(DeserializationError());
+        }
+        // Unlike most lead endpoints this endpoint uses `success`, not `status`.
+        if (response['success'] == true || response['status'] == true) {
+          return Success<ReassignLeadResponse>(
+            ReassignLeadResponse.fromJson(response),
+          );
+        }
+        return Error<ReassignLeadResponse>(
+          ErrorWithMessage(
+            message:
+                response['message'] as String? ?? 'Could not reassign lead.',
+          ),
+        );
+      } else if (result is Error<dynamic>) {
+        return Error<ReassignLeadResponse>(result.type);
+      }
+      return Error<ReassignLeadResponse>(GenericError());
+    } catch (_) {
+      return Error<ReassignLeadResponse>(DeserializationError());
     }
   }
 

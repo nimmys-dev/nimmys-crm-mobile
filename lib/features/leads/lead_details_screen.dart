@@ -27,6 +27,7 @@ import '../../shared/widgets/app_section_card.dart';
 import '../../shared/widgets/app_select_field.dart';
 import '../../shared/widgets/app_text_field.dart';
 import 'widgets/lead_detail_widgets.dart';
+import 'widgets/lead_reassign_bottom_sheet.dart';
 
 /// Lead Details — customer profile, assignment, source and requirements
 /// retrieved from `GET /api/view-lead/{leadId}`.
@@ -259,6 +260,16 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
                     //   ),
                     if (lead != null)
                       LeadDetailsSatausChip(status: lead.status ?? 'Closed'),
+                    if (lead?.id != null)
+                      IconButton(
+                        tooltip: 'Reassign lead',
+                        onPressed: () => showLeadReassignBottomSheet(
+                          context,
+                          leadId: lead!.id!,
+                        ),
+                        icon: const Icon(Icons.person_add_alt_1_rounded),
+                        color: AppColors.white,
+                      ),
                   ],
                 ),
                 Expanded(
@@ -271,6 +282,12 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
                     hasMoreCallHistory: _hasMoreCallHistory,
                     isLoadingMoreCallHistory: _isLoadingMoreCallHistory,
                     onLoadMoreCallHistory: _loadCallHistoryPage,
+                    onReassign: lead?.id == null
+                        ? null
+                        : () => showLeadReassignBottomSheet(
+                            context,
+                            leadId: lead!.id!,
+                          ),
                   ),
                 ),
 
@@ -988,6 +1005,7 @@ class _LeadDetailsBody extends StatelessWidget {
     required this.hasMoreCallHistory,
     required this.isLoadingMoreCallHistory,
     required this.onLoadMoreCallHistory,
+    this.onReassign,
   });
 
   final int? leadId;
@@ -998,6 +1016,7 @@ class _LeadDetailsBody extends StatelessWidget {
   final bool hasMoreCallHistory;
   final bool isLoadingMoreCallHistory;
   final VoidCallback onLoadMoreCallHistory;
+  final VoidCallback? onReassign;
 
   @override
   Widget build(BuildContext context) {
@@ -1117,6 +1136,17 @@ class _LeadDetailsBody extends StatelessWidget {
                   assignedTo: lead.assignedTo,
                   createdBy: lead.createdBy,
                 ),
+                if (onReassign != null) ...<Widget>[
+                  const SizedBox(height: AppSpacing.sm),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: AppOutlineButton(
+                      label: 'Reassign Lead',
+                      icon: Icons.person_add_alt_1_rounded,
+                      onPressed: onReassign,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

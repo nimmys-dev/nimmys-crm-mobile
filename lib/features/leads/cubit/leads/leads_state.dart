@@ -61,6 +61,9 @@ class LeadsState extends Equatable {
   /// POST /api/update-lead/{id} state.
   final UIState<LeadDetailsSuccess>? updateLeadUIState;
 
+  /// POST /api/leads/{id}/reassign state.
+  final UIState<ReassignLeadResponse>? reassignLeadUIState;
+
   // ---------------------------------------------------------------------------
   // Quotation PDF
   // ---------------------------------------------------------------------------
@@ -99,6 +102,7 @@ class LeadsState extends Equatable {
     this.createLeadUIState,
     this.leadDetailsUIState,
     this.updateLeadUIState,
+    this.reassignLeadUIState,
     this.quotationPdfUIState,
     this.addCallLogUIState,
     this.callHistoryUIState,
@@ -119,6 +123,7 @@ class LeadsState extends Equatable {
     UIState<dynamic>? createLeadUIState,
     UIState<LeadDetailsSuccess>? leadDetailsUIState,
     UIState<LeadDetailsSuccess>? updateLeadUIState,
+    UIState<ReassignLeadResponse>? reassignLeadUIState,
     UIState<QuotationPdfResponse>? quotationPdfUIState,
     UIState<TeleCallDetailResponseModel>? addCallLogUIState,
     UIState<CallHistoryResponseListModel>? callHistoryUIState,
@@ -138,6 +143,7 @@ class LeadsState extends Equatable {
       createLeadUIState: createLeadUIState ?? this.createLeadUIState,
       leadDetailsUIState: leadDetailsUIState ?? this.leadDetailsUIState,
       updateLeadUIState: updateLeadUIState ?? this.updateLeadUIState,
+      reassignLeadUIState: reassignLeadUIState ?? this.reassignLeadUIState,
       quotationPdfUIState: quotationPdfUIState ?? this.quotationPdfUIState,
       addCallLogUIState: addCallLogUIState ?? this.addCallLogUIState,
       callHistoryUIState: callHistoryUIState ?? this.callHistoryUIState,
@@ -160,7 +166,6 @@ class LeadsState extends Equatable {
     currentLeadStatus,
     lastFetchedStatus,
     isUniversalLeadList, // added here
-
     // Assignees
     leadAssigneesUIState,
     leadAssigneesUIState?.status,
@@ -190,6 +195,12 @@ class LeadsState extends Equatable {
     updateLeadUIState?.status,
     updateLeadUIState?.data,
     updateLeadUIState?.errorType,
+
+    // Reassign lead
+    reassignLeadUIState,
+    reassignLeadUIState?.status,
+    reassignLeadUIState?.data,
+    reassignLeadUIState?.errorType,
 
     // Quotation PDF
     quotationPdfUIState,
