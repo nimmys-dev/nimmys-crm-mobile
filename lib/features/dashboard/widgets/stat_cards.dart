@@ -40,7 +40,8 @@ class DutyStatCard extends StatelessWidget {
     final _DashboardCardScheme scheme = _DashboardCardScheme.forItem(item);
 
     return _AttentionTwinkle(
-      enabled: _shouldTwinkle(item),
+      // enabled: _shouldTwinkle(item),
+      enabled: false,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
@@ -53,28 +54,28 @@ class DutyStatCard extends StatelessWidget {
           child: Stack(
             children: <Widget>[
               Padding(
-                padding: const EdgeInsets.fromLTRB(4, 10, 4, 8),
+                padding: const EdgeInsets.fromLTRB(1, 10, 1, 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
-                    Icon(item.icon, size: 37, color: scheme.tint),
-                    const SizedBox(height: 2),
+                    Icon(item.icon, size: 18, color: scheme.tint),
+                    const SizedBox(height: 5),
                     Text(
                       item.value,
                       style: context.type.statValue.copyWith(
-                        fontSize: 25,
+                        fontSize: 13,
                         color: context.palette.ink,
                         height: 1,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 9),
                     Text(
                       _shortDutyLabel(item.label),
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 10.5,
+                        fontSize: 9,
                         fontWeight: FontWeight.w600,
                         color: scheme.tint,
                         height: 1.12,
@@ -121,12 +122,12 @@ class LeadStatCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              Icon(item.icon, size: 37, color: scheme.tint),
-              const SizedBox(height: 2),
+              Icon(item.icon, size: 18, color: scheme.tint),
+              const SizedBox(height: 5),
               Text(
                 item.value,
                 style: context.type.statValue.copyWith(
-                  fontSize: 25,
+                  fontSize: 13,
                   color: context.palette.ink,
                   height: 1,
                 ),
@@ -138,7 +139,7 @@ class LeadStatCard extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 10.5,
+                  fontSize: 9,
                   fontWeight: FontWeight.w600,
                   color: scheme.tint,
                   height: 1.12,
