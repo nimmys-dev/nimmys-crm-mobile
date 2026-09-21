@@ -1525,78 +1525,45 @@ class LeadDetailsGrid extends StatelessWidget {
   final String? assignedTo;
   final String? createdBy;
 
+  String _value(String? value) {
+    return value != null && value.trim().isNotEmpty ? value.trim() : '—';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        Row(
-          children: <Widget>[
-            // Expanded(
-            //   child: LeadDetailTile(
-            //     label: 'Name',
-            //     value: name,
-            //     icon: Icons.person_outline_rounded,
-            //   ),
-            // ),
-            // const SizedBox(width: AppSpacing.xs),
-            // Expanded(
-            //   child: LeadDetailTile(
-            //     label: 'Mobile No',
-            //     value: phone,
-            //     icon: Icons.call_outlined,
-            //   ),
-            // ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: LeadDetailTile(
-                label: 'Assigned To',
-                value: assignedTo != null && assignedTo!.trim().isNotEmpty
-                    ? assignedTo!.trim()
-                    : '—',
-                icon: Icons.assignment_ind_outlined,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Expanded(
-              child: LeadDetailTile(
-                label: 'Created By',
-                value: createdBy != null && createdBy!.trim().isNotEmpty
-                    ? createdBy!.trim()
-                    : '—',
-                icon: Icons.badge_outlined,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: LeadDetailTile(
-                label: 'Source',
-                value: source != null && source!.trim().isNotEmpty
-                    ? source!.trim().toUpperCase()
-                    : '—',
-                icon: Icons.campaign_outlined,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            // Expanded(
-            //   child: LeadDetailTile(
-            //     label: 'Reference',
-            //     value: reference != null && reference!.trim().isNotEmpty
-            //         ? reference!.trim()
-            //         : '—',
-            //     icon: Icons.tag_rounded,
-            //   ),
-            // ),
-          ],
-        ),
+        _DetailRow(label: 'Assigned To', value: _value(assignedTo)),
+        _DetailRow(label: 'Created by', value: _value(createdBy)),
+        _DetailRow(label: 'Source', value: _value(source).toUpperCase()),
       ],
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: <Widget>[
+          SizedBox(width: 85, child: Text(label, style: context.type.caption)),
+          Expanded(
+            child: Text(
+              value,
+              style: context.type.body,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -80,7 +80,7 @@ class AppSectionHeader extends StatelessWidget {
           child: Text(
             title,
             style: context.type.sectionTitle.copyWith(
-              fontSize: 17,
+              fontSize: 14,
               letterSpacing: -0.5,
             ),
             maxLines: 1,
@@ -88,24 +88,28 @@ class AppSectionHeader extends StatelessWidget {
           ),
         ),
         if (actionLabel != null)
-          InkWell(
-            onTap: onAction,
-            borderRadius: BorderRadius.circular(AppRadius.xs),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.xxs,
-                vertical: 2,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(actionLabel!, style: context.type.link),
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    size: 16,
-                    color: AppColors.red,
-                  ),
-                ],
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onAction,
+              borderRadius: BorderRadius.circular(AppRadius.xs),
+              splashColor: AppColors.red.withOpacity(0.15),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xxs,
+                  vertical: 8,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(actionLabel!, style: context.type.link),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      size: 16,
+                      color: AppColors.red,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
