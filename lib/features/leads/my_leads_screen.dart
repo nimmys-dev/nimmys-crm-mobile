@@ -507,10 +507,24 @@ class MyLeadTile extends StatelessWidget {
                       ],
                     ),
                     // --------------------------------------------------
+                    // DESCRIPTION
+                    // --------------------------------------------------
+                    if (description.isNotEmpty) ...<Widget>[
+                      const SizedBox(height: 3),
+                      Text(
+                        description,
+                        style: context.type.bodyMuted.copyWith(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ], // --------------------------------------------------
                     // PHONE
                     // --------------------------------------------------
                     if (phone.isNotEmpty) ...<Widget>[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 10),
                       Row(
                         children: <Widget>[
                           Icon(
@@ -530,18 +544,7 @@ class MyLeadTile extends StatelessWidget {
                         ],
                       ),
                     ],
-                    // --------------------------------------------------
-                    // DESCRIPTION
-                    // --------------------------------------------------
-                    if (description.isNotEmpty) ...<Widget>[
-                      const SizedBox(height: 3),
-                      Text(
-                        description,
-                        style: context.type.bodyMuted.copyWith(fontSize: 12.5),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+
                     // --------------------------------------------------
                     // TAGS
                     // --------------------------------------------------

@@ -168,7 +168,6 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
     }
   }
 
-
   void _onCloseLeadStateChanged(BuildContext context, LeadsState state) {
     final uiState = state.closeLeadUIState;
     if (uiState?.status == Status.SUCCESS) {
@@ -492,9 +491,7 @@ class _EditLeadBottomSheetState extends State<EditLeadBottomSheet> {
           ) ??
           0.0;
       final double taxPercent =
-          double.tryParse(
-            _taxControllers[i].text.trim().replaceAll(',', ''),
-          ) ??
+          double.tryParse(_taxControllers[i].text.trim().replaceAll(',', '')) ??
           18;
 
       items.add(<String, dynamic>{
@@ -1129,12 +1126,12 @@ class _LeadDetailsBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   const LeadSectionTitle(
-                    title: 'Description / Notes',
+                    title: 'Requirements',
                     icon: Icons.description_outlined,
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   LeadDetailBlock(
-                    label: 'Requirements / Notes',
+                    label: '',
                     value: description,
                     icon: Icons.notes_rounded,
                   ),
@@ -1534,21 +1531,21 @@ class LeadDetailsGrid extends StatelessWidget {
       children: <Widget>[
         Row(
           children: <Widget>[
-            Expanded(
-              child: LeadDetailTile(
-                label: 'Name',
-                value: name,
-                icon: Icons.person_outline_rounded,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Expanded(
-              child: LeadDetailTile(
-                label: 'Mobile No',
-                value: phone,
-                icon: Icons.call_outlined,
-              ),
-            ),
+            // Expanded(
+            //   child: LeadDetailTile(
+            //     label: 'Name',
+            //     value: name,
+            //     icon: Icons.person_outline_rounded,
+            //   ),
+            // ),
+            // const SizedBox(width: AppSpacing.xs),
+            // Expanded(
+            //   child: LeadDetailTile(
+            //     label: 'Mobile No',
+            //     value: phone,
+            //     icon: Icons.call_outlined,
+            //   ),
+            // ),
           ],
         ),
         const SizedBox(height: AppSpacing.xs),
@@ -1588,15 +1585,15 @@ class LeadDetailsGrid extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.xs),
-            Expanded(
-              child: LeadDetailTile(
-                label: 'Reference',
-                value: reference != null && reference!.trim().isNotEmpty
-                    ? reference!.trim()
-                    : '—',
-                icon: Icons.tag_rounded,
-              ),
-            ),
+            // Expanded(
+            //   child: LeadDetailTile(
+            //     label: 'Reference',
+            //     value: reference != null && reference!.trim().isNotEmpty
+            //         ? reference!.trim()
+            //         : '—',
+            //     icon: Icons.tag_rounded,
+            //   ),
+            // ),
           ],
         ),
       ],

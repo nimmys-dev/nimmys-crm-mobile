@@ -83,13 +83,9 @@ class _TeleCallDetailsSectionState extends State<TeleCallDetailsSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const LeadSectionTitle(
-            title: 'Tele Call Details',
-            icon: Icons.phone_in_talk_outlined,
-          ),
           const SizedBox(height: AppSpacing.sm),
 
-          AppOutlineButton(
+          AppPrimaryButton(
             label: 'Add Call Detail',
             icon: Icons.add_ic_call_outlined,
             onPressed: () => _showAddTeleCallSheet(context),
@@ -310,7 +306,11 @@ class TeleCallDetailCard extends StatelessWidget {
 
             Text(
               'Remarks : $remarks',
-              style: const TextStyle(fontSize: 13, height: 1.3),
+              style: const TextStyle(
+                fontSize: 16,
+                height: 1.3,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
           if (reason.isNotEmpty) ...[
@@ -450,7 +450,7 @@ class TeleCallDetailCard extends StatelessWidget {
                   date,
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w500,
                     color: palette.ink,
                   ),
                 ),
@@ -865,7 +865,7 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                         // ==================================================
                         Visibility(
                           visible:
-                              !_interest&& _selectedCallStatus == 'Answered',
+                              !_interest && _selectedCallStatus == 'Answered',
                           child: BlocBuilder<LeadsCubit, LeadsState>(
                             buildWhen: (previous, current) =>
                                 previous.notInterestedReasonsUIState !=
@@ -911,7 +911,8 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                         // ITEM SOLD
                         // ==================================================
                         Visibility(
-                          visible: _interest && _selectedCallStatus == 'Answered',
+                          visible:
+                              _interest && _selectedCallStatus == 'Answered',
                           child: SwitchListTile(
                             contentPadding: EdgeInsets.zero,
                             title: const Text('Item Sold'),
@@ -950,7 +951,9 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                         // NEXT FOLLOW-UP
                         // ==================================================
                         Visibility(
-                          visible: _interest && !_isItemSold || _selectedCallStatus == 'Not Answered',
+                          visible:
+                              _interest && !_isItemSold ||
+                              _selectedCallStatus == 'Not Answered',
                           child: AppFormField(
                             label: 'Next Follow-up Date',
                             child: AppTextField(
