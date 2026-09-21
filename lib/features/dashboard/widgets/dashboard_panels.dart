@@ -68,13 +68,13 @@ class DashboardTotalsCard extends StatelessWidget {
           onTap: () => context.push(
             AppRouteName.leadsWithStatus(
               status: 'overdue_followup',
-              scope: 'my_leads',
+              scope: 'all_leads',
             ),
           ),
           borderRadius: BorderRadius.circular(AppRadius.lg),
           child: DashboardTotalsTile(
             icon: Icons.history_toggle_off_rounded,
-            label: 'Overdue Follow Up',
+            label: 'All Overdue Follow Up',
             value: overdueFollowUp,
             tone: DashboardTotalsTileTone.overdue,
           ),
@@ -118,7 +118,7 @@ class DashboardTotalsTile extends StatelessWidget {
     final Color tint = colors.$1;
     final Color background = colors.$2;
     return Container(
-      height: 78,
+      height: 45,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
         color: background,
@@ -127,13 +127,13 @@ class DashboardTotalsTile extends StatelessWidget {
       child: Row(
         children: <Widget>[
           Container(
-            width: 44,
-            height: 44,
+            width: 25,
+            height: 25,
             decoration: BoxDecoration(
               color: tint.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(9),
             ),
-            child: Icon(icon, size: 26, color: tint),
+            child: Icon(icon, size: 13, color: tint),
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
@@ -143,12 +143,13 @@ class DashboardTotalsTile extends StatelessWidget {
               children: <Widget>[
                 Text(
                   label,
-                  style: context.type.cardTitle.copyWith(fontSize: 12.5),
+                  style: context.type.cardTitle.copyWith(fontSize: 9),
                 ),
+                SizedBox(height: 2),
                 Text(
                   value,
                   style: context.type.statValue.copyWith(
-                    fontSize: 28,
+                    fontSize: 12,
                     color: context.palette.ink,
                   ),
                 ),
