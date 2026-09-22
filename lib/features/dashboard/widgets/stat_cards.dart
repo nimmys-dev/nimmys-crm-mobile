@@ -109,7 +109,7 @@ class LeadStatCard extends StatelessWidget {
     final _DashboardCardScheme scheme = _DashboardCardScheme.forItem(item);
 
     return _AttentionTwinkle(
-      enabled: _shouldTwinkle(item),
+      enabled: false,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
