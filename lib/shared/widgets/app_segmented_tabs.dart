@@ -85,7 +85,7 @@ class AppSegmentedTab extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 11.96,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
             color: isSelected ? AppColors.white : context.palette.slate,
           ),
@@ -165,7 +165,7 @@ class AppUnderlineTab extends StatelessWidget {
                   child: Text(
                     item.label,
                     style: TextStyle(
-                      fontSize: 13.5,
+                      fontSize: 12.42,
                       fontWeight: isSelected
                           ? FontWeight.w700
                           : FontWeight.w600,
@@ -241,7 +241,7 @@ class AppToggleRow extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 13.5,
+                    fontSize: 12.42,
                     fontWeight: FontWeight.w700,
                     color: context.palette.ink,
                   ),
@@ -251,7 +251,7 @@ class AppToggleRow extends StatelessWidget {
                   Text(
                     subtitle!,
                     style: TextStyle(
-                      fontSize: 11.5,
+                      fontSize: 10.58,
                       fontWeight: FontWeight.w500,
                       color: context.palette.slate,
                       height: 1.3,

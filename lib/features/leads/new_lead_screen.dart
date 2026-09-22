@@ -128,8 +128,7 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
   LeadDraft _buildDraft() => LeadDraft(
     name: _nameController.text,
     mobile: _mobileController.text,
-    source:
-        _source?.value?.toString() ?? 'call', // matches API wire value
+    source: _source?.value?.toString() ?? 'call', // matches API wire value
     quotation: _quotation,
     requiredItems: _requirementController.text.trim().isEmpty
         ? null
@@ -675,7 +674,7 @@ class QuotationItemRemoveButton extends StatelessWidget {
               color: AppColors.red,
             ),
             const SizedBox(width: 3),
-            Text('Remove', style: context.type.link.copyWith(fontSize: 11.5)),
+            Text('Remove', style: context.type.link.copyWith(fontSize: 10.58)),
           ],
         ),
       ),
@@ -701,7 +700,7 @@ class NewLeadLookupButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Check', style: context.type.link.copyWith(fontSize: 11.5)),
+              Text('Check', style: context.type.link.copyWith(fontSize: 10.58)),
               const Icon(
                 Icons.chevron_right_rounded,
                 size: 15,

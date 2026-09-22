@@ -76,7 +76,9 @@ class AppPrimaryButton extends StatelessWidget {
                         Flexible(
                           child: Text(
                             label,
-                            style: context.type.button.copyWith(fontSize: 11),
+                            style: context.type.button.copyWith(
+                              fontSize: 10.12,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -139,7 +141,7 @@ class AppOutlineButton extends StatelessWidget {
                   Flexible(
                     child: Text(
                       label,
-                      style: context.type.link.copyWith(fontSize: 13.5),
+                      style: context.type.link.copyWith(fontSize: 12.42),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -194,7 +196,7 @@ class AppPillButton extends StatelessWidget {
                 child: Text(
                   label,
                   style: TextStyle(
-                    fontSize: 12.5,
+                    fontSize: 11.50,
                     fontWeight: FontWeight.w700,
                     color: isFilled ? AppColors.white : AppColors.red,
                   ),

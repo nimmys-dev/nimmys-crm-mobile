@@ -469,7 +469,7 @@ class MyLeadTile extends StatelessWidget {
                 child: Text(
                   lead.id != null ? '#${lead.id}' : '?',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11.04,
                     fontWeight: FontWeight.w800,
                     color: context.palette.ink,
                   ),
@@ -514,7 +514,7 @@ class MyLeadTile extends StatelessWidget {
                       Text(
                         description,
                         style: context.type.bodyMuted.copyWith(
-                          fontSize: 12.5,
+                          fontSize: 11.50,
                           fontWeight: FontWeight.w800,
                         ),
                         maxLines: 2,

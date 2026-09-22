@@ -160,7 +160,7 @@ class QuotationPdf {
           pw.Text(
             'NIMMYS',
             style: pw.TextStyle(
-              fontSize: 22,
+              fontSize: 20.24,
               fontWeight: pw.FontWeight.bold,
               color: _red,
               letterSpacing: 1.5,
@@ -169,7 +169,10 @@ class QuotationPdf {
           pw.SizedBox(height: 2),
           pw.Text(
             'Quotation',
-            style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
+            style: const pw.TextStyle(
+              fontSize: 11.04,
+              color: PdfColors.grey700,
+            ),
           ),
         ],
       ),
@@ -178,12 +181,15 @@ class QuotationPdf {
         children: <pw.Widget>[
           pw.Text(
             'Date',
-            style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
+            style: const pw.TextStyle(fontSize: 8.28, color: PdfColors.grey600),
           ),
           pw.SizedBox(height: 2),
           pw.Text(
             _date.format(issuedOn),
-            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
+            style: pw.TextStyle(
+              fontSize: 10.12,
+              fontWeight: pw.FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -206,22 +212,22 @@ class QuotationPdf {
       children: <pw.Widget>[
         pw.Text(
           'QUOTATION FOR',
-          style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+          style: const pw.TextStyle(fontSize: 7.36, color: PdfColors.grey600),
         ),
         pw.SizedBox(height: 4),
         pw.Text(
           name,
-          style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+          style: pw.TextStyle(fontSize: 12.88, fontWeight: pw.FontWeight.bold),
         ),
         if (mobile.trim().isNotEmpty) ...<pw.Widget>[
           pw.SizedBox(height: 2),
-          pw.Text(mobile, style: const pw.TextStyle(fontSize: 10)),
+          pw.Text(mobile, style: const pw.TextStyle(fontSize: 9.20)),
         ],
         if (address != null && address.trim().isNotEmpty) ...<pw.Widget>[
           pw.SizedBox(height: 6),
           pw.Text(
             address.trim(),
-            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey800),
+            style: const pw.TextStyle(fontSize: 9.20, color: PdfColors.grey800),
           ),
         ],
       ],
@@ -291,7 +297,7 @@ class QuotationPdf {
             pw.Text(
               'TOTAL',
               style: pw.TextStyle(
-                fontSize: 10,
+                fontSize: 9.20,
                 color: PdfColors.white,
                 fontWeight: pw.FontWeight.bold,
               ),
@@ -300,7 +306,7 @@ class QuotationPdf {
             pw.Text(
               _money(quotation.total),
               style: pw.TextStyle(
-                fontSize: 13,
+                fontSize: 11.96,
                 color: PdfColors.white,
                 fontWeight: pw.FontWeight.bold,
               ),
@@ -319,7 +325,7 @@ class QuotationPdf {
       pw.Text(
         'This quotation is indicative and valid for 15 days from the date '
         'above. Taxes extra as applicable.',
-        style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+        style: const pw.TextStyle(fontSize: 7.36, color: PdfColors.grey600),
       ),
     ],
   );
@@ -334,7 +340,7 @@ class QuotationPdf {
       text,
       textAlign: align,
       style: pw.TextStyle(
-        fontSize: isHeader ? 8.5 : 10.5,
+        fontSize: isHeader ? 7.82 : 9.66,
         fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
         color: isHeader ? PdfColors.grey700 : PdfColors.black,
       ),

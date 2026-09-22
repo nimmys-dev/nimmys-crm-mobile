@@ -125,7 +125,9 @@ class _StaffDetailsScreenState extends State<StaffDetailsScreen> {
                       const SizedBox(width: 12),
                       Text(
                         'Reset Password',
-                        style: context.type.pageHeading.copyWith(fontSize: 18),
+                        style: context.type.pageHeading.copyWith(
+                          fontSize: 16.56,
+                        ),
                       ),
                     ],
                   ),

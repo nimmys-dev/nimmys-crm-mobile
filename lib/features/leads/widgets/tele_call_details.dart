@@ -261,7 +261,7 @@ class TeleCallDetailCard extends StatelessWidget {
                 status,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 13,
+                  fontSize: 11.96,
                   color: status.toLowerCase() == 'answered'
                       ? Colors.green
                       : AppColors.red,
@@ -307,7 +307,7 @@ class TeleCallDetailCard extends StatelessWidget {
             Text(
               'Remarks : $remarks',
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: 14.72,
                 height: 1.3,
                 fontWeight: FontWeight.w600,
               ),
@@ -318,7 +318,7 @@ class TeleCallDetailCard extends StatelessWidget {
 
             Text(
               'Reason : $reason',
-              style: const TextStyle(fontSize: 13, height: 1.3),
+              style: const TextStyle(fontSize: 11.96, height: 1.3),
             ),
           ],
         ],
@@ -438,7 +438,7 @@ class TeleCallDetailCard extends StatelessWidget {
                 Text(
                   'Next follow-up',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 10.12,
                     fontWeight: FontWeight.w500,
                     color: palette.slate,
                   ),
@@ -449,7 +449,7 @@ class TeleCallDetailCard extends StatelessWidget {
                 Text(
                   date,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 11.96,
                     fontWeight: FontWeight.w500,
                     color: palette.ink,
                   ),
@@ -476,7 +476,7 @@ class TeleCallDetailCard extends StatelessWidget {
 
         const SizedBox(width: 4),
 
-        Text(text, style: const TextStyle(fontSize: 12)),
+        Text(text, style: const TextStyle(fontSize: 11.04)),
       ],
     );
   }

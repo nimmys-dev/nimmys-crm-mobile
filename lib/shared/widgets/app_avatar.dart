@@ -49,7 +49,7 @@ class AppAvatar extends StatelessWidget {
         child: Text(
           initials.toUpperCase(),
           style: TextStyle(
-            fontSize: size * 0.34,
+            fontSize: size * 0.3128,
             fontWeight: FontWeight.w800,
             color: onDark || isSolid ? AppColors.white : AppColors.red,
             letterSpacing: 0.4,
@@ -95,7 +95,7 @@ class AppInitialBubble extends StatelessWidget {
       child: Text(
         letter.isEmpty ? '?' : letter.substring(0, 1).toUpperCase(),
         style: TextStyle(
-          fontSize: size * 0.42,
+          fontSize: size * 0.3864,
           fontWeight: FontWeight.w800,
           color: isAccent ? AppColors.red : context.palette.ink,
         ),
@@ -103,6 +103,7 @@ class AppInitialBubble extends StatelessWidget {
     );
   }
 }
+
 /// Small rounded status/meta tag.
 class AppTag extends StatelessWidget {
   const AppTag({
@@ -150,7 +151,7 @@ class AppTag extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 11.5,
+                fontSize: 10.58,
                 fontWeight: FontWeight.w700,
                 color: tint,
               ),

@@ -267,10 +267,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
           if (index <= tasks.length) {
             final task = tasks[index - 1];
             // FIX: remove outer InkWell, let DutyListTile handle navigation
-            return DutyListTile(
-              task: task,
-              onUpdated: _refreshTasks,
-            );
+            return DutyListTile(task: task, onUpdated: _refreshTasks);
           }
 
           // Footer: loading or end message
@@ -298,7 +295,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
         child: Center(
           child: Text(
             'No more tasks',
-            style: TextStyle(fontSize: 12, color: context.palette.muted),
+            style: TextStyle(fontSize: 11.04, color: context.palette.muted),
           ),
         ),
       );
@@ -429,10 +426,7 @@ class _DutyListTileState extends State<DutyListTile> {
     final taskId = widget.task.id;
     if (taskId == null) return;
 
-    final bool? result = await showApproveTaskDialog(
-      context,
-      taskId: taskId,
-    );
+    final bool? result = await showApproveTaskDialog(context, taskId: taskId);
     if (result == null || !mounted) return;
 
     if (result) {

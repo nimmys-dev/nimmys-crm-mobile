@@ -11,6 +11,7 @@ import 'package:nimmys_crm/features/leads/my_leads_screen.dart';
 import 'package:nimmys_crm/features/reports/reports_screen.dart';
 import 'package:nimmys_crm/features/staff/staff_list_screen.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/app_text_styles.dart';
 import '../../core/auth/app_permission.dart';
 import '../../core/auth/user_role.dart';
 import '../../core/theme/app_dimens.dart';
@@ -230,7 +231,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final int navIndex = _navIndex.clamp(0, navItems.length - 1);
           final String tabTitle = _getTabTitle(navIndex);
 
-          return Scaffold(
+          final Scaffold scaffold = Scaffold(
             key: _scaffoldKey,
             drawer: DashboardDrawer(),
             backgroundColor: context.palette.canvas,
@@ -279,6 +280,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   : null,
               onCenterTap: () => context.push(AppRouteName.leadNew),
             ),
+          );
+
+          // Dashboard cards are intentionally information-dense and retain
+          // their established type scale. All other app screens use the
+          // lighter shared scale from [AppTheme].
+          if (navIndex != 0) return scaffold;
+
+          return Theme(
+            data: Theme.of(context).copyWith(
+              extensions: <ThemeExtension<dynamic>>[
+                context.palette,
+                AppTypography.from(context.palette, compact: false),
+              ],
+            ),
+            child: scaffold,
           );
         },
       ),

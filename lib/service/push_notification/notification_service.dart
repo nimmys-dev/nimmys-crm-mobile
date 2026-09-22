@@ -26,7 +26,9 @@ import 'notification_view.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
-  factory NotificationService(SecuredSharedPreferences securedSharedPreferences) => _instance;
+  factory NotificationService(
+    SecuredSharedPreferences securedSharedPreferences,
+  ) => _instance;
 
   NotificationService._internal();
   static String? deviceToken;
@@ -170,11 +172,10 @@ class NotificationService {
     try {
       // Android: Create notification channels for alert-specific sounds
       if (Platform.isAndroid) {
-        final androidImplementation =
-            _flutterLocalNotificationsPlugin
-                .resolvePlatformSpecificImplementation<
-                  AndroidFlutterLocalNotificationsPlugin
-                >();
+        final androidImplementation = _flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
 
         await androidImplementation?.createNotificationChannel(
           _highAlertsChannel,
@@ -272,18 +273,18 @@ class NotificationService {
   /// Request notification permissions
   Future<void> _requestPermissions() async {
     try {
-
       if (Platform.isIOS) {
         // iOS - Firebase permissions
-        NotificationSettings settings = await FirebaseMessaging.instance.requestPermission(
-          alert: true,
-          announcement: true,
-          badge: true,
-          carPlay: false,
-          sound: true,
-          provisional: false,
-          criticalAlert: false,
-        );
+        NotificationSettings settings = await FirebaseMessaging.instance
+            .requestPermission(
+              alert: true,
+              announcement: true,
+              badge: true,
+              carPlay: false,
+              sound: true,
+              provisional: false,
+              criticalAlert: false,
+            );
 
         // Only request AwesomeNotifications if authorized/provisional
         if (settings.authorizationStatus == AuthorizationStatus.authorized ||
@@ -578,7 +579,7 @@ class NotificationService {
                     title,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 18.40,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -588,7 +589,7 @@ class NotificationService {
                     child: Text(
                       body,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 14.72),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -608,7 +609,7 @@ class NotificationService {
                       'DISMISS',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
+                        fontSize: 14.72,
                         letterSpacing: 1,
                       ),
                     ),
@@ -672,7 +673,7 @@ class NotificationService {
                         title,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          fontSize: 20,
+                          fontSize: 18.40,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -682,7 +683,7 @@ class NotificationService {
                         child: Text(
                           body,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 16),
+                          style: const TextStyle(fontSize: 14.72),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -705,7 +706,7 @@ class NotificationService {
                               'DISMISS',
                               style: TextStyle(
                                 color: Colors.black87,
-                                fontSize: 14,
+                                fontSize: 12.88,
                                 letterSpacing: 1,
                               ),
                             ),
@@ -735,7 +736,7 @@ class NotificationService {
                               'VIEW',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 14,
+                                fontSize: 12.88,
                                 letterSpacing: 1,
                               ),
                             ),
@@ -901,10 +902,8 @@ class NotificationService {
   ) {
     CustomLog.debug(this, "$consolePrint : $payload");
     if (payload.route != null) {
-
       if (payload.route != null) {
         _notificationRouting(payload);
-
       }
     }
   }
@@ -1070,9 +1069,7 @@ class NotificationService {
       default:
         return defaultMessage;
     }
-
   }
-
 
   /// Turns the `route` field of a payload into a push.
   ///

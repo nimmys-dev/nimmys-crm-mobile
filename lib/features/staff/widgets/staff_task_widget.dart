@@ -358,7 +358,7 @@ class _StaffTasksSectionState extends State<StaffTasksSection> {
                             Text(
                               'Loading all tasks...',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 11.96,
                                 color: context.palette.muted,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -412,7 +412,7 @@ class _StaffTasksSectionState extends State<StaffTasksSection> {
                                       'Transfer',
                                       style: TextStyle(
                                         fontWeight: FontWeight.w600,
-                                        fontSize: 13,
+                                        fontSize: 11.96,
                                         color: _selectedTaskIds.isEmpty
                                             ? context.palette.faint
                                             : AppColors.red,
@@ -435,7 +435,7 @@ class _StaffTasksSectionState extends State<StaffTasksSection> {
                                           '${_selectedTaskIds.length}',
                                           style: const TextStyle(
                                             color: Colors.white,
-                                            fontSize: 11,
+                                            fontSize: 10.12,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -674,7 +674,7 @@ class __TransferTasksSheetState extends State<_TransferTasksSheet> {
                     _transferAll
                         ? 'Transfer all ${widget.totalCount} tasks'
                         : 'Transfer only ${widget.selectedCount} selected tasks',
-                    style: const TextStyle(fontSize: 14),
+                    style: const TextStyle(fontSize: 12.88),
                   ),
                 ),
               ],

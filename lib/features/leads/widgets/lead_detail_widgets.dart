@@ -100,7 +100,7 @@ class LeadDetailTile extends StatelessWidget {
                 child: Text(
                   label,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 10.12,
                     fontWeight: FontWeight.w600,
                     color: isAccent ? AppColors.red : context.palette.muted,
                   ),
@@ -114,7 +114,7 @@ class LeadDetailTile extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              fontSize: 13.5,
+              fontSize: 12.42,
               fontWeight: FontWeight.w700,
               color: context.palette.ink,
             ),
@@ -161,7 +161,7 @@ class LeadDetailBlock extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              fontSize: 13.5,
+              fontSize: 12.42,
               fontWeight: FontWeight.w700,
               color: context.palette.ink,
               height: 1.35,
@@ -283,7 +283,7 @@ class LeadQuotationItemsTable extends StatelessWidget {
                   Text(
                     LeadQuotationDetails.formatRate(total!),
                     style: const TextStyle(
-                      fontSize: 13.5,
+                      fontSize: 12.42,
                       fontWeight: FontWeight.w800,
                       color: AppColors.red,
                     ),
@@ -297,7 +297,7 @@ class LeadQuotationItemsTable extends StatelessWidget {
   }
 
   static TextStyle _headerStyle(BuildContext context) => TextStyle(
-    fontSize: 10,
+    fontSize: 9.20,
     fontWeight: FontWeight.w800,
     color: context.palette.slate,
     letterSpacing: 0.5,
@@ -334,7 +334,7 @@ class LeadQuotationItemRow extends StatelessWidget {
             child: Text(
               item.item ?? '—',
               style: TextStyle(
-                fontSize: 12.5,
+                fontSize: 11.50,
                 fontWeight: FontWeight.w700,
                 color: context.palette.ink,
               ),
@@ -348,7 +348,7 @@ class LeadQuotationItemRow extends StatelessWidget {
               item.quantity?.toString() ?? '—',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 12.5,
+                fontSize: 11.50,
                 fontWeight: FontWeight.w600,
                 color: context.palette.slate,
               ),
@@ -362,7 +362,7 @@ class LeadQuotationItemRow extends StatelessWidget {
                   : LeadQuotationDetails.formatRate(item.rate!),
               textAlign: TextAlign.right,
               style: TextStyle(
-                fontSize: 12.5,
+                fontSize: 11.50,
                 fontWeight: FontWeight.w700,
                 color: context.palette.ink,
               ),
@@ -486,7 +486,7 @@ class CallLogCard extends StatelessWidget {
                 ),
                 Text(
                   entry.calledAt,
-                  style: context.type.caption.copyWith(fontSize: 11),
+                  style: context.type.caption.copyWith(fontSize: 10.12),
                 ),
                 Icon(
                   Icons.chevron_right_rounded,
@@ -498,7 +498,7 @@ class CallLogCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             Text(
               entry.remarks,
-              style: context.type.body.copyWith(fontSize: 13),
+              style: context.type.body.copyWith(fontSize: 11.96),
             ),
             const SizedBox(height: 6),
             Row(
@@ -511,7 +511,7 @@ class CallLogCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   'Called by ${entry.calledBy}',
-                  style: context.type.caption.copyWith(fontSize: 11.5),
+                  style: context.type.caption.copyWith(fontSize: 10.58),
                 ),
               ],
             ),
@@ -607,7 +607,7 @@ class LeadQuickAction extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 11.5,
+                  fontSize: 10.58,
                   fontWeight: FontWeight.w700,
                   color: isPrimary ? AppColors.white : context.palette.ink,
                 ),

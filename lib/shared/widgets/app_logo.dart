@@ -180,7 +180,7 @@ class AppLogoFallback extends StatelessWidget {
               Text(
                 'nimmys',
                 style: TextStyle(
-                  fontSize: height * 0.52,
+                  fontSize: height * 0.4784,
                   fontWeight: FontWeight.w800,
                   color: wordColor,
                   letterSpacing: height * 0.02,
@@ -191,7 +191,7 @@ class AppLogoFallback extends StatelessWidget {
                 Text(
                   'camera centre',
                   style: TextStyle(
-                    fontSize: height * 0.21,
+                    fontSize: height * 0.1932,
                     fontWeight: FontWeight.w600,
                     color: AppColors.red,
                     letterSpacing: height * 0.055,
@@ -231,7 +231,7 @@ class AppLogoMark extends StatelessWidget {
       child: Text(
         'n',
         style: TextStyle(
-          fontSize: size * 0.66,
+          fontSize: size * 0.6072,
           fontWeight: FontWeight.w800,
           color: AppColors.white,
           height: 1.0,

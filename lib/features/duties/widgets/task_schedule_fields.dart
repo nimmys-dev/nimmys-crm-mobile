@@ -493,7 +493,7 @@ class TaskQuarterTile extends StatelessWidget {
                   Text(
                     quarter.label,
                     style: TextStyle(
-                      fontSize: 13.5,
+                      fontSize: 12.42,
                       fontWeight: FontWeight.w700,
                       color: context.palette.ink,
                     ),
@@ -518,7 +518,7 @@ class TaskQuarterTile extends StatelessWidget {
                 child: Text(
                   '${AppDateField.format(range.from!)} → '
                   '${AppDateField.format(range.to!)}',
-                  style: context.type.link.copyWith(fontSize: 10.5),
+                  style: context.type.link.copyWith(fontSize: 9.66),
                 ),
               ),
           ],
@@ -609,7 +609,7 @@ class TaskClearButton extends StatelessWidget {
           children: <Widget>[
             const Icon(Icons.close_rounded, size: 13, color: AppColors.red),
             const SizedBox(width: 3),
-            Text(label, style: context.type.link.copyWith(fontSize: 11.5)),
+            Text(label, style: context.type.link.copyWith(fontSize: 10.58)),
           ],
         ),
       ),
@@ -654,7 +654,7 @@ class TaskChoiceChip extends StatelessWidget {
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 12.5,
+            fontSize: 11.50,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
             color: isSelected ? AppColors.white : context.palette.slate,
           ),

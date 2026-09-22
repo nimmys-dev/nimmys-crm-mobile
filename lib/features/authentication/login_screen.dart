@@ -423,7 +423,7 @@ class LoginBrandStage extends StatelessWidget {
                   child: Text(
                     'CRM WORKSPACE',
                     style: context.type.splashTagline.copyWith(
-                      fontSize: 10,
+                      fontSize: 9.20,
                       letterSpacing: 2.4,
                     ),
                   ),
@@ -544,7 +544,7 @@ class LoginOptionsRow extends StatelessWidget {
           ),
           child: Text(
             'Forgot password?',
-            style: context.type.link.copyWith(fontSize: 12),
+            style: context.type.link.copyWith(fontSize: 11.04),
           ),
         ),
       ],
@@ -593,7 +593,7 @@ class LoginFooter extends StatelessWidget {
         Text(
           '© nimmys camera centre',
           style: context.type.caption.copyWith(
-            fontSize: 11,
+            fontSize: 10.12,
             color: context.palette.faint,
           ),
         ),

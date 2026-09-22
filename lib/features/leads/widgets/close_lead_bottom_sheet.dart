@@ -86,7 +86,7 @@ class CloseLeadBottomSheetState extends State<CloseLeadBottomSheet> {
               // Status selection
               const Text(
                 'Status',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.80),
               ),
               const SizedBox(height: 8),
               Row(
@@ -174,7 +174,7 @@ class CloseLeadBottomSheetState extends State<CloseLeadBottomSheet> {
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                fontSize: 15,
+                fontSize: 13.80,
                 color: isSelected ? AppColors.red : palette.slate,
               ),
             ),

@@ -50,17 +50,21 @@ class AppTypography extends ThemeExtension<AppTypography> {
   final TextStyle tableHeader;
 
   /// Builds the scale against a palette so text colours follow the theme.
-  factory AppTypography.from(AppPalette palette) {
+  /// [compact] is used for the standard app screens. The dashboard keeps the
+  /// original scale because its dense stat cards are designed around it.
+  factory AppTypography.from(AppPalette palette, {bool compact = true}) {
+    final double scale = compact ? 0.92 : 1;
+
     return AppTypography(
       splashWordmark: GoogleFonts.montserrat(
-        fontSize: 40,
+        fontSize: 36.80,
         fontWeight: FontWeight.w800,
         color: AppColors.white,
         letterSpacing: -1.0,
         height: 1.0,
       ),
       splashTagline: GoogleFonts.montserrat(
-        fontSize: 12,
+        fontSize: 11.04,
         fontWeight: FontWeight.w600,
         color: const Color(0xFFB6BCC7),
         letterSpacing: 4.0,
@@ -68,95 +72,95 @@ class AppTypography extends ThemeExtension<AppTypography> {
       // Header styles always sit on the dark gradient, so they stay light in
       // both themes.
       screenTitle: GoogleFonts.montserrat(
-        fontSize: 19,
+        fontSize: 19 * scale,
         fontWeight: FontWeight.w700,
         color: AppColors.white,
         letterSpacing: 0.2,
       ),
       headerEyebrow: GoogleFonts.montserrat(
-        fontSize: 10.5,
+        fontSize: 10.5 * scale,
         fontWeight: FontWeight.w600,
         color: const Color(0xCCFFFFFF),
         letterSpacing: 1.6,
       ),
       pageHeading: GoogleFonts.montserrat(
-        fontSize: 23,
+        fontSize: 23 * scale,
         fontWeight: FontWeight.w800,
         color: palette.ink,
         letterSpacing: -0.4,
       ),
       sectionTitle: GoogleFonts.montserrat(
-        fontSize: 12.5,
+        fontSize: 12.5 * scale,
         fontWeight: FontWeight.w800,
         color: palette.ink,
         letterSpacing: 1.1,
       ),
       cardTitle: GoogleFonts.montserrat(
-        fontSize: 14.5,
+        fontSize: 14.5 * scale,
         fontWeight: FontWeight.w700,
         color: palette.ink,
         letterSpacing: -0.1,
       ),
       body: GoogleFonts.montserrat(
-        fontSize: 13.5,
+        fontSize: 13.5 * scale,
         fontWeight: FontWeight.w500,
         color: palette.ink,
         height: 1.4,
       ),
       bodyMuted: GoogleFonts.montserrat(
-        fontSize: 10.5,
+        fontSize: 10.5 * scale,
         fontWeight: FontWeight.w500,
         color: palette.slate,
         height: 1.1,
       ),
       caption: GoogleFonts.montserrat(
-        fontSize: 11.5,
+        fontSize: 11.5 * scale,
         fontWeight: FontWeight.w500,
         color: palette.muted,
         height: 1.3,
       ),
       label: GoogleFonts.montserrat(
-        fontSize: 13,
+        fontSize: 13 * scale,
         fontWeight: FontWeight.w700,
         color: palette.ink,
         letterSpacing: 0.1,
       ),
       hint: GoogleFonts.montserrat(
-        fontSize: 13.5,
+        fontSize: 13.5 * scale,
         fontWeight: FontWeight.w500,
         color: palette.faint,
       ),
       input: GoogleFonts.montserrat(
-        fontSize: 14,
+        fontSize: 14 * scale,
         fontWeight: FontWeight.w600,
         color: palette.ink,
       ),
       statValue: GoogleFonts.montserrat(
-        fontSize: 25,
+        fontSize: 25 * scale,
         fontWeight: FontWeight.w800,
         color: palette.ink,
         letterSpacing: -0.8,
         height: 1.0,
       ),
       statLabel: GoogleFonts.montserrat(
-        fontSize: 11.5,
+        fontSize: 11.5 * scale,
         fontWeight: FontWeight.w600,
         color: palette.slate,
         height: 1.25,
       ),
       button: GoogleFonts.montserrat(
-        fontSize: 15,
+        fontSize: 15 * scale,
         fontWeight: FontWeight.w700,
         color: AppColors.white,
         letterSpacing: 0.3,
       ),
       link: GoogleFonts.montserrat(
-        fontSize: 12.5,
+        fontSize: 12.5 * scale,
         fontWeight: FontWeight.w700,
         color: AppColors.red,
       ),
       tableHeader: GoogleFonts.montserrat(
-        fontSize: 11,
+        fontSize: 11 * scale,
         fontWeight: FontWeight.w800,
         color: AppColors.white,
         letterSpacing: 0.6,

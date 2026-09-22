@@ -243,7 +243,7 @@ class _ApprovalsScreenState extends State<ApprovalsScreen> {
         child: Center(
           child: Text(
             'No more tasks',
-            style: TextStyle(fontSize: 12, color: context.palette.muted),
+            style: TextStyle(fontSize: 11.04, color: context.palette.muted),
           ),
         ),
       );

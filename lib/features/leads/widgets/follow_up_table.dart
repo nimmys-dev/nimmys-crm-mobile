@@ -224,7 +224,7 @@ class FollowUpTableRow extends StatelessWidget {
                   Text(
                     entry.name,
                     style: TextStyle(
-                      fontSize: 13.5,
+                      fontSize: 12.42,
                       fontWeight: FontWeight.w700,
                       color: palette.ink,
                     ),
@@ -235,7 +235,7 @@ class FollowUpTableRow extends StatelessWidget {
                   Text(
                     entry.requiredItems,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11.04,
                       fontWeight: FontWeight.w500,
                       color: palette.slate,
                       height: 1.3,
@@ -309,7 +309,7 @@ class FollowUpMetaChip extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 11.5,
+            fontSize: 10.58,
             fontWeight: FontWeight.w700,
             color: isAccent ? AppColors.red : context.palette.slate,
           ),

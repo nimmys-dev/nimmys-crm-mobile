@@ -259,13 +259,13 @@ class CatalogHeader extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           Text(
             'UI SCREENS',
-            style: context.type.splashTagline.copyWith(fontSize: 10.5),
+            style: context.type.splashTagline.copyWith(fontSize: 9.66),
           ),
           const SizedBox(height: 3),
           Text(
             'Tap any screen to preview',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 11.96,
               fontWeight: FontWeight.w500,
               color: context.palette.faint,
             ),

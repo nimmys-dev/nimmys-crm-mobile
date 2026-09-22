@@ -132,7 +132,7 @@ class AppBottomNavTab extends StatelessWidget {
             child: Text(
               item.label,
               style: TextStyle(
-                fontSize: 10.5,
+                fontSize: 9.66,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                 color: tint,
                 height: 1.1,
@@ -195,7 +195,7 @@ class AppBottomNavCenterButton extends StatelessWidget {
                 Text(
                   item.label,
                   style: const TextStyle(
-                    fontSize: 10,
+                    fontSize: 9.20,
                     fontWeight: FontWeight.w700,
                     color: AppColors.red,
                     height: 1.1,

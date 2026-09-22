@@ -142,7 +142,6 @@ class _MyLeadListScreenState extends State<MyLeadListScreen> with RouteAware {
         body: Column(
           children: <Widget>[
             Visibility(
-            
               visible: widget.isAppHeaderRequired,
               child: const AppGradientHeader(
                 title: 'My Leads',
@@ -463,7 +462,7 @@ class MyLeadTile extends StatelessWidget {
                 child: Text(
                   lead.id != null ? '#${lead.id}' : '?',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11.04,
                     fontWeight: FontWeight.w800,
                     color: context.palette.ink,
                   ),
@@ -537,7 +536,7 @@ class MyLeadTile extends StatelessWidget {
                       const SizedBox(height: 3),
                       Text(
                         description,
-                        style: context.type.bodyMuted.copyWith(fontSize: 12.5),
+                        style: context.type.bodyMuted.copyWith(fontSize: 11.50),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),

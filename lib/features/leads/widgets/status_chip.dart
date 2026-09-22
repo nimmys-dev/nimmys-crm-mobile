@@ -37,7 +37,7 @@ class StatusChip extends StatelessWidget {
         style: context.type.caption.copyWith(
           color: _getColor(),
           fontWeight: FontWeight.w500,
-          fontSize: 11,
+          fontSize: 10.12,
         ),
       ),
     );

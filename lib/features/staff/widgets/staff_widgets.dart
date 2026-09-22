@@ -137,7 +137,7 @@ class StaffPhotoPlaceholder extends StatelessWidget {
         Text(
           'Add photo',
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 10.12,
             fontWeight: FontWeight.w600,
             color: context.palette.muted,
           ),
@@ -231,7 +231,7 @@ class StaffBranchLoadError extends StatelessWidget {
                   const SizedBox(width: 3),
                   Text(
                     'Retry',
-                    style: context.type.link.copyWith(fontSize: 12),
+                    style: context.type.link.copyWith(fontSize: 11.04),
                   ),
                 ],
               ),
@@ -375,7 +375,7 @@ class IncrementHistoryHeader extends StatelessWidget {
 
   /// Shared heading style, resolved against the active theme.
   static TextStyle cellStyle(BuildContext context) => TextStyle(
-    fontSize: 10.5,
+    fontSize: 9.66,
     fontWeight: FontWeight.w800,
     color: context.palette.slate,
     letterSpacing: 0.5,
@@ -412,7 +412,7 @@ class IncrementHistoryRow extends StatelessWidget {
             child: Text(
               record.effectiveDate,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11.04,
                 fontWeight: FontWeight.w700,
                 color: context.palette.ink,
               ),
@@ -425,7 +425,7 @@ class IncrementHistoryRow extends StatelessWidget {
             child: Text(
               record.salary,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11.04,
                 fontWeight: FontWeight.w600,
                 color: context.palette.ink,
               ),
@@ -438,7 +438,7 @@ class IncrementHistoryRow extends StatelessWidget {
             child: Text(
               '+${record.incrementSalary}',
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 11.04,
                 fontWeight: FontWeight.w800,
                 color: AppColors.red,
               ),
@@ -450,7 +450,7 @@ class IncrementHistoryRow extends StatelessWidget {
             flex: 30,
             child: Text(
               record.remarks,
-              style: context.type.caption.copyWith(fontSize: 11),
+              style: context.type.caption.copyWith(fontSize: 10.12),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),

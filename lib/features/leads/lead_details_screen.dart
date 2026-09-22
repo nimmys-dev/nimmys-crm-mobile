@@ -251,7 +251,7 @@ class _LeadDetailsScreenState extends State<LeadDetailsScreen> {
                     //             style: TextStyle(
                     //               color: AppColors.white,
                     //               fontWeight: FontWeight.w600,
-                    //               fontSize: 13,
+                    //               fontSize: 11.96,
                     //             ),
                     //           ),
                     //         ],
@@ -810,7 +810,7 @@ class _EditLeadBottomSheetState extends State<EditLeadBottomSheet> {
                         Text(
                           'Items',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 11.96,
                             fontWeight: FontWeight.w700,
                             color: palette.ink,
                           ),
@@ -868,10 +868,10 @@ class _EditLeadBottomSheetState extends State<EditLeadBottomSheet> {
     }) {
       return InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(fontSize: 12, color: palette.faint),
+        hintStyle: TextStyle(fontSize: 11.04, color: palette.faint),
         prefixText: prefixText,
         prefixStyle: TextStyle(
-          fontSize: 12,
+          fontSize: 11.04,
           color: palette.slate,
           fontWeight: FontWeight.w500,
         ),
@@ -910,14 +910,14 @@ class _EditLeadBottomSheetState extends State<EditLeadBottomSheet> {
                 child: TextField(
                   controller: _itemControllers[index],
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 11.96,
                     color: palette.ink,
                     fontWeight: FontWeight.w500,
                   ),
                   cursorColor: AppColors.red,
                   decoration: InputDecoration(
                     hintText: 'Item description',
-                    hintStyle: TextStyle(fontSize: 13, color: palette.faint),
+                    hintStyle: TextStyle(fontSize: 11.96, color: palette.faint),
                     border: InputBorder.none,
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -943,7 +943,7 @@ class _EditLeadBottomSheetState extends State<EditLeadBottomSheet> {
                   controller: _qtyControllers[index],
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 11.96,
                     color: palette.ink,
                     fontWeight: FontWeight.w600,
                   ),
@@ -959,7 +959,7 @@ class _EditLeadBottomSheetState extends State<EditLeadBottomSheet> {
                   controller: _rateControllers[index],
                   textAlign: TextAlign.end,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 11.96,
                     color: palette.ink,
                     fontWeight: FontWeight.w600,
                   ),
@@ -976,7 +976,7 @@ class _EditLeadBottomSheetState extends State<EditLeadBottomSheet> {
                   controller: _taxControllers[index],
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 11.96,
                     color: palette.ink,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1236,7 +1236,7 @@ class QuotationCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             const Text(
               'Items',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.80),
             ),
             const SizedBox(height: AppSpacing.xs),
             ...quotation.items!.map((item) => QuotationItemTile(item: item)),
@@ -1263,13 +1263,13 @@ class QuotationCard extends StatelessWidget {
           children: [
             const Text(
               'Total',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.72),
             ),
             Text(
               '₹ ${quotation.total ?? '0.00'}',
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 18,
+                fontSize: 16.56,
                 color: AppColors.red,
               ),
             ),
@@ -1403,7 +1403,7 @@ class QuotationItemTile extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 12.88,
                 fontWeight: FontWeight.w500,
                 height: 1.3,
                 color: palette.ink,
@@ -1428,7 +1428,7 @@ class QuotationItemTile extends StatelessWidget {
               '× ${item.quantity ?? 1}',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11.04,
                 fontWeight: FontWeight.w600,
                 color: palette.slate,
               ),
@@ -1448,7 +1448,7 @@ class QuotationItemTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.end,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 12.88,
                 fontWeight: FontWeight.w700,
                 color: palette.ink,
               ),
@@ -1498,7 +1498,7 @@ class LeadSummaryCard extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       name,
-                      style: context.type.pageHeading.copyWith(fontSize: 19),
+                      style: context.type.pageHeading.copyWith(fontSize: 17.48),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

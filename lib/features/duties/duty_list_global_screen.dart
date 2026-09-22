@@ -238,10 +238,7 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
           }
           if (index <= tasks.length) {
             final task = tasks[index - 1];
-            return DutyListTile(
-              task: task,
-              onUpdated: _refreshTasks,
-            );
+            return DutyListTile(task: task, onUpdated: _refreshTasks);
           }
           // Footer: loading or end message
           return _buildFooter(hasMore, isLoadingMore);
@@ -268,7 +265,7 @@ class _DutyListGlobalScreenState extends State<DutyListGlobalScreen> {
         child: Center(
           child: Text(
             'No more tasks',
-            style: TextStyle(fontSize: 12, color: context.palette.muted),
+            style: TextStyle(fontSize: 11.04, color: context.palette.muted),
           ),
         ),
       );
@@ -399,10 +396,7 @@ class _DutyListTileState extends State<DutyListTile> {
     final taskId = widget.task.id;
     if (taskId == null) return;
 
-    final bool? result = await showApproveTaskDialog(
-      context,
-      taskId: taskId,
-    );
+    final bool? result = await showApproveTaskDialog(context, taskId: taskId);
     if (result == null || !mounted) return;
 
     if (result) {

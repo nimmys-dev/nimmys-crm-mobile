@@ -80,7 +80,7 @@ class AppSectionHeader extends StatelessWidget {
           child: Text(
             title,
             style: context.type.sectionTitle.copyWith(
-              fontSize: 14,
+              fontSize: 12.88,
               letterSpacing: -0.5,
             ),
             maxLines: 1,

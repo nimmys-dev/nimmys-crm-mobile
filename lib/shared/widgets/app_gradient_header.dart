@@ -194,7 +194,7 @@ class AppCountBadge extends StatelessWidget {
       child: Text(
         count > 99 ? '99+' : '$count',
         style: const TextStyle(
-          fontSize: 10,
+          fontSize: 9.20,
           fontWeight: FontWeight.w800,
           color: AppColors.white,
           height: 1.1,

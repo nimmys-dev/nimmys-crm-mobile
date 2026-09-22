@@ -119,7 +119,7 @@ class AppDateChip extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: 11.50,
                   fontWeight: FontWeight.w700,
                   color: context.palette.ink,
                 ),

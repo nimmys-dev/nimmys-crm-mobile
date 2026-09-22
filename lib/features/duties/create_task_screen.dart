@@ -348,7 +348,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                       'Clear',
                       style: context.type.link.copyWith(
                         color: AppColors.white,
-                        fontSize: 14,
+                        fontSize: 12.88,
                       ),
                     ),
                   ),

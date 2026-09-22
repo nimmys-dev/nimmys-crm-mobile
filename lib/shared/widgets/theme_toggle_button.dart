@@ -164,7 +164,7 @@ class ThemeModeChip extends StatelessWidget {
               child: Text(
                 label,
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: 11.50,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                   color: isSelected ? AppColors.white : context.palette.slate,
                 ),

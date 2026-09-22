@@ -359,7 +359,7 @@ class _SplashFooterState extends State<SplashFooter> {
             color: AppColors.white.withValues(alpha: 0.62),
             fontWeight: FontWeight.w700,
             letterSpacing: 2.2,
-            fontSize: 11,
+            fontSize: 10.12,
           ),
         ),
         const SizedBox(height: 3),
@@ -367,7 +367,7 @@ class _SplashFooterState extends State<SplashFooter> {
           _version,
           style: context.type.caption.copyWith(
             color: AppColors.white.withValues(alpha: 0.30),
-            fontSize: 10.5,
+            fontSize: 9.66,
           ),
         ),
       ],

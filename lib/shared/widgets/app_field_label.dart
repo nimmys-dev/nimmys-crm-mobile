@@ -37,7 +37,7 @@ class AppFieldLabel extends StatelessWidget {
               child: Text(
                 '*',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 12.88,
                   fontWeight: FontWeight.w800,
                   color: AppColors.red,
                 ),
