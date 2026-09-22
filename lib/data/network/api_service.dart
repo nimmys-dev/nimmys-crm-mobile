@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
@@ -7,20 +8,21 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:nimmys_crm/core/auth/session_expiry_handler.dart';
 import 'package:nimmys_crm/data/model/result.dart';
 import 'package:nimmys_crm/data/storage/secured_shared_preferences.dart';
-import 'package:nimmys_crm/service/hasInternet/has_internet_connection.dart';
 import 'package:nimmys_crm/utils/app_string.dart';
 import 'package:nimmys_crm/utils/constant_variables.dart';
 import 'package:nimmys_crm/utils/custom_log.dart';
 
 class ApiService {
-  final Duration _timeout = const Duration(
-    seconds: 30,
-  ); // General timeout for all requests
+  /// Dio applies these to each transport phase. The outer deadline below is a
+  /// final guard so a platform/Dio edge case can never leave a cubit loading.
+  static const Duration _timeout = Duration(seconds: 30);
+  static const Duration _requestDeadline = Duration(seconds: 35);
   final Dio _dio;
   final SecuredSharedPreferences _secureSharedPrefs;
 
   ApiService(this._dio, this._secureSharedPrefs) {
     _dio.options.connectTimeout = _timeout;
+    _dio.options.sendTimeout = _timeout;
     _dio.options.receiveTimeout = _timeout;
   }
 
@@ -38,7 +40,6 @@ class ApiService {
     );
     if (bearerToken != null && bearerToken.isNotEmpty) {
       headers['Authorization'] = 'Bearer $bearerToken';
-      print('Bearer ${bearerToken}');
       return headers;
     }
 
@@ -79,19 +80,20 @@ class ApiService {
       "\nMethod : Get, \nURL : $url,n,QueryParams : $queryParams",
     );
     try {
-      if (HasInternetConnection.isInternet != true) {
-        return Error(InternetNetworkError());
-      }
-      final response = await _dio.get(
-        url,
-        queryParameters: queryParams,
-        cancelToken: cancelToken,
-        options: Options(
-          headers: await _getHeaders(),
-          receiveTimeout: _timeout,
-        ),
-      );
+      final response = await _dio
+          .get(
+            url,
+            queryParameters: queryParams,
+            cancelToken: cancelToken,
+            options: Options(
+              headers: await _getHeaders(),
+              receiveTimeout: _timeout,
+            ),
+          )
+          .timeout(_requestDeadline);
       return _handleBodyResponse(response);
+    } on TimeoutException catch (_) {
+      return Error(NetworkTimeoutError());
     } on DioException catch (dioError) {
       return _handleDioError(dioError);
     } catch (exception) {
@@ -119,20 +121,21 @@ class ApiService {
       "\nMethod: Post \nURL: $url \nRequest: $prettyBodyString",
     );
     try {
-      if (!HasInternetConnection.isInternet) {
-        return Error(InternetNetworkError());
-      }
-      final response = await _dio.post(
-        url,
-        data: body,
-        queryParameters: queryParams,
-        options: Options(
-          headers: await _getHeaders(),
-          sendTimeout: _timeout,
-          receiveTimeout: _timeout,
-        ),
-      );
+      final response = await _dio
+          .post(
+            url,
+            data: body,
+            queryParameters: queryParams,
+            options: Options(
+              headers: await _getHeaders(),
+              sendTimeout: _timeout,
+              receiveTimeout: _timeout,
+            ),
+          )
+          .timeout(_requestDeadline);
       return _handleBodyResponse(response);
+    } on TimeoutException catch (_) {
+      return Error(NetworkTimeoutError());
     } on DioException catch (dioError) {
       return _handleDioError(dioError);
     } catch (exception) {
@@ -151,19 +154,20 @@ class ApiService {
       "\nMethod: Put \nURL: $url \nRequest: $prettyBodyString",
     );
     try {
-      if (!HasInternetConnection.isInternet) {
-        return Error(InternetNetworkError());
-      }
-      final response = await _dio.put(
-        url,
-        data: body,
-        options: Options(
-          headers: await _getHeaders(),
-          sendTimeout: _timeout,
-          receiveTimeout: _timeout,
-        ),
-      );
+      final response = await _dio
+          .put(
+            url,
+            data: body,
+            options: Options(
+              headers: await _getHeaders(),
+              sendTimeout: _timeout,
+              receiveTimeout: _timeout,
+            ),
+          )
+          .timeout(_requestDeadline);
       return _handleBodyResponse(response);
+    } on TimeoutException catch (_) {
+      return Error(NetworkTimeoutError());
     } on DioException catch (dioError) {
       return _handleDioError(dioError);
     } catch (exception) {
@@ -176,19 +180,19 @@ class ApiService {
   Future<Result<dynamic>> delete(String url) async {
     CustomLog.debug(this, "Method: Delete, URL: $url");
     try {
-      if (!HasInternetConnection.isInternet) {
-        return Error(InternetNetworkError());
-      }
-
-      final response = await _dio.delete(
-        url,
-        options: Options(
-          headers: await _getHeaders(),
-          sendTimeout: _timeout,
-          receiveTimeout: _timeout,
-        ),
-      );
+      final response = await _dio
+          .delete(
+            url,
+            options: Options(
+              headers: await _getHeaders(),
+              sendTimeout: _timeout,
+              receiveTimeout: _timeout,
+            ),
+          )
+          .timeout(_requestDeadline);
       return _handleBodyResponse(response);
+    } on TimeoutException catch (_) {
+      return Error(NetworkTimeoutError());
     } on DioException catch (dioError) {
       return _handleDioError(dioError);
     } catch (exception) {
@@ -205,10 +209,6 @@ class ApiService {
     String? pathName,
   }) async {
     try {
-      if (!HasInternetConnection.isInternet) {
-        return Error(InternetNetworkError());
-      }
-
       final prettyFieldsString = const JsonEncoder.withIndent(
         '  ',
       ).convert(fields);
@@ -260,17 +260,21 @@ class ApiService {
       debugPrint("Form Data : ${formData.fields.toString()}");
       debugPrint("Form Data files : ${formData.files.toString()}");
 
-      final response = await _dio.post(
-        url,
-        data: formData,
-        options: Options(
-          headers: await _getHeaders(isMultipart: true),
-          sendTimeout: _timeout,
-          receiveTimeout: _timeout,
-        ),
-      );
+      final response = await _dio
+          .post(
+            url,
+            data: formData,
+            options: Options(
+              headers: await _getHeaders(isMultipart: true),
+              sendTimeout: _timeout,
+              receiveTimeout: _timeout,
+            ),
+          )
+          .timeout(_requestDeadline);
 
       return _handleBodyResponse(response);
+    } on TimeoutException catch (_) {
+      return Error(NetworkTimeoutError());
     } on DioException catch (dioError) {
       return _handleDioError(dioError);
     } catch (exception) {
@@ -285,24 +289,29 @@ class ApiService {
     required Map<String, String> fields,
   }) async {
     try {
-      if (!HasInternetConnection.isInternet) {
-        return Error(InternetNetworkError());
-      }
       CustomLog.debug(this, '\nMethod: Secure multipart\nURL: $url');
-      final response = await _dio.post(
-        url,
-        data: FormData.fromMap(fields),
-        options: Options(
-          headers: await _getHeaders(isMultipart: true),
-          sendTimeout: _timeout,
-          receiveTimeout: _timeout,
-        ),
-      );
+      final response = await _dio
+          .post(
+            url,
+            data: FormData.fromMap(fields),
+            options: Options(
+              headers: await _getHeaders(isMultipart: true),
+              sendTimeout: _timeout,
+              receiveTimeout: _timeout,
+            ),
+          )
+          .timeout(_requestDeadline);
       return _handleBodyResponse(response);
+    } on TimeoutException catch (_) {
+      return Error(NetworkTimeoutError());
     } on DioException catch (dioError) {
       return _handleDioError(dioError);
     } catch (exception) {
-      CustomLog.error(this, 'HTTP call error during secure multipart', exception);
+      CustomLog.error(
+        this,
+        'HTTP call error during secure multipart',
+        exception,
+      );
       return Error(GenericError());
     }
   }
@@ -317,7 +326,8 @@ class ApiService {
       "\nResponse status code: ${response.statusCode}, \nResponse data: $prettyBodyString",
     );
     try {
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      final statusCode = response.statusCode;
+      if (statusCode != null && statusCode >= 200 && statusCode < 300) {
         return Success(response.data);
       } else {
         return _handleHttpError(response);
@@ -366,6 +376,9 @@ class ApiService {
       case 498:
         return InvalidTokenError();
       case 500:
+      case 502:
+      case 503:
+      case 504:
         return InternalServerError();
       default:
         log("Unexpected status code: ${response?.statusCode}");
@@ -387,8 +400,18 @@ class ApiService {
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
         return Error(NetworkTimeoutError());
+      case DioExceptionType.cancel:
+        return Error(RequestCancelledError());
+      case DioExceptionType.connectionError:
+        // A socket/DNS failure can mean the API is down even when the device
+        // is online. Do not present it as a definitive offline diagnosis.
+        return Error(
+          ErrorWithMessage(
+            message: 'Could not reach the server. Please try again.',
+          ),
+        );
       default:
-        return Error(ErrorWithMessage(message: error.response?.data));
+        return Error(GenericError());
     }
   }
 

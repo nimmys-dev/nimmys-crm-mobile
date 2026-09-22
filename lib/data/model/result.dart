@@ -2,7 +2,6 @@ import 'package:flutter/widgets.dart';
 import 'package:nimmys_crm/utils/app_string.dart';
 import 'package:nimmys_crm/utils/extensions/string_extensions.dart';
 
-
 abstract class Result<T> {
   const Result();
 }
@@ -35,9 +34,9 @@ class ErrorWithMessage extends ErrorType {
   // in a toast.
   @override
   String getText(BuildContext context) {
-    if(code != null){
+    if (code != null) {
       return "$message ($code)";
-    }else{
+    } else {
       return message;
     }
   }
@@ -51,9 +50,7 @@ class ErrorWithMessage extends ErrorType {
     }
     return ErrorWithMessage(message: AppString.errorType.somethingWentWrong);
   }
-
 }
-
 
 class TokenExpiredError extends ErrorType {
   @override
@@ -62,14 +59,12 @@ class TokenExpiredError extends ErrorType {
   }
 }
 
-
 class InvalidTokenError extends ErrorType {
   @override
   String getText(BuildContext context) {
     return AppString.errorType.invalidTokenError.capitalize;
   }
 }
-
 
 class BadRequestError extends ErrorType {
   @override
@@ -78,14 +73,12 @@ class BadRequestError extends ErrorType {
   }
 }
 
-
 class InternalServerError extends ErrorType {
   @override
   String getText(BuildContext context) {
-    return AppString.errorType.badRequestError.capitalize;
+    return AppString.errorType.internalServerError.capitalize;
   }
 }
-
 
 class ConflictError extends ErrorType {
   @override
@@ -94,7 +87,6 @@ class ConflictError extends ErrorType {
   }
 }
 
-
 class NotFoundError extends ErrorType {
   @override
   String getText(BuildContext context) {
@@ -102,14 +94,12 @@ class NotFoundError extends ErrorType {
   }
 }
 
-
 class UnauthenticatedError extends ErrorType {
   @override
   String getText(BuildContext context) {
     return AppString.errorType.unauthenticatedError.capitalize;
   }
 }
-
 
 /// 403 — the session is valid, the role is not sufficient.
 ///
@@ -123,14 +113,12 @@ class ForbiddenError extends ErrorType {
   }
 }
 
-
 class NetworkTimeoutError extends ErrorType {
   @override
   String getText(BuildContext context) {
     return AppString.errorType.timeOutError.capitalize;
   }
 }
-
 
 class RequestCancelledError extends ErrorType {
   @override
@@ -139,14 +127,12 @@ class RequestCancelledError extends ErrorType {
   }
 }
 
-
 class DeserializationError extends ErrorType {
   @override
   String getText(BuildContext context) {
     return AppString.errorType.deserializationError.capitalize;
   }
 }
-
 
 class ResponseStatusFailed extends ErrorType {
   @override
@@ -155,14 +141,12 @@ class ResponseStatusFailed extends ErrorType {
   }
 }
 
-
 class SerializationError extends ErrorType {
   @override
   String getText(BuildContext context) {
     return AppString.errorType.serializationError.capitalize;
   }
 }
-
 
 class GenericError extends ErrorType {
   @override
@@ -171,14 +155,12 @@ class GenericError extends ErrorType {
   }
 }
 
-
 class LoginAttemptError extends ErrorType {
   @override
   String getText(BuildContext context) {
     return AppString.errorType.loginAttemptError.capitalize;
   }
 }
-
 
 class InternetNetworkError extends ErrorType {
   @override
@@ -187,12 +169,9 @@ class InternetNetworkError extends ErrorType {
   }
 }
 
-
-
 class InvalidInputError extends ErrorType {
   @override
   String getText(BuildContext context) {
     return AppString.errorType.invalidInput.capitalize;
   }
 }
-

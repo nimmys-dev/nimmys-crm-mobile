@@ -303,10 +303,20 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                       : createState?.status;
                   if (requestStatus == Status.ERROR) {
                     ToastMessages.error(
-                      message: _isEditing
-                          ? 'Failed to update task.'
-                          : 'Failed to create task.',
+                      message:
+                          (_isEditing
+                                  ? updateState?.errorType
+                                  : createState?.errorType)
+                              ?.getText(context) ??
+                          (_isEditing
+                              ? 'Failed to update task.'
+                              : 'Failed to create task.'),
                     );
+                    if (_isEditing) {
+                      context.read<TasksCubit>().resetUpdateTaskState();
+                    } else {
+                      context.read<TasksCubit>().resetCreateTaskState();
+                    }
                   }
                 }
               },
