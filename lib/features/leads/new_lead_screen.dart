@@ -41,7 +41,14 @@ class _NewLeadScreenState extends State<NewLeadScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _requirementController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _termsController = TextEditingController();
+  final TextEditingController _termsController = TextEditingController(
+    text:
+        "1. All prices are inclusive of applicable taxes.\n\n"
+        "2. The supply of materials is subject to availability.\n\n"
+        "3. We reserve the right to revise prices in the event of any price increases from the manufacturers or suppliers.\n\n"
+        "4. Materials will be delivered within 7 days of quotation confirmation.\n\n"
+        "5. Shipping and delivery charges are additional.",
+  );
 
   /// One controller set per quotation line. Starts with a single row, which
   /// is also the minimum while the quotation toggle is on.
@@ -541,7 +548,7 @@ class NewLeadQuotationFields extends StatelessWidget {
             hint: 'Enter quotation terms',
             controller: termsController,
             icon: Icons.description_outlined,
-            maxLines: 3,
+            maxLines: 5,
             maxLength: 500,
             textCapitalization: TextCapitalization.sentences,
           ),
