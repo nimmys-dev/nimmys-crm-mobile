@@ -129,6 +129,10 @@ class _LeadContactActionsState extends State<LeadContactActions> {
 
         if (pdfState?.status == Status.SUCCESS) {
           final pdfUrl = pdfState?.data?.data?.pdfUrl;
+          debugPrint('-----------PDF URL: $pdfUrl');
+          debugPrint(
+            '-----------Filename: ${_buildFileName(pdfUrl.toString())}',
+          );
           // Reset so we don't react again
           context.read<LeadsCubit>().resetQuotationPdfState();
 
