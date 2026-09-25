@@ -607,10 +607,10 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
       ToastMessages.error(message: 'Call Status is required');
       return;
     }
-    if (_remarksController.text.trim().isEmpty) {
-      ToastMessages.error(message: 'Remarks is required');
-      return;
-    }
+    // if (_remarksController.text.trim().isEmpty) {
+    //   ToastMessages.error(message: 'Remarks is required');
+    //   return;
+    // }
 
     final bool isAnswered = _selectedCallStatus == 'Answered';
     final String remarks = _remarksController.text.trim();
@@ -971,7 +971,7 @@ class _AddTeleCallDetailSheetState extends State<AddTeleCallDetailSheet> {
                         // REMARKS
                         // ==================================================
                         AppFormField(
-                          isRequired: true,
+                          isRequired: false,
                           label: 'Remarks',
                           child: AppTextField(
                             hint: 'Notes / remarks',

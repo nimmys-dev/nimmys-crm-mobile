@@ -234,6 +234,7 @@ class _MyLeadsBody extends StatefulWidget {
 
 class _MyLeadsBodyState extends State<_MyLeadsBody> {
   late final ScrollController _scrollController;
+  int? _lastRequestedPage;
 
   @override
   void initState() {
@@ -250,17 +251,31 @@ class _MyLeadsBodyState extends State<_MyLeadsBody> {
   }
 
   void _onScroll() {
+    if (!_scrollController.hasClients) return;
+
     final cubit = context.read<DashboardCubit>();
     final currentState = cubit.state;
-    // Only trigger if not already loading, there is a next page, and near bottom
+
+    // Already loading — bail out early.
     if (currentState.leadListUIState?.status == Status.LOADING) return;
+
     final pagination = currentState.leadPagination;
     if (pagination == null || !pagination.hasNextPage) return;
-    const threshold = 200.0;
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - threshold) {
-      cubit.goToLeadPage(pagination.nextPage);
+
+    // Reset the guard once the previously-requested page has arrived.
+    if (_lastRequestedPage != null &&
+        pagination.currentPage! >= _lastRequestedPage!) {
+      _lastRequestedPage = null;
     }
+
+    const threshold = 300.0;
+    final position = _scrollController.position;
+    if (position.pixels < position.maxScrollExtent - threshold) return;
+
+    final int nextPage = pagination.nextPage;
+    if (_lastRequestedPage == nextPage) return; // don't fire twice
+    _lastRequestedPage = nextPage;
+    cubit.goToLeadPage(nextPage);
   }
 
   @override
@@ -339,18 +354,26 @@ class _MyLeadsBodyState extends State<_MyLeadsBody> {
     final int from = pagination?.from ?? ((currentPage - 1) * perPage + 1);
     final int to = pagination?.to ?? (from + leads.length - 1);
     final int total = pagination?.total ?? leads.length;
+    final bool hasMore = pagination?.hasNextPage ?? false;
+
+    // Show the footer loader whenever there is another page to fetch.
+    // It stays visible until the last page has been reached, which gives
+    // the scroll a consistent height and prevents the "jump" you saw.
+    final bool showFooter = hasMore;
 
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
       color: AppColors.red,
       child: ListView.builder(
         controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(
           left: AppSpacing.gutter,
           right: AppSpacing.gutter,
           bottom: AppSpacing.xl + 40,
         ),
-        itemCount: leads.length + 1,
+        // +1 for the header, +1 for the footer when there is more data.
+        itemCount: leads.length + 1 + (showFooter ? 1 : 0),
         itemBuilder: (BuildContext context, int index) {
           if (index == 0) {
             return MyLeadsCount(
@@ -359,6 +382,10 @@ class _MyLeadsBodyState extends State<_MyLeadsBody> {
               total: total,
               isLoading: isLoading,
             );
+          }
+
+          if (showFooter && index == leads.length + 1) {
+            return const _PaginationLoader();
           }
 
           final LeadItemData lead = leads[index - 1];
@@ -376,6 +403,28 @@ class _MyLeadsBodyState extends State<_MyLeadsBody> {
                 : null,
           );
         },
+      ),
+    );
+  }
+}
+
+/// Bottom-of-list loader shown while the next page is being fetched.
+class _PaginationLoader extends StatelessWidget {
+  const _PaginationLoader();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+      child: Center(
+        child: SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.red),
+          ),
+        ),
       ),
     );
   }

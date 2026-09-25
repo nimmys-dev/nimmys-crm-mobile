@@ -116,7 +116,7 @@
 			<key>entitlements</key>
 			<dict>
 				<key>application-identifier</key>
-				<string>5K8MQ5ZW2B.com.nimmyscrmios.app</string>
+				<string>5K8MQ5ZW2B.com.nimmyscrm.app</string>
 				<key>beta-reports-active</key>
 				<true/>
 				<key>com.apple.developer.team-identifier</key>
@@ -133,7 +133,7 @@
 				<key>dateExpires</key>
 				<string>13/09/27</string>
 				<key>name</key>
-				<string>iOS Team Store Provisioning Profile: com.nimmyscrmios.app</string>
+				<string>iOS Team Store Provisioning Profile: com.nimmyscrm.app</string>
 			</dict>
 			<key>symbols</key>
 			<true/>

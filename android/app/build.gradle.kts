@@ -28,7 +28,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.nimmyscrmios.app"
+    namespace = "com.nimmyscrm.app"
 
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -62,7 +62,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.nimmyscrmios.app"
+        applicationId = "com.nimmyscrm.app"
 
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
