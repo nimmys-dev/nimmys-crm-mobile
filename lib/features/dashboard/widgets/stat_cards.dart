@@ -46,7 +46,7 @@ class DutyStatCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Container(
-          height: 142,
+          height: 115,
           decoration: BoxDecoration(
             color: scheme.background,
             borderRadius: BorderRadius.circular(8),
@@ -55,38 +55,36 @@ class DutyStatCard extends StatelessWidget {
             children: <Widget>[
               Padding(
                 padding: const EdgeInsets.fromLTRB(1, 10, 1, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: <Widget>[
-                    Icon(item.icon, size: 18, color: scheme.tint),
-                    const SizedBox(height: 5),
-                    Text(
-                      item.value,
-                      style: context.type.statValue.copyWith(
-                        fontSize: 13,
-                        color: context.palette.ink,
-                        height: 1,
+                child: Center(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Icon(item.icon, size: 18, color: scheme.tint),
+                      const SizedBox(height: 5),
+                      Text(
+                        item.value,
+                        style: context.type.statValue.copyWith(
+                          fontSize: 13,
+                          color: context.palette.ink,
+                          height: 1,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 9),
-                    Text(
-                      _shortDutyLabel(item.label),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
-                        color: scheme.tint,
-                        height: 1.12,
+                      const SizedBox(height: 9),
+                      Text(
+                        _shortDutyLabel(item.label),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                          color: scheme.tint,
+                          height: 1.12,
+                        ),
                       ),
-                    ),
-                    const Spacer(),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: _ArrowBadge(color: scheme.tint),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -98,6 +96,7 @@ class DutyStatCard extends StatelessWidget {
 }
 
 /// Wide lead tile — arranged as a 2×2 grid under "MY LEADS".
+/// Wide lead tile — arranged as a 2-column grid under "MY LEADS".
 class LeadStatCard extends StatelessWidget {
   const LeadStatCard({super.key, required this.item, this.onTap});
 
@@ -112,44 +111,63 @@ class LeadStatCard extends StatelessWidget {
       enabled: false,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(6, 10, 6, 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: scheme.background,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
           ),
-          child: Column(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              Icon(item.icon, size: 18, color: scheme.tint),
-              const SizedBox(height: 5),
-              Text(
-                item.value,
-                style: context.type.statValue.copyWith(
-                  fontSize: 13,
-                  color: context.palette.ink,
-                  height: 1,
+              // ── Icon badge ─────────────────────────────
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: scheme.tint.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(item.icon, size: 18, color: scheme.tint),
+              ),
+              const SizedBox(width: 10),
+
+              // ── Value + label ──────────────────────────
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      item.value,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.type.statValue.copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: context.palette.ink,
+                        height: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _shortLeadLabel(item.label),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: scheme.tint,
+                        height: 1.15,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                _shortLeadLabel(item.label),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
-                  color: scheme.tint,
-                  height: 1.12,
-                ),
-              ),
-              const Spacer(),
-              Align(
-                alignment: Alignment.centerRight,
-                child: _ArrowBadge(color: scheme.tint),
-              ),
+
+              // ── Arrow ──────────────────────────────────
+              const SizedBox(width: 6),
             ],
           ),
         ),

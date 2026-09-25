@@ -118,7 +118,7 @@ class DashboardTotalsTile extends StatelessWidget {
     final Color tint = colors.$1;
     final Color background = colors.$2;
     return Container(
-      height: 45,
+      height: 60,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
         color: background,

@@ -352,10 +352,10 @@ class DashboardLeadsSection extends StatelessWidget {
             padding: EdgeInsets.zero,
             itemCount: items.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              mainAxisSpacing: AppSpacing.xs,
-              crossAxisSpacing: AppSpacing.xs,
-              mainAxisExtent: 152,
+              crossAxisCount: 2, // 👈 2 cards per row
+              mainAxisSpacing: AppSpacing.sm,
+              crossAxisSpacing: AppSpacing.sm,
+              mainAxisExtent: 96, // 👈 shorter, since layout is horizontal now
             ),
             itemBuilder: (BuildContext context, int index) => LeadStatCard(
               item: items[index],

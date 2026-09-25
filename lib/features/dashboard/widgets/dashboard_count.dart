@@ -87,7 +87,8 @@ class _DashboardContentState extends State<DashboardContent> {
         final totalLeads = widget.role.can(AppPermission.viewAllLeads)
             ? leadCounts?.myLeads?.totalLeads?.toString() ?? '0'
             : null;
-
+        final AlloverdueFollowUp =
+            leadCounts?.allLeads?.overdueFollowup?.toString() ?? '0';
         Future<void> refreshDashboard() async {
           await context.read<DashboardCubit>().getDashboardCount();
           await context.read<DashboardCubit>().getLeadCount();
@@ -152,7 +153,7 @@ class _DashboardContentState extends State<DashboardContent> {
                           child: DashboardTotalsCard(
                             yourLeads: yourLeads,
                             totalLeads: totalLeads,
-                            overdueFollowUp: overdueFollowUp,
+                            overdueFollowUp: AlloverdueFollowUp,
                           ),
                         ),
                         if (widget.role.hasFullDashboard)
