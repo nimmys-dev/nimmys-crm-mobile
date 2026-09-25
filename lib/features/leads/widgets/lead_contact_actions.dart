@@ -1,5 +1,8 @@
 // ignore_for_file: unrelated_type_equality_checks
 
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -7,9 +10,11 @@ import 'package:nimmys_crm/core/theme/app_colors.dart';
 import 'package:nimmys_crm/core/theme/app_theme.dart';
 import 'package:nimmys_crm/core/utils/phone_dialer.dart';
 import 'package:nimmys_crm/core/utils/whatsapp_launcher.dart';
-import 'package:nimmys_crm/enum/status.dart'; 
+import 'package:nimmys_crm/enum/status.dart';
 import 'package:nimmys_crm/features/leads/cubit/leads/leads_cubit.dart';
 import 'package:nimmys_crm/utils/toast_messages.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 const Color kWhatsAppGreen = Color(0xFF25D366);
 
@@ -43,17 +48,77 @@ class LeadContactActions extends StatefulWidget {
 
 class _LeadContactActionsState extends State<LeadContactActions> {
   bool _isLoading = false;
+  bool _isDownloading = false;
 
   void _sendQuotation() {
-    if (_isLoading) return;
+    if (_isLoading || _isDownloading) return;
     setState(() => _isLoading = true);
     context.read<LeadsCubit>().getQuotationPdf(widget.leadId);
   }
 
-  void _sharePdfViaWhatsApp(String pdfUrl) {
-    final message =
-        'Here is your quotation PDF: $pdfUrl\n\nThank you for choosing Nimmy\'s!';
-    WhatsAppLauncher.openChat(context, widget.mobile, message: message);
+  Future<void> _downloadAndSharePdf(String pdfUrl) async {
+    setState(() {
+      _isDownloading = true;
+      _isLoading = false;
+    });
+
+    try {
+      final String fileName = _buildFileName(pdfUrl);
+      final Directory tempDir = await getTemporaryDirectory();
+      final String savePath = '${tempDir.path}/$fileName';
+
+      // Clean stale file so we always share the fresh one.
+      final File existing = File(savePath);
+      if (await existing.exists()) {
+        await existing.delete();
+      }
+
+      await Dio().download(pdfUrl, savePath);
+
+      final File pdfFile = File(savePath);
+      if (!await pdfFile.exists()) {
+        throw Exception('PDF file not found after download');
+      }
+
+      // Compute share sheet origin — required on iPad and on iOS 26+.
+      final RenderBox? box = context.findRenderObject() as RenderBox?;
+      final Rect? shareOrigin = box != null
+          ? box.localToGlobal(Offset.zero) & box.size
+          : null;
+
+      // Open the native share sheet. WhatsApp (and WhatsApp Business)
+      // appear as share targets. The PDF is attached as a real file.
+      await Share.shareXFiles(
+        <XFile>[
+          XFile(pdfFile.path, mimeType: 'application/pdf', name: fileName),
+        ],
+        text: 'Quotation for ${widget.name}',
+        subject: 'Quotation - ${widget.name}',
+        sharePositionOrigin: shareOrigin,
+      );
+    } catch (e) {
+      if (mounted) {
+        ToastMessages.error(message: 'Failed to download PDF: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDownloading = false;
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String _buildFileName(String url) {
+    try {
+      final uri = Uri.parse(url);
+      final segment = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : '';
+      if (segment.toLowerCase().endsWith('.pdf')) return segment;
+    } catch (_) {
+      // ignore and fallback
+    }
+    return 'quotation_${widget.leadId}.pdf';
   }
 
   @override
@@ -62,23 +127,22 @@ class _LeadContactActionsState extends State<LeadContactActions> {
       listener: (context, state) {
         final pdfState = state.quotationPdfUIState;
 
-        // Use status comparisons – safe and works with your UIState
         if (pdfState?.status == Status.SUCCESS) {
-          setState(() => _isLoading = false);
           final pdfUrl = pdfState?.data?.data?.pdfUrl;
-          if (pdfUrl != null && pdfUrl.isNotEmpty) {
-            _sharePdfViaWhatsApp(pdfUrl);
-          } else {
-            ToastMessages.error(message: 'PDF URL not found');
-          }
           // Reset so we don't react again
           context.read<LeadsCubit>().resetQuotationPdfState();
+
+          if (pdfUrl != null && pdfUrl.isNotEmpty) {
+            _downloadAndSharePdf(pdfUrl);
+          } else {
+            if (mounted) setState(() => _isLoading = false);
+            ToastMessages.error(message: 'PDF URL not found');
+          }
         } else if (pdfState?.status == Status.ERROR) {
-          setState(() => _isLoading = false);
+          if (mounted) setState(() => _isLoading = false);
           final error =
               pdfState?.errorType?.getText(context) ?? 'Failed to generate PDF';
           ToastMessages.error(message: error);
-          // Reset on error too
           context.read<LeadsCubit>().resetQuotationPdfState();
         }
       },
@@ -87,7 +151,7 @@ class _LeadContactActionsState extends State<LeadContactActions> {
         children: <Widget>[
           if (widget.hasQuotation == true) ...[
             LeadActionButton(
-              icon: _isLoading
+              icon: (_isLoading || _isDownloading)
                   ? const SizedBox(
                       width: 18,
                       height: 18,
@@ -103,8 +167,10 @@ class _LeadContactActionsState extends State<LeadContactActions> {
                     ),
               badge: const LeadActionBadge(icon: Icons.share_rounded),
               semanticLabel: 'Send quotation PDF to ${widget.name}',
-              tooltip: 'Share quotation PDF',
-              onPressed: _isLoading ? null : _sendQuotation,
+              tooltip: _isDownloading
+                  ? 'Downloading PDF…'
+                  : 'Share quotation PDF',
+              onPressed: (_isLoading || _isDownloading) ? null : _sendQuotation,
             ),
             SizedBox(width: widget.spacing),
           ],
@@ -133,11 +199,6 @@ class _LeadContactActionsState extends State<LeadContactActions> {
     );
   }
 }
-
-// ------------------------------------------------------------
-// The rest (LeadActionButton, LeadActionBadge, LeadCallButton)
-// remain exactly as in your original file – keep them unchanged.
-// ------------------------------------------------------------
 
 // ============================================================
 // Helper widgets (unchanged)
