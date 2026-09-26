@@ -31,7 +31,11 @@ class DashboardDutySection extends StatelessWidget {
             actionLabel: 'View All',
             // onAction: () => context.push(AppRouteName.viewAllLeads),
             onAction: () {
-              context.push(AppRouteName.viewAllDuties);
+              if (scope == "my_tasks") {
+                context.push(AppRouteName.dutiesFiltered(scope: 'my_tasks'));
+              } else {
+                context.push(AppRouteName.dutiesFiltered(scope: 'all_tasks'));
+              }
             },
           ),
           const SizedBox(height: AppSpacing.sm),

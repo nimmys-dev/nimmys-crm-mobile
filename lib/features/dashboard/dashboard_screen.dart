@@ -330,6 +330,9 @@ class DashboardLeadsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print(
+      '--------------- items: ${items[0].label} ---------------${items[0].icon}${items[0].route}${items[0].tone}${items[0].value}',
+    );
     return AppSectionCard(
       child: Column(
         children: <Widget>[
