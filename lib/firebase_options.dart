@@ -64,7 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '44488471486',
     projectId: 'nimmyscrm',
     storageBucket: 'nimmyscrm.firebasestorage.app',
-    iosBundleId: 'com.nimmyscrm.app',
+    iosBundleId: 'com.nimmyscrmios.app',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -73,7 +73,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '44488471486',
     projectId: 'nimmyscrm',
     storageBucket: 'nimmyscrm.firebasestorage.app',
-    iosBundleId: 'com.nimmyscrm.app',
+    iosBundleId: 'com.nimmyscrmios.app',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
