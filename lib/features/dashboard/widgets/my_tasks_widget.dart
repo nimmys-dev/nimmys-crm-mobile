@@ -29,7 +29,6 @@ class DashboardDutySection extends StatelessWidget {
           AppSectionHeader(
             title: taskTitle,
             actionLabel: 'View All',
-            // onAction: () => context.push(AppRouteName.viewAllLeads),
             onAction: () {
               if (scope == "my_tasks") {
                 context.push(AppRouteName.dutiesFiltered(scope: 'my_tasks'));

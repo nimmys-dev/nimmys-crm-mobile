@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nimmys_crm/core/auth/user_role.dart';
 import 'package:nimmys_crm/enum/status.dart';
+import 'package:nimmys_crm/features/authentication/cubit/session/session_cubit.dart';
 import 'package:nimmys_crm/features/dashboard/cubit/dashboard_cubit.dart';
 import 'package:nimmys_crm/features/duties/cubit/tasks_cubit.dart';
 import 'package:nimmys_crm/features/duties/model/tasks_list_model.dart';
+import 'package:nimmys_crm/utils/app_text_style.dart';
 import 'package:nimmys_crm/utils/toast_messages.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimens.dart';
@@ -40,11 +43,13 @@ class _DutyListScreenState extends State<DutyListScreen> {
   Timer? _searchDebounce;
   String _query = '';
   bool _isInitialLoading = true;
+  late String _scope;
   late final DashboardCubit _dashboardCubit;
 
   @override
   void initState() {
     super.initState();
+    _scope = widget.scope ?? 'my_tasks';
     _dashboardCubit = context.read<DashboardCubit>();
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -52,7 +57,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
       await _dashboardCubit.getTaskCounts(
         refresh: true,
         filter: widget.taskStatus ?? '',
-        scope: widget.scope,
+        scope: _scope,
         search: '',
         page: 1,
       );
@@ -93,7 +98,7 @@ class _DutyListScreenState extends State<DutyListScreen> {
     await context.read<DashboardCubit>().getTaskCounts(
       refresh: true,
       filter: widget.taskStatus ?? '',
-      scope: widget.scope,
+      scope: _scope,
       search: _searchController.text.trim(),
       page: 1,
     );
@@ -117,7 +122,19 @@ class _DutyListScreenState extends State<DutyListScreen> {
       search: _searchController.text.trim(),
       refresh: true,
       filter: widget.taskStatus ?? '',
-      scope: widget.scope,
+      scope: _scope,
+      page: 1,
+    );
+  }
+
+  void _changeScope(String? scope) {
+    if (scope == null || scope == _scope) return;
+    setState(() => _scope = scope);
+    context.read<DashboardCubit>().getTaskCounts(
+      refresh: true,
+      filter: widget.taskStatus ?? '',
+      scope: scope,
+      search: _searchController.text.trim(),
       page: 1,
     );
   }
@@ -133,6 +150,8 @@ class _DutyListScreenState extends State<DutyListScreen> {
           backgroundColor: context.palette.canvas,
           body: BlocBuilder<DashboardCubit, DashboardState>(
             builder: (context, state) {
+              final isAdmin =
+                  context.read<SessionCubit>().state.role == UserRole.admin;
               final all_tasks = state.taskList ?? [];
               final isLoading =
                   _isInitialLoading ||
@@ -150,7 +169,70 @@ class _DutyListScreenState extends State<DutyListScreen> {
                     title: 'Duties',
                     eyebrow: 'MY DUTIES',
                     leading: const AppBackButton(),
-                    actions: const <Widget>[],
+                    actions: isAdmin
+                        ? <Widget>[
+                            SizedBox(
+                              width: 90,
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: _scope,
+                                  isExpanded:
+                                      true, // 👈 fills width consistently
+                                  dropdownColor: context.palette.surface,
+                                  iconEnabledColor: Colors.white,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  selectedItemBuilder: (BuildContext context) {
+                                    return <Widget>[
+                                      Align(
+                                        alignment: Alignment
+                                            .centerLeft, // 👈 match menu item alignment
+                                        child: Text(
+                                          'My tasks',
+                                          style: AppTextStyle.button.copyWith(
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'All tasks',
+                                          style: AppTextStyle.button.copyWith(
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ];
+                                  },
+                                  items: <DropdownMenuItem<String>>[
+                                    DropdownMenuItem(
+                                      value: 'my_tasks',
+                                      child: Text(
+                                        'My tasks',
+                                        style: AppTextStyle.button.copyWith(
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'all_tasks',
+                                      child: Text(
+                                        'All tasks',
+                                        style: AppTextStyle.button.copyWith(
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                  onChanged: _changeScope,
+                                ),
+                              ),
+                            ),
+                          ]
+                        : const <Widget>[],
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
